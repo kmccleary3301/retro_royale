@@ -44,7 +44,15 @@ function open_socket() {
 }
 
 function process_message(data) {          //Event function to process data recieved from the server through the websocket.
-  current_state.read_network_data(data);  //Feeds to current_state's local data recieved function.
+  var lines = data.split("\n");
+  for (let i in lines) {
+    console.log("line "+str(i)+": "+lines[i]);
+    var line_split = lines[i].split(":");
+    var flag = line_split[0],
+        message = null;
+    if (line_split.length > 1) { message = line_split[1]; }
+    current_state.read_network_data(flag, message);  //Feeds to current_state's local data recieved function.
+  }
 }
 
 
@@ -75,14 +83,13 @@ class game_1_player {
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
     this.sprite_row = 0;
-    this.fruit_holding = false;
+    this.fruit_holding = 0;
     this.fruit_held_id = 0;
   }
   
   draw() {
     push();
     translate(this.x, this.y);
-
     if (this.move == 1){
       if (this.facing < 2){
         scale(1-this.facing*2, 1);  
@@ -110,58 +117,69 @@ class game_1_player {
         image(this.spriteSheet, 0, 0, 100, 100, 480, 400, 80, 80);
       }
     }
-
+    
     if (frameCount % 6 == 0) {
       this.sx = (this.sx + 1) % 6;
     }
 
-    
-    //this.x += this.speed*this.move;
-    
     pop();
   }
 
   grab_fruit(fruit_id, size){
-    this.fruit_holding = true;
+    this.fruit_holding = 1;
     this.fruit_held_id = fruit_id;
     this.speed = 15/size;
   }
 
   drop_fruit(){
     this.speed = 5;
-    this.fruit_holding = false;
+    this.fruit_holding = 0;
   }
 
   get_pos_string(){
     var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
     return string_make;
   }
-
+  
   update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
     //if (sprite != null) {this.spriteSheet = }
-    console.log("move:"+str(move));
-    if (x != null) { this.x = x; console.log("x: "+str(x));}
-    console.log("update line 1");
-    if (y != null) { this.y = y; console.log("y: "+str(y));}
-    if (move != null) { this.move = move; console.log("move: "+str(move));}
-    if (speed != null) { this.speed = speed; console.log("speed: "+str(speed));}
-    if (facing != null) { this.facing = facing; console.log("facing: "+str(facing));}
-    if (fruit_holding != null) { this.fruit_holding = fruit_holding; console.log("fr_holding: "+str(fruit_holding));}
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (facing != null) { this.facing = facing; }
+    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
     if (fruit_id != null) { this.fruit_held_id = fruit_id; }
   }
 
+  make_data_raw(){
+    return this.x+","+this.y+","+this.move+","+
+            this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+  }
 
-
+  make_data(player_index){
+    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+    return string_make;
+  }
 }
 
 class game_1_fruit {
+
+  /*
+  network commands:
+  make_fruit:x,y,size
+  upd_fruit:x,y,size,held,scored,player_holding_id //from server
+
+  */
+
   constructor(spriteSheet, x, y, size) {
     this.spriteSheet = spriteSheet;
     this.x = x;
     this.y = y;
     this.size = int(size);
-    this.held = false;
-    this.scored = false;
+    this.held = 0;
+    this.scored = 0;
     this.player_holding_id = 0;
     this.sprite_select = 0;
     if ((size < 5) || (size > 15)) {
@@ -199,22 +217,35 @@ class game_1_fruit {
     var player_x_norm = Math.abs(x - this.x),
         player_y_norm = Math.abs(y - this.y);
     if ((player_x_norm <= 40) & (player_y_norm <= 40)) {
-      this.held = true;
+      this.held = 1;
       this.player_holding_id = player_index;
     }
   }
 
   drop() {
-    this.held = false;
+    this.held = 0;
   }
 
   update_data(x, y, size, held, scored, player_holding_id) {
-    if (x != null) {this.x = x;}
-    if (y != null) {this.y = y;}
-    if (size != null) {this.size = size;}
-    if (held != null) {this.held = held;}
-    if (scored != null) {this.scored = scored;}
-    if (player_holding_id != null) {this.player_holding_id = player_holding_id;}
+    if (!(isNaN(x)) && x != null) {this.x = x;}
+    if (!(isNaN(y)) && y != null) {this.y = y;}
+    if (!(isNaN(size)) && size != null) {this.size = size;}
+    if (!(isNaN(held)) && held != null) {this.held = held;}
+    if (!(isNaN(scored)) && scored != null) {this.scored = scored;}
+    if (!(isNaN(player_holding_id)) && player_holding_id != null) {this.player_holding_id = player_holding_id;}
+    if (this.size > 12) {
+      this.sprite_select = 3;
+    } else if (this.size > 10) {
+      this.sprite_select = 2;
+    } else if (this.size > 7) {
+      this.sprite_select = 1;
+    }
+  }
+
+  make_data(index) {
+    var str_make = "pos_fruit:"+str(index)+","+str(this.x)+","+str(this.y)+","+
+                    str(this.size)+","+str(this.held)+","+str(this.scored)+","+str(this.player_holding_id);
+    return str_make;
   }
 }
 
@@ -256,21 +287,21 @@ function fruitGame() {
   this.main_player_index;
   this.arrow_keys = [39, 37, 38, 40];  
   this.sounds = new Tone.Players({
-    Fail : 'media/fail_sound.mp3',
-    Win : 'media/win_sound.mp3',
-    Hit : 'media/hit.mp3',
-    Miss : 'media/miss.mp3'
+    Fail : 'media/sounds/fail_sound.mp3',
+    Win : 'media/sounds/win_sound.mp3',
+    Hit : 'media/sounds/hit.mp3',
+    Miss : 'media/sounds/miss.mp3'
   })
   this.sounds.toDestination();
   this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
 
   this.preload = function() {
-    this.greenSprite = loadImage("Green.png");
-    this.fruitSprite = loadImage("fruit_sprites.png");
+    this.greenSprite = loadImage("media/sprites/Green.png");
+    this.fruitSprite = loadImage("media/sprites/fruit_sprites.png");
   }
 
   this.setup = function() {
-    inconsolata = loadFont("Inconsolata.ttf");
+    inconsolata = loadFont("media/fonts/Inconsolata.ttf");
     textFont(inconsolata);
     textSize(20);
     textAlign(CENTER, CENTER);
@@ -291,27 +322,31 @@ function fruitGame() {
         this.players[this.main_player_index].facing = i;
         this.players[this.main_player_index].move = 1;
         this.players[this.main_player_index].sx = 0;
-        send_data("my_pos:"+this.players[this.main_player_index].get_pos_string());
+        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
         return;
       }
     }
     if (keycode == 32) {
-      if (this.players[this.main_player_index].fruit_holding) {
+      if (this.players[this.main_player_index].fruit_holding == 1) {
+        var fruit_id = this.players[this.main_player_index].fruit_held_id;
 
         this.players[this.main_player_index].drop_fruit();
-        this.fruits[this.players[this.main_player_index].fruit_held_id].drop();
-
+        this.fruits[fruit_id].drop();
         for (i=0; i<this.endzones.length; i++) {
-          var fr_x = this.fruits[this.players[this.main_player_index].fruit_held_id].x,
-              fr_y = this.fruits[this.players[this.main_player_index].fruit_held_id].y;
+          var fr_x = this.fruits[fruit_id].x,
+              fr_y = this.fruits[fruit_id].y;
           if (!(this.fruits[this.players[this.main_player_index].fruit_held_id].scored) &&
               this.endzones[i].check_placement(fr_x, fr_y)) {
-            this.fruits[this.players[this.main_player_index].fruit_held_id].scored = true;
-            this.endzones[i].score += this.fruits[this.players[this.main_player_index].fruit_held_id].size;
+            this.fruits[fruit_id].scored = 1;
+            this.endzones[i].score += this.fruits[fruit_id].size;
+            send_data(this.fruits[fruit_id].make_data(fruit_id)+"\n"+
+                  this.players[this.main_player_index].make_data(this.main_player_index));
             break;
           }
         }
         this.playSound("Miss");
+        send_data(this.fruits[fruit_id].make_data(fruit_id)+"\n"+
+                  this.players[this.main_player_index].make_data(this.main_player_index));
       } else {
         for (i=0; i < this.fruits.length; i++) {
           this.fruits[i].check_grabbed(
@@ -322,13 +357,15 @@ function fruitGame() {
           if (this.fruits[i].held) {  
             this.players[this.main_player_index].grab_fruit(i, this.fruits[i].size);
             this.playSound("Hit");
+
+            send_data(this.fruits[i].make_data(i)+"\n"+
+                      this.players[this.main_player_index].make_data(this.main_player_index));
+            
             return;
           }
         }
       }
     }
-    
-    //send_data("hello");
   }
 
   this.key_released = function(keycode) {
@@ -337,22 +374,24 @@ function fruitGame() {
         this.players[this.main_player_index].move = 0;
       }
     }
-    send_data("my_pos:"+this.players[this.main_player_index].get_pos_string());
+    send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
   }
 
   this.draw = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
-    for (i=0; i<this.endzones.length; i++) {
+    for (let i in this.endzones) {
       this.endzones[i].draw();
     }
-    for (i=0; i<this.players.length; i++) {
-      if (this.players[i].fruit_holding) {
+    //console.log("players length:"+str(this.players.length));
+    for (let i in this.players) {
+      if (this.players[i].fruit_holding == 1) {
         this.fruits[this.players[i].fruit_held_id].update_position(
           this.players[i].x, this.players[i].y
         );
       }
-      this.players[i].draw()
+      //console.log("drawing player "+str(i));
+      this.players[i].draw();
     }
     for (i=0; i < this.fruits.length; i++){
       this.fruits[i].draw();
@@ -373,11 +412,11 @@ function fruitGame() {
     this.sounds.player(whichSound).start();
   }
 
-  this.read_network_data = function(data_in) {
+  this.read_network_data = function(flag, message) {
     /*
     Server packets will be formatted as such
 
-    new_player:3,500,200,3,1    (id, x_pos, y_pos, facing, moving, speed) adds newly connected player
+    new_player:id
     pos_player:3,500,200,3,1    (id, x_pos, y_pos, facing, moving, speed)
     rmv_player:3                deletes player from array
 
@@ -389,46 +428,44 @@ function fruitGame() {
     new_id:2                    if a player leaves, indices change, and the assignments will too
     */
     //console.log("Recieved:" + str(data_in));
-    var lines = data_in.split("\n");
-    for (let i in lines) {
-      console.log("line "+str(i)+": "+lines[i]);
-      var line_split = lines[i].split(":");
-      var flag = line_split[0],
-          message = line_split[1];
-      if (flag == "player_count") {
-        this.players = [];
-        for (j=this.players.length; j < parseInt(message); j++){
-          this.players[j] = new game_1_player(this.greenSprite, 600*Math.random(), 600*Math.random(), 1);
-        }
-      } else if (flag == "assigned_id") {
-        this.main_player_index = parseInt(message);
-      } else if (flag == "pos_player") {
-        this.read_in_player_position(message);
-      } else if (flag == "new_player") {
-        this.read_in_player_position(message);
-      } else if (flag == "rmv_player") {
-        var player_index = parseInt(message);
-        this.players.splice(player_index, 1);
-        if (this.main_player_index > player_index) {
-          this.main_player_index -= 1;
-        }
+    if (flag == "player_count") {
+      for (j=this.players.length; j < parseInt(message); j++){
+        this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
       }
+    } else if (flag == "assigned_id") {
+      this.main_player_index = parseInt(message);
+    } else if (flag == "pos_player") {
+      this.read_in_player_position(message);
+    } else if (flag == "new_player") {
+      this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+    } else if (flag == "rmv_player") {
+      var player_index = parseInt(message);
+      this.players.splice(player_index, 1);
+      if (this.main_player_index > player_index) {
+        this.main_player_index -= 1;
+      }
+    } else if (flag == "pos_fruit") {
+      this.read_in_fruit_position(message);
     }
   }
 
-  this.read_in_player_position = function(data_string) {
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     var p_vals_string = data_string.split(",");
-    var p_vals = [null, null, null, null, null];
-    var ints = [0, 3, 4], floats = [1, 2];
+    var p_vals = [null, null, null, null, null, null, null, null];
+    var ints = [0, 3, 5, 6, 7], floats = [1, 2, 4];
     for (let i in ints)     { p_vals[ints[i]] = parseInt(p_vals_string[ints[i]])}
     for (let i in floats)   { p_vals[floats[i]] = parseFloat(p_vals_string[floats[i]]); }
-    if (p_vals[0] >= this.players.length) {
-      this.players[p_vals[0]] = new game_1_player(this.greenSprite, p_vals[1], p_vals[2], p_vals[3], p_vals[4]);
-    }
-    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], null, p_vals[4], null, null);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
 
-  this.read_in_fruit_positions = function(data_string) {
-    return;
+  this.read_in_fruit_position = function(data_string) {
+    var p_vals_string = data_string.split(",");
+    var p_vals = [null, null, null, null, null, null, null];
+    var ints = [0, 3, 4, 5, 6], floats = [1, 2];
+    for (let i in ints)     { p_vals[ints[i]] = parseInt(p_vals_string[ints[i]])}
+    for (let i in floats)   { p_vals[floats[i]] = parseFloat(p_vals_string[floats[i]]); }
+    if (p_vals[0] >= this.fruits.length) { this.fruits[p_vals[0]] = new game_1_fruit(this.fruitSprite, 0, 0, 0); }
+    this.fruits[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6]);
+    return p_vals[1];
   }
 }
