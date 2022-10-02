@@ -13,7 +13,9 @@ Open a terminal and run the following command:
   npm install -g browser-sync
 In order to start the server, run the following commands in a terminal:
 >  cd server
+>  
 >  npm install   #only do this the first time, it will install dependencies for server.js
+>  
 >  node server.js
 
 To run the client, make a new terminal and run this command:
