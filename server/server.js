@@ -1,13 +1,3 @@
-/*
-  Websocket server with express.js and express-ws.js
-  (https://www.npmjs.com/package/express-ws)
-  Serves an index page from /public. That page makes
-  a websocket client back to this server.
-
-  created 17 Jan 2021
-  by Tom Igoe
-*/
-
 let width = 600;
 let height = 600;
 
