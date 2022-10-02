@@ -6,7 +6,7 @@ This is a P5.js game styled after mario party.
 
 Game is multiplayer with internet connectivity, and a server-side component.
 
-Setup
+# Setup
 
 Install Node.js from https://nodejs.org/en/
 
