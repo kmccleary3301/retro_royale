@@ -4,7 +4,7 @@
 var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 
 
-/*
+/* :)
 P5 has several default functions.
 These include, but are not limited to:
 preload(), setup(), draw(), keyPressed(), keyReleased, mousePressed(), and mouseReleased().
