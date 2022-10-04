@@ -5,7 +5,7 @@ var current_state = new fruitGame();  //Games are stored as functions in the sty
 var repo_address = "";
 
 /* :) -Kyle
-
+-James
 
 
 P5 has several default functions.
