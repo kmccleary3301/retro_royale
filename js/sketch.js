@@ -4,7 +4,7 @@
 var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
 
-/* :) -Kyle
+/* :) -Kyle M
 -James
 
 
