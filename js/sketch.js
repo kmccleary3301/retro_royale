@@ -2,9 +2,12 @@
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
 var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
+var repo_address = "";
+
+/* :) -Kyle
 
 
-/*
+
 P5 has several default functions.
 These include, but are not limited to:
 preload(), setup(), draw(), keyPressed(), keyReleased, mousePressed(), and mouseReleased().
@@ -287,21 +290,21 @@ function fruitGame() {
   this.main_player_index;
   this.arrow_keys = [39, 37, 38, 40];  
   this.sounds = new Tone.Players({
-    Fail : 'media/sounds/fail_sound.mp3',
-    Win : 'media/sounds/win_sound.mp3',
-    Hit : 'media/sounds/hit.mp3',
-    Miss : 'media/sounds/miss.mp3'
+    Fail : repo_address+'media/sounds/fail_sound.mp3',
+    Win : repo_address+'media/sounds/win_sound.mp3',
+    Hit : repo_address+'media/sounds/hit.mp3',
+    Miss : repo_address+'media/sounds/miss.mp3'
   })
   this.sounds.toDestination();
   this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
 
   this.preload = function() {
-    this.greenSprite = loadImage("media/sprites/Green.png");
-    this.fruitSprite = loadImage("media/sprites/fruit_sprites.png");
+    this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
   }
 
   this.setup = function() {
-    inconsolata = loadFont("media/fonts/Inconsolata.ttf");
+    inconsolata = loadFont(repo_address+"media/fonts/Inconsolata.ttf");
     textFont(inconsolata);
     textSize(20);
     textAlign(CENTER, CENTER);
