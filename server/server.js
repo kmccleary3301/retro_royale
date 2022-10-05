@@ -69,27 +69,6 @@ function broadcast_exclusive(data, excluded_clients_array) {  //Send a message t
   }
 }
 
-function convert_data_string(message, ints, floats, strings) {
-  // Converts messages into an array of ints, floats, and strings according to passed indices for each.
-  var message_split = message.split(",");
-  var return_vals = [];
-  for (let i in message_split) { return_vals[i] = NaN; }
-  if (!(ints === undefined)) {
-    for (let i in ints) {
-      if (message_split[ints[i]] != "") { return_vals[ints[i]] = parseInt(message_split[ints[i]]); }
-    }
-  }
-  if (!(floats === undefined)) {
-    for (let i in floats) {
-      if (message_split[floats[i]] != "") { return_vals[floats[i]] = parseInt(message_split[floats[i]]); }
-    }
-  }
-  if (!(strings === undefined)) {
-    for (let i in strings) { return_vals[strings[i]] = message_split[strings[i]]; }
-  }
-  return return_vals
-}
-
 server.listen(process.env.PORT || global_port, serverStart);  //start the server
 server.ws('/', handleClient);                                 //listen for ws connections
 
@@ -198,18 +177,6 @@ class game_1_endzone {
     }
     return false;
   }
-
-  update_data(x, y, width, height, score){
-    if (!isNaN(x)) { this.x = x; }
-    if (!isNaN(y)) { this.y = y; }
-    if (!isNaN(width)) { this.width = width; }
-    if (!isNaN(height)) { this.height = height; }
-    if (!isNaN(score)) { this.score = score; }
-  }
-
-  make_data(index){
-    return "upd_endzone:"+index+","+this.x+","+this.y+","+this.width+","+this.height+","+this.score;
-  }
 }
 
 function fruitGame() {
@@ -238,18 +205,24 @@ function fruitGame() {
     } else if (flag == "pos_fruit") {
       var fruit_id = this.read_in_fruit_position(message);
       broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]);
-    } else if (flag == "upd_endzone") {
-      var endzone_id = this.read_in_endzone_data(message);
-      broadcast_exclusive(this.endzones[endzone_id].make_data(endzone_id), [usr_id]);
     }
   }
 
   this.user_connected = function(usr_id) {
     clients[usr_id].send("connected");
+    var string_make = "player_count:" + clients.length + "\n" +
+                      "assigned_id:" + usr_id + "\n";
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    for (let i in this.fruits) {
+      string_make += this.fruits[i].make_data(i)+"\n";
+    }
+    
+    for (let i in this.players) {
+      string_make += "new_player:"+i+"\n";
+      string_make += this.players[i].make_data(i)+"\n";
+    }
+    clients[usr_id].send(string_make);
   }
 
   this.user_disconnected = function(usr_id) {
@@ -260,29 +233,22 @@ function fruitGame() {
     this.players.splice(usr_id, 1);
   }
 
-  this.make_everything = function() {
-    str_make = "";
-    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
-    for (let i in this.fruits) { str_make += this.fruits[i].make_data(i) + "\n"; }
-    for (let i in this.endzones) { str_make += this.endzones[i].make_data(i) + "\n"; }
-    return str_make;
-  }
-
-  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+  this.read_in_player_position = function(data_string) {
+    var p_vals_string = data_string.split(",");
+    var p_vals = [null, null, null, null, null, null, null, null];
+    var ints = [0, 3, 5, 6, 7], floats = [1, 2, 4];
+    for (let i in ints)     { p_vals[ints[i]] = parseInt(p_vals_string[ints[i]])}
+    for (let i in floats)   { p_vals[floats[i]] = parseFloat(p_vals_string[floats[i]]); }
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
-    return p_vals[0];
   }
 
   this.read_in_fruit_position = function(data_string) {
-    p_vals = convert_data_string(data_string, [0, 3, 4, 5, 6], [1, 2]);
+    var p_vals_string = data_string.split(",");
+    var p_vals = [null, null, null, null, null, null, null];
+    var ints = [0, 3, 4, 5, 6], floats = [1, 2];
+    for (let i in ints)     { p_vals[ints[i]] = parseInt(p_vals_string[ints[i]])}
+    for (let i in floats)   { p_vals[floats[i]] = parseFloat(p_vals_string[floats[i]]); }
     this.fruits[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6]);
-    return p_vals[0];
-  }
-
-  this.read_in_endzone_data = function(data_string) {
-    p_vals = convert_data_string(data_string, [0, 5], [1, 2, 3, 4]);
-    this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
     return p_vals[0];
   }
 }

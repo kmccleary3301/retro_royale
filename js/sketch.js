@@ -4,7 +4,10 @@
 var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
 
-/* :)
+/* :) -Kyle M This is Kyle's edit branch
+-James
+
+
 P5 has several default functions.
 These include, but are not limited to:
 preload(), setup(), draw(), keyPressed(), keyReleased, mousePressed(), and mouseReleased().
@@ -55,26 +58,6 @@ function process_message(data) {          //Event function to process data recie
   }
 }
 
-function convert_data_string(message, ints, floats, strings) {
-  // Converts messages into an array of ints, floats, and strings according to passed indices for each.
-  var message_split = message.split(",");
-  var return_vals = [];
-  for (let i in message_split) { return_vals[i] = NaN; }
-  if (!(ints === undefined)) {
-    for (let i in ints) {
-      if (message_split[ints[i]] != "") { return_vals[ints[i]] = parseInt(message_split[ints[i]]); }
-    }
-  }
-  if (!(floats === undefined)) {
-    for (let i in floats) {
-      if (message_split[floats[i]] != "") { return_vals[floats[i]] = parseInt(message_split[floats[i]]); }
-    }
-  }
-  if (!(strings === undefined)) {
-    for (let i in strings) { return_vals[strings[i]] = message_split[strings[i]]; }
-  }
-  return return_vals
-}
 
 function send_data(data) {  //Global function to send data to server.
   if (connected_to_server) { socket.send(data); }
@@ -253,10 +236,13 @@ class game_1_fruit {
     if (!(isNaN(held)) && held != null) {this.held = held;}
     if (!(isNaN(scored)) && scored != null) {this.scored = scored;}
     if (!(isNaN(player_holding_id)) && player_holding_id != null) {this.player_holding_id = player_holding_id;}
-    if (this.size > 12) { this.sprite_select = 3; }
-    else if (this.size > 10) { this.sprite_select = 2; } 
-    else if (this.size > 7) { this.sprite_select = 1; } 
-    else { this.sprite_select = 0; }
+    if (this.size > 12) {
+      this.sprite_select = 3;
+    } else if (this.size > 10) {
+      this.sprite_select = 2;
+    } else if (this.size > 7) {
+      this.sprite_select = 1;
+    }
   }
 
   make_data(index) {
@@ -291,19 +277,6 @@ class game_1_endzone {
     }
     return false;
   }
-
-  update_data(x, y, width, height, score){
-    if (!isNaN(x)) { this.x = x; }
-    if (!isNaN(y)) { this.y = y; }
-    if (!isNaN(width)) { this.width = width; }
-    if (!isNaN(height)) { this.height = height; }
-    if (!isNaN(score)) { this.score = score; }
-  }
-
-  make_data(index){
-    return "upd_endzone:"+str(index)+","+str(this.x)+","+str(this.y)+","+str(this.width)+","+str(this.height)+","+str(this.score);
-  }
-
 }
 
 function fruitGame() {
@@ -317,10 +290,10 @@ function fruitGame() {
   this.main_player_index;
   this.arrow_keys = [39, 37, 38, 40];  
   this.sounds = new Tone.Players({
-    Fail : 'media/sounds/fail_sound.mp3',
-    Win : 'media/sounds/win_sound.mp3',
-    Hit : 'media/sounds/hit.mp3',
-    Miss : 'media/sounds/miss.mp3'
+    Fail : repo_address+'media/sounds/fail_sound.mp3',
+    Win : repo_address+'media/sounds/win_sound.mp3',
+    Hit : repo_address+'media/sounds/hit.mp3',
+    Miss : repo_address+'media/sounds/miss.mp3'
   })
   this.sounds.toDestination();
   this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
@@ -359,6 +332,7 @@ function fruitGame() {
     if (keycode == 32) {
       if (this.players[this.main_player_index].fruit_holding == 1) {
         var fruit_id = this.players[this.main_player_index].fruit_held_id;
+
         this.players[this.main_player_index].drop_fruit();
         this.fruits[fruit_id].drop();
         for (i=0; i<this.endzones.length; i++) {
@@ -369,8 +343,7 @@ function fruitGame() {
             this.fruits[fruit_id].scored = 1;
             this.endzones[i].score += this.fruits[fruit_id].size;
             send_data(this.fruits[fruit_id].make_data(fruit_id)+"\n"+
-                  this.players[this.main_player_index].make_data(this.main_player_index)+"\n"+
-                  this.endzones[i].make_data(i));
+                  this.players[this.main_player_index].make_data(this.main_player_index));
             break;
           }
         }
@@ -410,7 +383,10 @@ function fruitGame() {
   this.draw = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
-    for (let i in this.endzones) { this.endzones[i].draw(); }
+    for (let i in this.endzones) {
+      this.endzones[i].draw();
+    }
+    //console.log("players length:"+str(this.players.length));
     for (let i in this.players) {
       if (this.players[i].fruit_holding == 1) {
         this.fruits[this.players[i].fruit_held_id].update_position(
@@ -420,7 +396,12 @@ function fruitGame() {
       //console.log("drawing player "+str(i));
       this.players[i].draw();
     }
-    for (let i in this.fruits){ this.fruits[i].draw(); }
+    for (i=0; i < this.fruits.length; i++){
+      this.fruits[i].draw();
+    }
+    //socket.send(str(this.players[this.main_player_index].x)+","+
+    //           str(this.players[this.main_player_index].y));
+
     if (this.game_active) {
       this.current_time = this.start_time - (millis()/1000);
       text("Time: "+str(int(this.current_time)), width/2+100, 20);
@@ -468,27 +449,26 @@ function fruitGame() {
       }
     } else if (flag == "pos_fruit") {
       this.read_in_fruit_position(message);
-    } else if (flag == "upd_endzone") {
-      this.read_in_endzone_data(message);
     }
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    var p_vals_string = data_string.split(",");
+    var p_vals = [null, null, null, null, null, null, null, null];
+    var ints = [0, 3, 5, 6, 7], floats = [1, 2, 4];
+    for (let i in ints)     { p_vals[ints[i]] = parseInt(p_vals_string[ints[i]])}
+    for (let i in floats)   { p_vals[floats[i]] = parseFloat(p_vals_string[floats[i]]); }
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
 
   this.read_in_fruit_position = function(data_string) {
-
-    p_vals = convert_data_string(data_string, [0, 3, 4, 5, 6], [1, 2]);
+    var p_vals_string = data_string.split(",");
+    var p_vals = [null, null, null, null, null, null, null];
+    var ints = [0, 3, 4, 5, 6], floats = [1, 2];
+    for (let i in ints)     { p_vals[ints[i]] = parseInt(p_vals_string[ints[i]])}
+    for (let i in floats)   { p_vals[floats[i]] = parseFloat(p_vals_string[floats[i]]); }
     if (p_vals[0] >= this.fruits.length) { this.fruits[p_vals[0]] = new game_1_fruit(this.fruitSprite, 0, 0, 0); }
     this.fruits[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6]);
-    return p_vals[0];
-  }
-
-  this.read_in_endzone_data = function(data_string) {
-    p_vals = convert_data_string(data_string, [0, 5], [1, 2, 3, 4]);
-    if (p_vals[0] >= this.endzones.length) { this.endzones[p_vals[0]] = new game_1_endzone(0, 0, 0, 0); }
-    this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
+    return p_vals[1];
   }
 }
