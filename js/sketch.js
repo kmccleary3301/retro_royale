@@ -1,8 +1,10 @@
 //browser start :  browser-sync start --server -f -w
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
-var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
+//console.log(millis());
+//var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
+var current_state = new fruitGame();
 
 /* :) -Kyle M
 -James
@@ -22,10 +24,12 @@ listed below can simply call current_state's respective function (i.e. current_s
 
 
 function preload() {  //This is a default p5 function which executes on load. Since games are written as functions, I've given each
+  //let current_state = new fruitGame();
   current_state.preload();
 }
 
 function setup() {
+  console.log(millis());
   createCanvas(600, 600); //Enables the canvas size. These are stored in global variables named width and height.
   background(50, 50, 50); //Declares the background color via RGB.
 
@@ -278,11 +282,13 @@ class game_1_endzone {
   }
 
   draw(){
+    push();
+    textSize(30);
     fill(255, 204, 0);
     rect(this.x, this.y, this.width, this.height);
-
     fill(0, 0, 0);
     text(str(this.score), this.width/2+this.x, this.height/2+this.y);
+    pop();
   }
 
   check_placement(x, y){
@@ -309,30 +315,32 @@ class game_1_endzone {
 }
 
 function fruitGame() {
-  this.fruits_count = 15;
-  this.players = [];
-  this.fruits = [];
-  this.endzones = [];
-  this.game_active = true;
-  this.start_time = 30.000;
-  this.current_time = this.start_time;
-  this.main_player_index;
-  this.arrow_keys = [39, 37, 38, 40];  
-  this.sounds = new Tone.Players({
-    Fail : 'media/sounds/fail_sound.mp3',
-    Win : 'media/sounds/win_sound.mp3',
-    Hit : 'media/sounds/hit.mp3',
-    Miss : 'media/sounds/miss.mp3'
-  })
-  this.sounds.toDestination();
-  this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
-
   this.preload = function() {
-    this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
-    this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
+    return;
   }
 
   this.setup = function() {
+    this.fruits_count = 15;
+    this.players = [];
+    this.fruits = [];
+    this.endzones = [];
+    this.game_active = 0;
+    this.game_length = 30.000;
+    this.start_time;
+    this.current_time = this.game_length;
+    this.main_player_index;
+    this.arrow_keys = [39, 37, 38, 40];  
+    this.sounds = new Tone.Players({
+      Fail : 'media/sounds/fail_sound.mp3',
+      Win : 'media/sounds/win_sound.mp3',
+      Hit : 'media/sounds/hit.mp3',
+      Miss : 'media/sounds/miss.mp3'
+    })
+    this.sounds.toDestination();
+    this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
+    this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
+    this.start_time = millis()/1000;
     inconsolata = loadFont(repo_address+"media/fonts/Inconsolata.ttf");
     textFont(inconsolata);
     textSize(20);
@@ -346,6 +354,7 @@ function fruitGame() {
     this.endzones[0] = new game_1_endzone(0, 100, 200, 400);
     this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
     this.main_player_index = 0;
+    this.end_message = "";
   }
 
   this.key_pressed = function(keycode) {
@@ -358,6 +367,7 @@ function fruitGame() {
         return;
       }
     }
+    if (this.game_active != 1) { return; }
     if (keycode == 32) {
       if (this.players[this.main_player_index].fruit_holding == 1) {
         var fruit_id = this.players[this.main_player_index].fruit_held_id;
@@ -410,8 +420,30 @@ function fruitGame() {
   }
 
   this.draw = function() {
+    if (this.game_active == 0) { this.draw_game_load(); }
+    else if (this.game_active == 1) { this.draw_game_active(); }
+    else if (this.game_active == 2) { this.draw_game_over(); }
+  }
+
+  this.draw_game_load = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
+    textSize(50);
+    for (let i in this.players) {
+      this.players[i].draw();
+    }
+    textAlign(CENTER, CENTER);
+    text("Game starts in "+str(int(this.current_time)), width/2, height/2);
+    this.current_time = this.game_length - (millis()/1000 - this.start_time);
+    if (this.current_time < 0) {
+      this.game_active = 1;
+    }
+  }
+
+  this.draw_game_active = function() {
+    background(200, 200, 200);
+    fill(0, 0, 0);
+    textSize(50);
     for (let i in this.endzones) { this.endzones[i].draw(); }
     for (let i in this.players) {
       if (this.players[i].fruit_holding == 1) {
@@ -419,22 +451,49 @@ function fruitGame() {
           this.players[i].x, this.players[i].y
         );
       }
-      //console.log("drawing player "+str(i));
       this.players[i].draw();
     }
     for (let i in this.fruits){ this.fruits[i].draw(); }
-    if (this.game_active) {
-      this.current_time = this.start_time - (millis()/1000);
-      text("Time: "+str(int(this.current_time)), width/2+100, 20);
-      if (this.current_time < 0) {
-        this.game_active = false;
+    this.current_time = this.game_length - ((millis()/1000) - this.start_time);
+    text("Time: "+str(int(this.current_time)), width/2, 50);
+  }
+
+  this.game_over = function() {
+    var indices_winners = [0], max=0;
+    for (let i in this.endzones) {
+      if (this.endzones[i].score > max) {
+        indices_winners = [i];
+        max = this.endzones[i].score;
+      } else if (this.endzones[i].score == max) {
+        indices_winners[indices_winners.length] = i;
       }
     }
+    if (indices_winners.length > 1) {
+      this.end_message = "TIE\n";
+      for (let i in indices_winners) {
+        this.end_message += "Team "+str(indices_winners[i])+",";
+      }
+    } else {
+      this.end_message = "TEAM "+str(indices_winners)+" WINS";
+    }
+    console.log(this.end_message);
+    this.game_active = 2;
+  }
+
+  this.draw_game_over = function() {
+    fill(255, 255, 255);
+    rect(width*1/3, height*1/3, width*1/3, height*1/3);
+    textSize(100);
+    textAlign(CENTER, CENTER);
+    fill(0, 0, 0);
+    text(this.end_message, width/2, height/2);
   }
   
   this.playSound = function(whichSound='Fail') {
     this.sounds.player(whichSound).start();
   }
+
+  this.pop_fruit = function(id) {}
 
   this.read_network_data = function(flag, message) {
     /*
@@ -472,6 +531,10 @@ function fruitGame() {
       this.read_in_fruit_position(message);
     } else if (flag == "upd_endzone") {
       this.read_in_endzone_data(message);
+    } else if (flag == "game_state") {
+      this.read_in_game_state(message)
+    } else if (flag == "pop_fruit") {
+      this.fruits.splice(parseInt(message), 1);
     }
   }
 
@@ -481,7 +544,6 @@ function fruitGame() {
   }
 
   this.read_in_fruit_position = function(data_string) {
-
     p_vals = convert_data_string(data_string, [0, 3, 4, 5, 6], [1, 2]);
     if (p_vals[0] >= this.fruits.length) { this.fruits[p_vals[0]] = new game_1_fruit(this.fruitSprite, 0, 0, 0); }
     this.fruits[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6]);
@@ -492,5 +554,14 @@ function fruitGame() {
     p_vals = convert_data_string(data_string, [0, 5], [1, 2, 3, 4]);
     if (p_vals[0] >= this.endzones.length) { this.endzones[p_vals[0]] = new game_1_endzone(0, 0, 0, 0); }
     this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
+  }
+
+  this.read_in_game_state = function(data_string) {
+    p_vals = convert_data_string(data_string, [0], [1, 2]);
+    if (this.game_active == 1 && p_vals[0] == 2) { this.game_over(); }
+    this.current_time = p_vals[1];
+    this.game_active = p_vals[0];
+    this.game_length = p_vals[2];
+    this.start_time = millis()/1000 - (this.game_length - this.current_time);
   }
 }

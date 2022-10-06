@@ -1,7 +1,6 @@
+var current_state = new fruitGame();
 let width = 600;
 let height = 600;
-
-var current_state = new fruitGame();
 
 let global_port = 3128;
 var express = require('express');	// include express.js
@@ -14,17 +13,30 @@ var clients_hash = new Array;
 server.use('/', express.static('public'));
 
 // this runs after the server successfully starts:
+
+function game_start() {
+  console.log("Game Reset");
+  //var current_state = new fruitGame();
+  //current_state.setup();
+}
+
 function serverStart() {
+  game_start();
   var port = this.address().port;
   console.log('Server listening on port ' + port);
   console.log("Initializing game");
+  console.log(Date.now());
   current_state.setup();
 }
 
 function handleClient(thisClient, request) {
   console.log("New Connection");        // you have a new client
-  clients.push(thisClient);    // add this client to the clients array
-
+  console.log("clients length "+clients.length);
+  clients.push(thisClient);
+  console.log("clients length "+clients.length);
+  if (clients.length == 1) { game_start(); }
+    // add this client to the clients array
+  console.log("user connecting");
   current_state.user_connected(clients.indexOf(thisClient));
 
   function endClient() {                        //Triggers on a client disconnect
@@ -35,6 +47,7 @@ function handleClient(thisClient, request) {
   }
 
   function clientResponse(data) {             //Activates when a client sends data in.
+    console.log(data);
     var lines = data.split("\n");             //Packets may contain multiple commands, separated by newline
     var index = clients.indexOf(thisClient);  //grabs the index of the client that sent it in
     for (let i in lines) {                    //Processes each individual command in the packet
@@ -218,9 +231,10 @@ function fruitGame() {
     this.players = [];
     this.fruits = [];
     this.endzones = [];
-    this.game_active = false;
-    this.start_time = 60.000;
-    this.current_time = this.start_time;
+    this.game_active = 0;
+    this.game_length = 30.000;
+    this.start_time = Date.now()/1000;
+    this.current_time = this.game_length;
     for (i=0; i < this.fruits_count; i++) {
       this.fruits[i] = new game_1_fruit(width*Math.random(), height*Math.random(), 3+Math.random()*12);
     }
@@ -228,8 +242,25 @@ function fruitGame() {
     this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
   }
   
+  this.game_update = function() {
+    this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
+    if (this.current_time < 0) {
+      if (this.game_active == 0) {
+        this.game_active = 1;
+        this.game_length = 60;
+        this.start_time = Date.now()/1000;
+        this.current_time = this.game_length;
+      } else if (this.game_active == 1) {
+        this.game_active = 2;
+        this.game_length = 5;
+      }
+      broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
+    }
+  }
+
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
+    this.game_update();
     if (flag == "connected") {
       this.user_connected(usr_id);
     } else if (flag == "my_pos") {
@@ -237,7 +268,8 @@ function fruitGame() {
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "pos_fruit") {
       var fruit_id = this.read_in_fruit_position(message);
-      broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]);
+      if (this.fruits[fruit_id].scored) { broadcast('pop_fruit:'+fruit_id); }
+      else { broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]); }
     } else if (flag == "upd_endzone") {
       var endzone_id = this.read_in_endzone_data(message);
       broadcast_exclusive(this.endzones[endzone_id].make_data(endzone_id), [usr_id]);
@@ -250,6 +282,7 @@ function fruitGame() {
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     clients[usr_id].send(this.make_everything());
+    broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
   }
 
   this.user_disconnected = function(usr_id) {
