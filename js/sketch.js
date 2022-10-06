@@ -540,9 +540,9 @@ function fruitGame() {
       this.read_in_endzone_data(message);
     } else if (flag == "game_state") {
       this.read_in_game_state(message)
-    } else if (flag == "pop_fruit") {
-      this.fruits.splice(parseInt(message), 1);
-    }
+    } //else if (flag == "pop_fruit") {
+      //this.fruits.splice(parseInt(message), 1);
+    //}
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id

@@ -268,8 +268,8 @@ function fruitGame() {
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "pos_fruit") {
       var fruit_id = this.read_in_fruit_position(message);
-      if (this.fruits[fruit_id].scored) { broadcast('pop_fruit:'+fruit_id); }
-      else { broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]); }
+      //if (this.fruits[fruit_id].scored) { broadcast('pop_fruit:'+fruit_id); }
+      broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]);
     } else if (flag == "upd_endzone") {
       var endzone_id = this.read_in_endzone_data(message);
       broadcast_exclusive(this.endzones[endzone_id].make_data(endzone_id), [usr_id]);
