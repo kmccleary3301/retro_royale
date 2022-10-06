@@ -5,8 +5,8 @@
 //var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
 var current_state = new fruitGame();
-var host_address = "127.0.0.1";
-//var host_address = "167.96.53.21";
+//var host_address = "127.0.0.1";
+var host_address = "167.96.53.21";
 /* :) -Kyle M
 -James
 This is a change on master, testing auto pulls.
