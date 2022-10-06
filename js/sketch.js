@@ -5,7 +5,8 @@
 //var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
 var current_state = new fruitGame();
-
+var host_address = "127.0.0.1";
+//var host_address = "167.96.53.21";
 /* :) -Kyle M
 -James
 This is a change on master, testing auto pulls.
@@ -35,7 +36,7 @@ function setup() {
 
   let connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.
   let global_port = 3128;
-  let server_address = "ws://localhost:"+str(global_port);   //The host server address, written here so it can be easily changed. 
+  let server_address = "ws://"+host_address+":"+str(global_port);   //The host server address, written here so it can be easily changed. 
 
   socket = new WebSocket(server_address); //Declares the websocket for connecting to host server.
   socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
@@ -354,7 +355,7 @@ function fruitGame() {
     this.endzones[0] = new game_1_endzone(0, 100, 200, 400);
     this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
     this.main_player_index = 0;
-    this.end_message = "";
+    this.end_message = "GAME OVER";
   }
 
   this.key_pressed = function(keycode) {
@@ -420,6 +421,7 @@ function fruitGame() {
   }
 
   this.draw = function() {
+    this.current_time = this.game_length - ((millis()/1000) - this.start_time);
     if (this.game_active == 0) { this.draw_game_load(); }
     else if (this.game_active == 1) { this.draw_game_active(); }
     else if (this.game_active == 2) { this.draw_game_over(); }
@@ -434,7 +436,6 @@ function fruitGame() {
     }
     textAlign(CENTER, CENTER);
     text("Game starts in "+str(int(this.current_time)), width/2, height/2);
-    this.current_time = this.game_length - (millis()/1000 - this.start_time);
     if (this.current_time < 0) {
       this.game_active = 1;
     }
@@ -454,7 +455,6 @@ function fruitGame() {
       this.players[i].draw();
     }
     for (let i in this.fruits){ this.fruits[i].draw(); }
-    this.current_time = this.game_length - ((millis()/1000) - this.start_time);
     text("Time: "+str(int(this.current_time)), width/2, 50);
   }
 
@@ -469,10 +469,12 @@ function fruitGame() {
       }
     }
     if (indices_winners.length > 1) {
-      this.end_message = "TIE\n";
+      this.end_message = "TIE";
+      /*
       for (let i in indices_winners) {
         this.end_message += "Team "+str(indices_winners[i])+",";
       }
+      */
     } else {
       this.end_message = "TEAM "+str(indices_winners)+" WINS";
     }
@@ -481,19 +483,24 @@ function fruitGame() {
   }
 
   this.draw_game_over = function() {
-    fill(255, 255, 255);
-    rect(width*1/3, height*1/3, width*1/3, height*1/3);
+    background(127.5*(Math.sin(this.current_time)+1), 127.5*(Math.cos(this.current_time)+1), 127.5*(Math.sin(this.current_time+5)+1));
+    stroke(51);
+    strokeWeight(4);
     textSize(100);
     textAlign(CENTER, CENTER);
-    fill(0, 0, 0);
-    text(this.end_message, width/2, height/2);
+    for (i=Math.max(0, Math.floor(20*(this.game_length - this.current_time)%40-20)); 
+        i<Math.min(20, Math.floor(20*(this.game_length - this.current_time)%40));i++) {
+      var r = 255*(Math.sin(this.current_time+i*PI/20+3)+1)/2,
+          g = 255*(Math.cos(this.current_time+i*PI/20)+1)/2,
+          b = 255*(Math.sin(this.current_time+i*PI/20+5)+1)/2;
+      fill(r, g, b);
+      text(this.end_message, width/2, i*25+height/2-250);
+    }
   }
   
   this.playSound = function(whichSound='Fail') {
     this.sounds.player(whichSound).start();
   }
-
-  this.pop_fruit = function(id) {}
 
   this.read_network_data = function(flag, message) {
     /*
@@ -558,7 +565,7 @@ function fruitGame() {
 
   this.read_in_game_state = function(data_string) {
     p_vals = convert_data_string(data_string, [0], [1, 2]);
-    if (this.game_active == 1 && p_vals[0] == 2) { this.game_over(); }
+    if (this.game_active != 2 && p_vals[0] == 2) { this.game_over(); }
     this.current_time = p_vals[1];
     this.game_active = p_vals[0];
     this.game_length = p_vals[2];
