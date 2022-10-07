@@ -316,9 +316,6 @@ class game_1_endzone {
 }
 
 function fruitGame() {
-  this.preload = function() {
-    return;
-  }
 
   this.setup = function() {
     this.fruits_count = 15;
