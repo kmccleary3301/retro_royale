@@ -244,7 +244,7 @@ function fruitGame() {
   
   this.game_update = function() {
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
-    if (this.current_time < 0) {
+    if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
         this.game_length = 60;
@@ -253,6 +253,7 @@ function fruitGame() {
       } else if (this.game_active == 1) {
         this.game_active = 2;
         this.game_length = 5;
+        this.start_time = Date.now()/1000;
       }
       broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
     }

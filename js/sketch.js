@@ -2,6 +2,11 @@
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
 //console.log(millis());
+
+//const { text } = require("body-parser");
+
+//const { text } = require("body-parser");
+
 //var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
 var current_state = new fruitGame();
@@ -25,8 +30,7 @@ listed below can simply call current_state's respective function (i.e. current_s
 
 
 function preload() {  //This is a default p5 function which executes on load. Since games are written as functions, I've given each
-  //let current_state = new fruitGame();
-  current_state.preload();
+  return;
 }
 
 function setup() {
@@ -98,6 +102,11 @@ function keyReleased() {  //Event function that triggers upon user releasing a k
 function draw() { //Global frame render function.
   background(200, 200, 200);
   current_state.draw();
+}
+
+function swap_current_state() {
+  current_state = new uiTest();
+  current_state.setup();
 }
 
 class game_1_player {
@@ -420,7 +429,7 @@ function fruitGame() {
   this.draw = function() {
     this.current_time = this.game_length - ((millis()/1000) - this.start_time);
     if (this.game_active == 0) { this.draw_game_load(); }
-    else if (this.game_active == 1) { this.draw_game_active(); }
+    else if (this.game_active == 1) { this.draw_game_active(); swap_current_state(); }
     else if (this.game_active == 2) { this.draw_game_over(); }
   }
 
@@ -480,19 +489,44 @@ function fruitGame() {
   }
 
   this.draw_game_over = function() {
-    background(127.5*(Math.sin(this.current_time)+1), 127.5*(Math.cos(this.current_time)+1), 127.5*(Math.sin(this.current_time+5)+1));
+    var time = 10*(this.game_length - this.current_time - 2);
+    var breakpoint = 10;
+    time -= 5;
+    var text_position_x = (width/2)*(1+2/(1+Math.exp(time))),
+        box_position_x = (width/2)/(1+Math.exp(-time)),
+        r = 255*(Math.sin(time/5)+1)/2,
+        g = 255*(Math.cos(time/5.13)+1)/2,
+        b = 255*(Math.sin(time/5.3+5)+1)/2;
+    stroke(51);
+    strokeWeight(2);
+    textSize(100);
+    textAlign(CENTER, CENTER);
+    textStyle(ITALIC);
+    fill(127.5+g/2, 127.5+b/2, 127.5+r/2);
+    
+    if (time/10 >= breakpoint - 5) {
+      var x_new = width/2 * (1/(1+Math.exp(1.4*(time - 10*(breakpoint*(0.7)))))) - 250,
+        y_new = height/2 * (1/(1+Math.exp(1.4*(time- 10*(breakpoint*(0.7)))))) - 100;
+      rect(x_new, y_new, width - x_new*2, height - y_new*2);
+    } else { rect(box_position_x-250, height/2 - 100, 500, 200); }
+    if (time/10 < breakpoint) {
+      fill(r, g, b);
+      text("GAME OVER", text_position_x, height/2);
+      return;
+    }
     stroke(51);
     strokeWeight(4);
     textSize(100);
     textAlign(CENTER, CENTER);
-    for (i=Math.max(0, Math.floor(20*(this.game_length - this.current_time)%40-20)); 
-        i<Math.min(20, Math.floor(20*(this.game_length - this.current_time)%40));i++) {
+    for (i=Math.max(0, Math.floor(20*((time - breakpoint*10)/15)%39-20)); 
+        i<Math.min(20, Math.floor(20*((time - breakpoint*10)/15)%39));i++) {
       var r = 255*(Math.sin(this.current_time+i*PI/20+3)+1)/2,
           g = 255*(Math.cos(this.current_time+i*PI/20)+1)/2,
           b = 255*(Math.sin(this.current_time+i*PI/20+5)+1)/2;
       fill(r, g, b);
       text(this.end_message, width/2, i*25+height/2-250);
     }
+    
   }
   
   this.playSound = function(whichSound='Fail') {
@@ -567,5 +601,33 @@ function fruitGame() {
     this.game_active = p_vals[0];
     this.game_length = p_vals[2];
     this.start_time = millis()/1000 - (this.game_length - this.current_time);
+  }
+}
+
+function uiTest() {
+  this.setup = function() {
+    this.time = millis();
+  }
+
+  this.key_pressed = function(keycode) {
+    return;
+  }
+
+  this.key_released = function(keycode) {
+    return;
+  }
+  
+  this.draw = function() {
+    this.time = millis();
+    fill(255, 255, 255);
+    rect(width/2-200, height/2-200, 400, 400);
+    textSize(20);
+    fill(0, 0, 0);
+    text("Time: "+str(this.time), width/2, height/2);
+  }
+
+  this.read_network_data = function(flag, message) {
+    console.log("network_data_read");
+    return;
   }
 }
