@@ -10,8 +10,10 @@
 //var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
 var current_state = new fruitGame();
-//var host_address = "127.0.0.1";
-var host_address = "167.96.53.21";
+var host_address = "127.0.0.1";
+var font_set;
+var font_size_scaling;
+//var host_address = "167.96.53.21";
 /* :) -Kyle M
 -James
 This is a change on master, testing auto pulls.
@@ -33,6 +35,34 @@ function preload() {  //This is a default p5 function which executes on load. Si
   return;
 }
 
+function sigmoid_shift(peak_value, t1, t2, speed, t) { //a sigmoid smoothly goes from 0 to 1 around x = 0, and is scaled here accordingly.
+  var exp_value = ((t - t1)/(t2 - t1) - 0.5)*10*speed;
+  return peak_value / (1 + Math.exp(-(exp_value)));
+}
+
+function sigmoid_array(p_array, t_array, speed_array, t) { //this sums sigmoids in a way that is useful for animating.
+  // smooth transitions along the real numbers from p1 at time t1 to p2 at time t2, etc.
+  //I'm using this for nice UI animations.
+  sum = p_array[0]
+  for (i = 1; i < p_array.length; i++){
+    var exp_value = ((t -  t_array[i-1]) / (t_array[i] - t_array[i-1]) - 0.5 ) * 10 * speed_array[i-1];
+    sum += (p_array[i] - p_array[i-1]) / (1 + Math.exp(-(exp_value)));
+  }
+  return sum
+}
+
+function font_make(index, size) {
+  textFont(font_set[index]);
+  textSize(font_size_scaling[index]*size);
+}
+
+function text_make(font_index, size, stroke, stroke_weight) {
+  textFont(font_set[index]);
+  textSize(font_size_scaling[index]*size);
+  stroke(stroke);
+  strokeWeight(stroke_weight);
+}
+
 function setup() {
   console.log(millis());
   createCanvas(600, 600); //Enables the canvas size. These are stored in global variables named width and height.
@@ -42,6 +72,11 @@ function setup() {
   let global_port = 3128;
   let server_address = "ws://"+host_address+":"+str(global_port);   //The host server address, written here so it can be easily changed. 
 
+  font_set =[loadFont("media/fonts/Inconsolata.ttf"),
+                loadFont("media/fonts/Alpharush.ttf"),
+                loadFont("media/fonts/PublicPixel.ttf")];
+
+  font_size_scaling = [1, 1.2, 0.5];
   socket = new WebSocket(server_address); //Declares the websocket for connecting to host server.
   socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
   socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
@@ -348,8 +383,7 @@ function fruitGame() {
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
     this.start_time = millis()/1000;
-    inconsolata = loadFont(repo_address+"media/fonts/Inconsolata.ttf");
-    textFont(inconsolata);
+    textFont(font_set[0]);
     textSize(20);
     textAlign(CENTER, CENTER);
     fill(0, 0, 0);
@@ -427,10 +461,12 @@ function fruitGame() {
   }
 
   this.draw = function() {
+    textFont(font_set[0]);
     this.current_time = this.game_length - ((millis()/1000) - this.start_time);
     if (this.game_active == 0) { this.draw_game_load(); }
-    else if (this.game_active == 1) { this.draw_game_active(); swap_current_state(); }
+    else if (this.game_active == 1) { this.draw_game_active();}
     else if (this.game_active == 2) { this.draw_game_over(); }
+    this.draw_game_over();
   }
 
   this.draw_game_load = function() {
@@ -489,11 +525,10 @@ function fruitGame() {
   }
 
   this.draw_game_over = function() {
-    var time = 10*(this.game_length - this.current_time - 2);
+    var time = this.game_length - this.current_time;
     var breakpoint = 10;
-    time -= 5;
-    var text_position_x = (width/2)*(1+2/(1+Math.exp(time))),
-        box_position_x = (width/2)/(1+Math.exp(-time)),
+    var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], time),
+        box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], time),
         r = 255*(Math.sin(time/5)+1)/2,
         g = 255*(Math.cos(time/5.13)+1)/2,
         b = 255*(Math.sin(time/5.3+5)+1)/2;
@@ -504,25 +539,26 @@ function fruitGame() {
     textStyle(ITALIC);
     fill(127.5+g/2, 127.5+b/2, 127.5+r/2);
     
-    if (time/10 >= breakpoint - 5) {
+    if (time >= breakpoint - 5) {
       var x_new = width/2 * (1/(1+Math.exp(1.4*(time - 10*(breakpoint*(0.7)))))) - 250,
         y_new = height/2 * (1/(1+Math.exp(1.4*(time- 10*(breakpoint*(0.7)))))) - 100;
       rect(x_new, y_new, width - x_new*2, height - y_new*2);
     } else { rect(box_position_x-250, height/2 - 100, 500, 200); }
-    if (time/10 < breakpoint) {
+    if (time < breakpoint) {
       fill(r, g, b);
       text("GAME OVER", text_position_x, height/2);
       return;
     }
     stroke(51);
     strokeWeight(4);
-    textSize(100);
+    font_make(0, 100);
     textAlign(CENTER, CENTER);
-    for (i=Math.max(0, Math.floor(20*((time - breakpoint*10)/15)%39-20)); 
-        i<Math.min(20, Math.floor(20*((time - breakpoint*10)/15)%39));i++) {
-      var r = 255*(Math.sin(this.current_time+i*PI/20+3)+1)/2,
-          g = 255*(Math.cos(this.current_time+i*PI/20)+1)/2,
-          b = 255*(Math.sin(this.current_time+i*PI/20+5)+1)/2;
+    for (i=Math.max(0, Math.floor(20*((time - breakpoint)/1.5)%39-20)); 
+        i<Math.min(20, Math.floor(20*((time - breakpoint)/1.5)%39));i++) {
+      text_make(int(time*2) % 3, 100, 51, 4);
+      var r = 255*(Math.sin(time*2+i*PI/15+3)+1)/2,
+          g = 255*(Math.cos(time*2+i*PI/15)+1)/2,
+          b = 255*(Math.sin(time*2+i*PI/15+5)+1)/2;
       fill(r, g, b);
       text(this.end_message, width/2, i*25+height/2-250);
     }
@@ -629,5 +665,15 @@ function uiTest() {
   this.read_network_data = function(flag, message) {
     console.log("network_data_read");
     return;
+  }
+}
+
+function main_menu() {
+  this.setup = function() {
+    this.start_time = millis();
+  }
+
+  this.draw = function() {
+
   }
 }

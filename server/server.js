@@ -103,6 +103,11 @@ function convert_data_string(message, ints, floats, strings) {
   return return_vals
 }
 
+function swap_current_state() {
+  current_state = new uiTest();
+  current_state.setup();
+}
+
 server.listen(process.env.PORT || global_port, serverStart);  //start the server
 server.ws('/', handleClient);                                 //listen for ws connections
 
@@ -250,6 +255,7 @@ function fruitGame() {
         this.game_length = 60;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
+        swap_current_state();
       } else if (this.game_active == 1) {
         this.game_active = 2;
         this.game_length = 5;
@@ -318,5 +324,29 @@ function fruitGame() {
     p_vals = convert_data_string(data_string, [0, 5], [1, 2, 3, 4]);
     this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
     return p_vals[0];
+  }
+}
+
+function uiTest() {
+  this.setup = function() {
+    this.time = Date.now();
+    console.log("setting up uiTest class");
+  }
+
+  this.read_network_data = function(flag, message) {
+    console.log("network_data_read");
+    return;
+  }
+
+  this.user_connected = function(usr_id) {
+    clients[usr_id].send("hello. current server state is uiTest");
+  }
+
+  this.user_disconnected = function(usr_id) {
+    return;
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    clients[usr_id].send("hello. current server state is uiTest");
   }
 }
