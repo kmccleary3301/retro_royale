@@ -725,7 +725,7 @@ function main_menu() {
     this.button_funcs = [];
     this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Button 1");
     this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
-    this.buttons_menu_1[2] = new button(width/2 - 150, 300, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
+    this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
     this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
     this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
   }
