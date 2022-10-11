@@ -255,7 +255,6 @@ function fruitGame() {
         this.game_length = 60;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
-        swap_current_state();
       } else if (this.game_active == 1) {
         this.game_active = 2;
         this.game_length = 5;
