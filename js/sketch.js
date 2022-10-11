@@ -49,9 +49,9 @@ function rainbox_gradient(t) {
 }
 
 function make_socket() {
-  console.log("Connecting to: "+"ws://"+host_address+":"+str(global_port));
+  console.log("Connecting to: "+"ws://"+"["+host_address+"]:"+str(global_port));
   connected_to_server = false;
-  socket = new WebSocket("ws://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
+  socket = new WebSocket("wss://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
   socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
   socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
 }
