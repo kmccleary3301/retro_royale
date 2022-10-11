@@ -442,6 +442,7 @@ function fruitGame() {
     this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
     this.main_player_index = 0;
     this.end_message = "GAME OVER";
+    send_data("load_game");
   }
 
   this.key_pressed = function(keycode) {

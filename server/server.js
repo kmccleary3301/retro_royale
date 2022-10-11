@@ -1,4 +1,5 @@
 var current_state = new fruitGame();
+var current_state_flag = "fruit_game";
 let width = 600;
 let height = 600;
 
@@ -35,9 +36,7 @@ function handleClient(thisClient, request) {
   clients.push(thisClient);
   console.log("clients length "+clients.length);
   if (clients.length == 1) { game_start(); }
-    // add this client to the clients array
   console.log("user connecting");
-  current_state.user_connected(clients.indexOf(thisClient));
 
   function endClient() {                        //Triggers on a client disconnect
     var position = clients.indexOf(thisClient); //Gets clients position in array
@@ -57,8 +56,11 @@ function handleClient(thisClient, request) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
+      if (flag == 'connected') { thisClient.send("connected"); }
       current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
+
+
   }
 
   // set up client event listeners:
@@ -240,6 +242,9 @@ function fruitGame() {
     this.game_length = 30.000;
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
     for (i=0; i < this.fruits_count; i++) {
       this.fruits[i] = new game_1_fruit(width*Math.random(), height*Math.random(), 3+Math.random()*12);
     }
@@ -267,8 +272,8 @@ function fruitGame() {
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
     this.game_update();
-    if (flag == "connected") {
-      this.user_connected(usr_id);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
@@ -282,8 +287,8 @@ function fruitGame() {
     }
   }
 
-  this.user_connected = function(usr_id) {
-    clients[usr_id].send("connected");
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
