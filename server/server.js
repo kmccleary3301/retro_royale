@@ -1,4 +1,5 @@
 var current_state = new fruitGame();
+var current_state_flag = "fruit_game";
 let width = 600;
 let height = 600;
 
@@ -35,9 +36,7 @@ function handleClient(thisClient, request) {
   clients.push(thisClient);
   console.log("clients length "+clients.length);
   if (clients.length == 1) { game_start(); }
-    // add this client to the clients array
   console.log("user connecting");
-  current_state.user_connected(clients.indexOf(thisClient));
 
   function endClient() {                        //Triggers on a client disconnect
     var position = clients.indexOf(thisClient); //Gets clients position in array
@@ -57,8 +56,11 @@ function handleClient(thisClient, request) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
+      if (flag == 'connected') { thisClient.send("connected"); }
       current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
+
+
   }
 
   // set up client event listeners:
@@ -101,6 +103,11 @@ function convert_data_string(message, ints, floats, strings) {
     for (let i in strings) { return_vals[strings[i]] = message_split[strings[i]]; }
   }
   return return_vals
+}
+
+function swap_current_state() {
+  current_state = new uiTest();
+  current_state.setup();
 }
 
 server.listen(process.env.PORT || global_port, serverStart);  //start the server
@@ -235,6 +242,9 @@ function fruitGame() {
     this.game_length = 30.000;
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
     for (i=0; i < this.fruits_count; i++) {
       this.fruits[i] = new game_1_fruit(width*Math.random(), height*Math.random(), 3+Math.random()*12);
     }
@@ -244,7 +254,7 @@ function fruitGame() {
   
   this.game_update = function() {
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
-    if (this.current_time < 0) {
+    if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
         this.game_length = 60;
@@ -253,6 +263,7 @@ function fruitGame() {
       } else if (this.game_active == 1) {
         this.game_active = 2;
         this.game_length = 5;
+        this.start_time = Date.now()/1000;
       }
       broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
     }
@@ -261,23 +272,23 @@ function fruitGame() {
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
     this.game_update();
-    if (flag == "connected") {
-      this.user_connected(usr_id);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "pos_fruit") {
       var fruit_id = this.read_in_fruit_position(message);
-      if (this.fruits[fruit_id].scored) { broadcast('pop_fruit:'+fruit_id); }
-      else { broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]); }
+      //if (this.fruits[fruit_id].scored) { broadcast('pop_fruit:'+fruit_id); }
+      broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]);
     } else if (flag == "upd_endzone") {
       var endzone_id = this.read_in_endzone_data(message);
       broadcast_exclusive(this.endzones[endzone_id].make_data(endzone_id), [usr_id]);
     }
   }
 
-  this.user_connected = function(usr_id) {
-    clients[usr_id].send("connected");
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
@@ -317,5 +328,29 @@ function fruitGame() {
     p_vals = convert_data_string(data_string, [0, 5], [1, 2, 3, 4]);
     this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
     return p_vals[0];
+  }
+}
+
+function uiTest() {
+  this.setup = function() {
+    this.time = Date.now();
+    console.log("setting up uiTest class");
+  }
+
+  this.read_network_data = function(flag, message) {
+    console.log("network_data_read");
+    return;
+  }
+
+  this.user_connected = function(usr_id) {
+    clients[usr_id].send("hello. current server state is uiTest");
+  }
+
+  this.user_disconnected = function(usr_id) {
+    return;
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    clients[usr_id].send("hello. current server state is uiTest");
   }
 }

@@ -1,15 +1,12 @@
 //browser start :  browser-sync start --server -f -w
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
-//console.log(millis());
-//var current_state = new fruitGame();  //Games are stored as functions in the style of a class. This is how we'll organize multiple nested games.
 var repo_address = "";
-var current_state = new fruitGame();
-//var host_address = "127.0.0.1";
-var host_address = "167.96.53.21";
-/* :) -Kyle M
--James
-This is a change on master, testing auto pulls.
+var current_state = new main_menu();
+var host_address = "127.0.0.1", global_port = 3128;
+var font_set, font_size_scaling, connected_to_server;
+
+/*
 P5 has several default functions.
 These include, but are not limited to:
 preload(), setup(), draw(), keyPressed(), keyReleased, mousePressed(), and mouseReleased().
@@ -25,8 +22,41 @@ listed below can simply call current_state's respective function (i.e. current_s
 
 
 function preload() {  //This is a default p5 function which executes on load. Since games are written as functions, I've given each
-  //let current_state = new fruitGame();
-  current_state.preload();
+  return;
+}
+
+function sigmoid_shift(peak_value, t1, t2, speed, t) { //a sigmoid smoothly goes from 0 to 1 around x = 0, and is scaled here accordingly.
+  var exp_value = ((t - t1)/(t2 - t1) - 0.5)*10*speed;
+  return peak_value / (1 + Math.exp(-(exp_value)));
+}
+
+function sigmoid_array(p_array, t_array, speed_array, t) { //this sums sigmoids in a way that is useful for animating.
+  // smooth transitions along the real numbers from p1 at time t1 to p2 at time t2, etc.
+  //I'm using this for nice UI animations.
+  sum = p_array[0]
+  for (i = 1; i < p_array.length; i++){
+    var exp_value = ((t -  t_array[i-1]) / (t_array[i] - t_array[i-1]) - 0.5 ) * 10 * speed_array[i-1];
+    sum += (p_array[i] - p_array[i-1]) / (1 + Math.exp(-(exp_value)));
+  }
+  return sum
+}
+
+function rainbox_gradient(t) {
+  var r = 255*(Math.sin(1+t*3.19)+1)/2,
+      g = 255*(Math.cos(2+t*2.15)+1)/2,
+      b = 255*(Math.sin(3+t*2.23)+1)/2;
+  return [r, g, b];
+}
+
+function make_socket() {
+  if (host_address.includes(":") && !(host_address.includes("["))) {
+    host_address = "[" + host_address + "]"; //IPv6 correction, urls written as ws://[::1]:3128/
+  }
+  console.log("Connecting to: "+"ws://"+host_address+str(global_port));
+  connected_to_server = false;
+  socket = new WebSocket("ws://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
+  socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
+  socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
 }
 
 function setup() {
@@ -34,14 +64,13 @@ function setup() {
   createCanvas(600, 600); //Enables the canvas size. These are stored in global variables named width and height.
   background(50, 50, 50); //Declares the background color via RGB.
 
-  let connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.
-  let global_port = 3128;
-  let server_address = "ws://"+host_address+":"+str(global_port);   //The host server address, written here so it can be easily changed. 
+  connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.
 
-  socket = new WebSocket(server_address); //Declares the websocket for connecting to host server.
-  socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
-  socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
-
+  font_set =[loadFont("media/fonts/Inconsolata.ttf"),
+                loadFont("media/fonts/Alpharush.ttf"),
+                loadFont("media/fonts/PublicPixel.ttf")];
+  font_size_scaling = [1, 1.2, 0.5];
+  make_socket();
   current_state.setup();
 }
 
@@ -87,6 +116,18 @@ function send_data(data) {  //Global function to send data to server.
   if (connected_to_server) { socket.send(data); }
 }
 
+function font_make(index, size) {
+  textFont(font_set[index]);
+  textSize(font_size_scaling[index]*size);
+}
+
+function text_make(font_index, size, stroke, stroke_weight) {
+  textFont(font_set[font_index]);
+  textSize(font_size_scaling[font_index]*size);
+  strokeWeight(stroke_weight);
+  //stroke(stroke);
+}
+
 function keyPressed() { //Event function that triggers upon user pressing a key on their keyboard.
   current_state.key_pressed(keyCode); 
 }
@@ -95,9 +136,19 @@ function keyReleased() {  //Event function that triggers upon user releasing a k
   current_state.key_released(keyCode);
 }
 
+function mousePressed() { current_state.mouse_pressed(); }
+function mouseReleased() { current_state.mouse_released(); }
+
 function draw() { //Global frame render function.
   background(200, 200, 200);
   current_state.draw();
+}
+
+function swap_current_state(flag) {
+  if (flag == "main_menu") { current_state = new main_menu(); }
+  else if (flag == "load_screen") { current_state = new load_screen(); }
+  else if (flag == "fruit_game") { current_state = new fruitGame(); }
+  current_state.setup();
 }
 
 class game_1_player {
@@ -315,11 +366,47 @@ class game_1_endzone {
 
 }
 
-function fruitGame() {
-  this.preload = function() {
-    return;
+class button {
+  constructor(x_in, y_in, width_in, height_in, color, text_color, text) {
+    this.x_cen = x_in;
+    this.y_cen = y_in;
+    this.box_width = width_in;
+    this.box_height = height_in;
+    this.text = text;
+    this.color = color;
+    this.text_color = text_color;
+    this.pressed = 0;
+    this.execute = function() {return;}
   }
 
+  draw() {
+    fill(this.color[0], this.color[1], this.color[2]);
+    stroke(10);
+    if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
+    rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height);
+    strokeWeight(0);
+    textAlign(CENTER, CENTER);
+    text_make(0, 0.3*Math.min(this.box_width, this.box_height), 0, 0);
+    fill(this.text_color[0], this.text_color[1], this.text_color[2]);
+    text(this.text, this.x_cen, this.y_cen);
+  }
+
+  check_press(x, y) {
+    if ((Math.abs(x - this.x_cen) < this.box_width/2) && 
+        (Math.abs(y - this.y_cen) < this.box_height/2)) {
+          this.pressed = 1;
+          return true;
+    }
+    return false;
+  }
+
+  activate() {
+    this.execute();
+  }
+
+}
+
+function fruitGame() {
   this.setup = function() {
     this.fruits_count = 15;
     this.players = [];
@@ -342,8 +429,7 @@ function fruitGame() {
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
     this.start_time = millis()/1000;
-    inconsolata = loadFont(repo_address+"media/fonts/Inconsolata.ttf");
-    textFont(inconsolata);
+    textFont(font_set[0]);
     textSize(20);
     textAlign(CENTER, CENTER);
     fill(0, 0, 0);
@@ -356,6 +442,7 @@ function fruitGame() {
     this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
     this.main_player_index = 0;
     this.end_message = "GAME OVER";
+    send_data("load_game");
   }
 
   this.key_pressed = function(keycode) {
@@ -420,10 +507,14 @@ function fruitGame() {
     send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
   }
 
+  this.mouse_pressed = function() { return; }
+  this.mouse_released = function() { return; }
+
   this.draw = function() {
+    textFont(font_set[0]);
     this.current_time = this.game_length - ((millis()/1000) - this.start_time);
     if (this.game_active == 0) { this.draw_game_load(); }
-    else if (this.game_active == 1) { this.draw_game_active(); }
+    else if (this.game_active == 1) { this.draw_game_active();}
     else if (this.game_active == 2) { this.draw_game_over(); }
   }
 
@@ -483,19 +574,42 @@ function fruitGame() {
   }
 
   this.draw_game_over = function() {
-    background(127.5*(Math.sin(this.current_time)+1), 127.5*(Math.cos(this.current_time)+1), 127.5*(Math.sin(this.current_time+5)+1));
+    var time = this.game_length - this.current_time;
+    var breakpoint = 10;
+    var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], time),
+        box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], time),
+        r = 255*(Math.sin(time/5)+1)/2,
+        g = 255*(Math.cos(time/5.13)+1)/2,
+        b = 255*(Math.sin(time/5.3+5)+1)/2;
     stroke(51);
-    strokeWeight(4);
+    strokeWeight(2);
     textSize(100);
     textAlign(CENTER, CENTER);
-    for (i=Math.max(0, Math.floor(20*(this.game_length - this.current_time)%40-20)); 
-        i<Math.min(20, Math.floor(20*(this.game_length - this.current_time)%40));i++) {
-      var r = 255*(Math.sin(this.current_time+i*PI/20+3)+1)/2,
-          g = 255*(Math.cos(this.current_time+i*PI/20)+1)/2,
-          b = 255*(Math.sin(this.current_time+i*PI/20+5)+1)/2;
+    textStyle(ITALIC);
+    fill(127.5+g/2, 127.5+b/2, 127.5+r/2);
+    
+    if (time < breakpoint - 5) {
+      rect(box_position_x-250, height/2 - 100, 500, 200);
+    }
+    if (time < breakpoint) {
+      fill(r, g, b);
+      text("GAME OVER", text_position_x, height/2);
+      return;
+    }
+    stroke(51);
+    strokeWeight(4);
+    font_make(0, 100);
+    textAlign(CENTER, CENTER);
+    for (i=Math.max(0, Math.floor(20*((time - breakpoint)/1.5)%39-20)); 
+        i<Math.min(20, Math.floor(20*((time - breakpoint)/1.5)%39));i++) {
+      text_make(int(time*2) % 3, 100, 51, 4);
+      var r = 255*(Math.sin(time*2+i*PI/15+3)+1)/2,
+          g = 255*(Math.cos(time*2+i*PI/15)+1)/2,
+          b = 255*(Math.sin(time*2+i*PI/15+5)+1)/2;
       fill(r, g, b);
       text(this.end_message, width/2, i*25+height/2-250);
     }
+    
   }
   
   this.playSound = function(whichSound='Fail') {
@@ -540,9 +654,9 @@ function fruitGame() {
       this.read_in_endzone_data(message);
     } else if (flag == "game_state") {
       this.read_in_game_state(message)
-    } else if (flag == "pop_fruit") {
-      this.fruits.splice(parseInt(message), 1);
-    }
+    } //else if (flag == "pop_fruit") {
+      //this.fruits.splice(parseInt(message), 1);
+    //}
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
@@ -571,4 +685,238 @@ function fruitGame() {
     this.game_length = p_vals[2];
     this.start_time = millis()/1000 - (this.game_length - this.current_time);
   }
+}
+
+function uiTest() {
+  this.setup = function() {
+    this.time = millis();
+  }
+
+  this.key_pressed = function(keycode) {
+    return;
+  }
+
+  this.key_released = function(keycode) {
+    return;
+  }
+  
+  this.draw = function() {
+    this.time = millis();
+    fill(255, 255, 255);
+    rect(width/2-200, height/2-200, 400, 400);
+    textSize(20);
+    fill(0, 0, 0);
+    text("Time: "+str(this.time), width/2, height/2);
+  }
+
+  this.read_network_data = function(flag, message) {
+    console.log("network_data_read");
+    return;
+  }
+}
+
+function main_menu() {
+  this.setup = function() {
+    this.start_time = millis()/1000;
+    this.server_address_input;
+    this.server_port_input;
+    this.temp_server_address = host_address;
+    this.temp_server_port = str(global_port);
+    this.current_time = 0.000;
+    this.current_menu = 1;
+    this.buttons_menu_1 = [];
+    this.buttons_menu_2 = [];
+    this.button_funcs = [];
+    this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Button 1\nDON'T PUSH");
+    this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
+    this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server\nAddress");
+    this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
+    this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
+  }
+
+  this.draw = function() {
+    this.current_time = millis()/1000 - this.start_time;
+    if (this.current_time < 3) { this.draw_startup_animation(); return; }
+    if (this.current_menu == 1) { this.draw_menu_1(); }
+    else if (this.current_menu == 2) { this.draw_menu_2(); }
+  }
+
+  this.draw_menu_1 = function() {
+    var r_color = rainbox_gradient(2*this.current_time);
+    textAlign(CENTER, CENTER);
+    text_make(2, 90, 0, 2);
+    fill(r_color[0], r_color[1], r_color[2]);
+    text("RETRO ROYALE", width/2, 50);
+    for (let i in this.buttons_menu_1) { this.buttons_menu_1[i].draw(); }
+    text_make(0, 10, 0, 1);
+    stroke(11);
+    if (connected_to_server) {
+      fill(0, 255, 0);
+      text("Connected", width - 50, 10);
+    } else {
+      fill(255, 0, 0);
+      text("Not connected", width - 50, 10);
+    }
+  }
+
+  this.draw_menu_2 = function() {
+    //background(255, 78, 0);
+    strokeWeight(5);
+    fill(200, 200, 255);
+    rect(width/2 - 200, height/2 - 200, 400, 400);
+    text_make(0, 20, 0, 0);
+    fill(0, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("Server address", width/2, height/2 - 125);
+    text("Server port", width/2, height/2-50);
+    for (let i in this.buttons_menu_2) { this.buttons_menu_2[i].draw(); }
+  }
+
+  this.draw_startup_animation = function() {
+    text_make(1, 50,  0, 2);
+    var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
+        box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], this.current_time),
+        box_width = 350, box_height = 100;
+    fill(255, 78, 0);
+    rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
+    var r_color = rainbox_gradient(this.current_time);
+    fill(r_color[0], r_color[1], r_color[2]);
+    textAlign(CENTER, CENTER);
+    text("RETRO ROYALE", text_position_x, height/2);
+  }
+
+  this.key_pressed = function(keycode) {
+    return;
+  }
+
+  this.key_released = function(keycode) {
+    return;
+  }
+
+  this.mouse_pressed = function() {
+    if (this.current_menu == 1) {
+      for (let i in this.buttons_menu_1) { 
+        if (this.buttons_menu_1[i].check_press(mouseX, mouseY)) {return;} 
+      }
+    } else if (this.current_menu == 2) {
+      for (let i in this.buttons_menu_2) {
+        if (this.buttons_menu_2[i].check_press(mouseX, mouseY)) {return;}
+      }
+    }
+  }
+
+  this.mouse_released = function() {
+    if (this.current_menu == 1) {
+      for (let i in this.buttons_menu_1) {
+        if (this.buttons_menu_1[i].pressed) {this.button_press(i);}
+        this.buttons_menu_1[i].pressed = 0; 
+      }
+    } else if (this.current_menu == 2) {
+      for (let i in this.buttons_menu_2) {
+        if (this.buttons_menu_2[i].pressed) {this.button_press(i);}
+        this.buttons_menu_2[i].pressed = 0; 
+      }
+    }
+  }
+
+  this.button_press = function(code) {
+    if (this.current_menu == 1) {
+      if (code == 0) { this.temp_function(); }
+      else if (code == 1) { swap_current_state("load_screen"); }
+      else if (code == 2) { this.server_menu_enable(); }
+    } else if (this.current_menu == 2) {
+      if (code == 0) { this.update_server_address(); }
+      else if (code == 1) { this.server_menu_disable(); }
+    }
+  }
+
+  this.read_network_data = function(flag, message) {
+    return;
+  }
+
+  this.server_menu_enable = function() {
+    this.server_address_input = createInput(host_address);
+    this.server_address_input.position(width/2 - 75, height/2-105);
+    this.server_address_input.input(oninput_address);  
+
+    this.server_port_input = createInput(str(global_port));
+    this.server_port_input.position(width/2 - 75, height/2-30);
+    this.server_port_input.input(oninput_port);
+    this.current_menu = 2;
+  }
+
+  this.server_menu_disable = function() {
+    this.server_address_input.remove();
+    this.server_port_input.remove();
+    this.current_menu = 1;
+  }
+
+  this.update_server_address = function() {
+    host_address = this.temp_server_address;
+    global_port = parseInt(this.temp_server_port);
+    make_socket();
+    this.server_menu_disable();
+  }
+}
+
+function load_screen() {
+  this.setup = function(){
+    this.start_time = millis()/1000;
+    this.current_time = 0;
+    this.attempts = 0;
+    this.connect_attempted = true;
+  }
+
+  this.draw = function(){
+    this.current_time = millis()/1000 - this.start_time;
+    var menu_text, cycle_time = 15 - this.current_time;
+    if (connected_to_server) {
+      menu_text = "Connection successful";
+      if (cycle_time <= 10) {
+        swap_current_state("fruit_game");
+      }
+    } else if (this.attempts == 0) {
+      menu_text = "Attempting to connect";
+      make_socket();
+      this.attempts++;
+    } else if (this.attempts == 1) {
+      menu_text = "Attempting to connect";
+      for (i = 0; i < (int(this.current_time) % 4); i++) {
+        menu_text += ".";
+      }
+      if (cycle_time <= 0) {
+        this.start_time = millis()/1000;
+        this.attempts++;
+      }
+    } else if (this.attempts >= 5) {
+      menu_text = "5 Failed attempts\n Returning to menu";
+      if (cycle_time <= 10) {
+        swap_current_state("main_menu");
+      }
+    } else if (cycle_time > 0) {
+      menu_text = "Retrying in " + str(int(Math.max(0, cycle_time)));
+    } else if (cycle_time <= 0 && !(connected_to_server)) {
+      make_socket();
+      this.start_time = millis()/1000;
+      this.attempts++;
+    }
+    text_make(0, 40, 0, 0);
+    textAlign(CENTER, CENTER);
+    fill(0, 0, 0);
+    text(menu_text, width/2, height/2);
+  }
+
+  this.key_pressed = function(keycode) { return; }
+  this.key_released = function(keycode) { return; }
+  this.mouse_pressed = function() { return; }
+  this.mouse_released = function() { return; }
+  this.read_network_data = function(flag, message) { return; }
+}
+
+function oninput_address() {
+  current_state.temp_server_address = this.value();
+}
+
+function oninput_port() {
+  current_state.temp_server_port = this.value();
 }
