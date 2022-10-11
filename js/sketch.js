@@ -49,9 +49,12 @@ function rainbox_gradient(t) {
 }
 
 function make_socket() {
-  console.log("Connecting to: "+"ws://"+"["+host_address+"]:"+str(global_port));
+  if (host_address.includes(":") && !(host_address.includes("["))) {
+    host_address = "[" + host_address + "]"; //IPv6 correction, urls written as ws://[::1]:3128/
+  }
+  console.log("Connecting to: "+"ws://"+host_address+str(global_port));
   connected_to_server = false;
-  socket = new WebSocket("wss://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
+  socket = new WebSocket("ws://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
   socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
   socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
 }
@@ -725,7 +728,7 @@ function main_menu() {
     this.button_funcs = [];
     this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Button 1");
     this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
-    this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
+    this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server\nAddress");
     this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
     this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
   }
