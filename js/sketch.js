@@ -52,9 +52,9 @@ function make_socket() {
   if (host_address.includes(":") && !(host_address.includes("["))) {
     host_address = "[" + host_address + "]"; //IPv6 correction, urls written as ws://[::1]:3128/
   }
-  console.log("Connecting to: "+"ws://"+host_address+str(global_port));
+  console.log("Connecting to: "+"wss://"+host_address+":"+str(global_port));
   connected_to_server = false;
-  socket = new WebSocket("ws://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
+  socket = new WebSocket("wss://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
   socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
   socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
 }
