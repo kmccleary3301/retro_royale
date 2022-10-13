@@ -720,18 +720,21 @@ function main_menu() {
     this.start_time = millis()/1000;
     this.server_address_input;
     this.server_port_input;
+    this.cert_hyperlink;
     this.temp_server_address = host_address;
     this.temp_server_port = str(global_port);
     this.current_time = 0.000;
     this.current_menu = 1;
     this.buttons_menu_1 = [];
     this.buttons_menu_2 = [];
+    this.buttons_menu_3 = [];
     this.button_funcs = [];
-    this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Button 1\nDON'T PUSH");
+    this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
     this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
     this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server\nAddress");
     this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
     this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
+    this.buttons_menu_3[0] = new button(width/2, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
   }
 
   this.draw = function() {
@@ -739,6 +742,7 @@ function main_menu() {
     if (this.current_time < 3) { this.draw_startup_animation(); return; }
     if (this.current_menu == 1) { this.draw_menu_1(); }
     else if (this.current_menu == 2) { this.draw_menu_2(); }
+    else if (this.current_menu == 3) { this.draw_menu_3(); }
   }
 
   this.draw_menu_1 = function() {
@@ -772,6 +776,18 @@ function main_menu() {
     for (let i in this.buttons_menu_2) { this.buttons_menu_2[i].draw(); }
   }
 
+  this.draw_menu_3 = function() {
+    strokeWeight(5);
+    fill(200, 200, 255);
+    rect(width/2 - 175, height/2 - 175, 350, 350);
+    text_make(0, 20, 0, 0);
+    fill(0, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
+        width/2, height/2-100);
+    for (let i in this.buttons_menu_3) { this.buttons_menu_3[i].draw(); }
+  }
+
   this.draw_startup_animation = function() {
     text_make(1, 50,  0, 2);
     var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
@@ -802,6 +818,10 @@ function main_menu() {
       for (let i in this.buttons_menu_2) {
         if (this.buttons_menu_2[i].check_press(mouseX, mouseY)) {return;}
       }
+    } else if (this.current_menu == 3) {
+      for (let i in this.buttons_menu_3) {
+        if (this.buttons_menu_3[i].check_press(mouseX, mouseY)) {return;}
+      }
     }
   }
 
@@ -816,17 +836,25 @@ function main_menu() {
         if (this.buttons_menu_2[i].pressed) {this.button_press(i);}
         this.buttons_menu_2[i].pressed = 0; 
       }
+    } else if (this.current_menu == 3) {
+      for (let i in this.buttons_menu_3) {
+        if (this.buttons_menu_3[i].pressed) {this.button_press(i);}
+        this.buttons_menu_3[i].pressed = 0; 
+      }
     }
   }
 
   this.button_press = function(code) {
     if (this.current_menu == 1) {
-      if (code == 0) { this.temp_function(); }
+      if (code == 0) { this.authorize_menu_enable(); }
       else if (code == 1) { swap_current_state("load_screen"); }
       else if (code == 2) { this.server_menu_enable(); }
     } else if (this.current_menu == 2) {
       if (code == 0) { this.update_server_address(); }
       else if (code == 1) { this.server_menu_disable(); }
+    }
+    else if (this.current_menu == 3) {
+      if (code == 0) { this.authorize_menu_disable(); }
     }
   }
 
@@ -843,11 +871,15 @@ function main_menu() {
     this.server_port_input.position(width/2 - 75, height/2-30);
     this.server_port_input.input(oninput_port);
     this.current_menu = 2;
+    this.cert_hyperlink = createA("https://"+host_address+":"+global_port, "Authorize Connection");
+    this.cert_hyperlink.position(width/2-70, height/2+200);
   }
 
   this.server_menu_disable = function() {
     this.server_address_input.remove();
     this.server_port_input.remove();
+    this.cert_hyperlink.remove();
+    this.cert_hyperlink = NaN;
     this.current_menu = 1;
   }
 
@@ -856,6 +888,17 @@ function main_menu() {
     global_port = parseInt(this.temp_server_port);
     make_socket();
     this.server_menu_disable();
+  }
+
+  this.authorize_menu_enable = function() {
+    this.cert_hyperlink = createA("https://"+host_address+":"+global_port, "Authorize Connection");
+    this.cert_hyperlink.position(width/2-70, height/2-20);
+    this.current_menu = 3;
+  }
+
+  this.authorize_menu_disable = function() {
+    this.cert_hyperlink.remove();
+    this.current_menu = 1;
   }
 }
 
