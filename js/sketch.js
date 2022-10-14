@@ -871,15 +871,11 @@ function main_menu() {
     this.server_port_input.position(width/2 - 75, height/2-30);
     this.server_port_input.input(oninput_port);
     this.current_menu = 2;
-    this.cert_hyperlink = createA("https://"+host_address+":"+global_port, "Authorize Connection");
-    this.cert_hyperlink.position(width/2-70, height/2+200);
   }
 
   this.server_menu_disable = function() {
     this.server_address_input.remove();
     this.server_port_input.remove();
-    this.cert_hyperlink.remove();
-    this.cert_hyperlink = NaN;
     this.current_menu = 1;
   }
 
