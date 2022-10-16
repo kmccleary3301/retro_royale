@@ -1,0 +1,68 @@
+idea 1 (FFA):
+Multiplayer flappy bird, with some dramatic effects.
+You get to watch other players jump around and crash.
+Whoever goes the longest wins.
+Each person earns the number of jumps they made, winner gets a large bonus.
+
+idea 2 (FFA):
+Everyone is in a square arena, and every 30 seconds a ball-type object is shot in. It ricochets around the arena,
+and if it collides with a players, the player is out. Last players standing wins. The number of objects will increase.
+They will also have their ricochet angle adjusted by a slight but random amount on each bounce.
+Winner wins a large amount, losers get however long they lasted.
+
+idea 3 (2 Teams):
+From super mario party, rowboat uprising. Each person paddles one side of a boat, and two boats race to the end.
+There are obstacles in the way. Loser gets nothing
+
+idea 4 (1 v Everyone else):
+One person has no player character, but can send projectiles into the arena
+where everyone is, or can break the tiles the players are standing on.
+Basically one player controls a death room and has a set timer to try and
+kill everyone. If he succeeds, he wins a massive amount, other players get
+nothing. If he fails, he gets nothing and everyone else gets a large amount.
+
+Board state:
+Each member rolls a dice to progress certain amount of steps.
+From each game, you gain a certain amount of points (coins).
+There will be a shop available at all times, you can buy a
+dice boost with coins, set back another player, get a
+new dice, etc. At the end, there will be a star, which supercedes
+coins in determining the winner.
+You can buy a star for a considerable amount of coins.
+
+Players can play alone or on teams.
+Minigames are often 2v2, 1v3, or have more people,
+meaning players will team occassionally.
+The winners reap the benefits.
+
+
+Tile types will include:
+(G) GAME (Either preset or dice roll which game).
+(+) Gain coins
+(-) lose coins
+(T) Trap - sends you back x spaces.
+(E) - Empty, nothing happens.
+(R) - Random, any of the above except empty
+        Small chance the map is reshaped.
+(S) - Final tile, grants a star and send you back to start
+W-- - Warp tile, teleports player to corresponding tile (i.e. W1+ goes to W1-)
+
+
+
+The layout is constant, but tiles will be randomly decided
+at the start of every game.
+
+Layout sketch
+
+(.) is just a placeholder.
+
+       (S) <- (.) <- (.) <- (.) 
+                             |
+(G) -> (.) -> (.) -> (.) -> (.) <- (.) <- (.) <- (.) <- (W1-) 
+ |                                                |
+(E) <- (+) <- (E) <- (G) -> (.) -> (.) -> (.) -> (.)
+                      |
+(E) -> (+) -> (-) -> (E) -> (G) -> (G) -> (T) -> (-) -> (R) -> ()
+Start                 |
+                     (E) -> (-) -> (G) -> (+) -> (R) -> (W1+)
+
