@@ -41,7 +41,7 @@ function sigmoid_array(p_array, t_array, speed_array, t) { //this sums sigmoids 
   return sum
 }
 
-function rainbox_gradient(t) {
+function rainbow_gradient(t) {
   var r = 255*(Math.sin(1+t*3.19)+1)/2,
       g = 255*(Math.cos(2+t*2.15)+1)/2,
       b = 255*(Math.sin(3+t*2.23)+1)/2;
@@ -406,6 +406,86 @@ class button {
 
 }
 
+class board_game_player {
+  constructor(spriteSheet, x, y, face) {
+    this.spriteSheet = spriteSheet;
+    this.sx = 0;
+    this.x = x;
+    this.y = y;
+    this.move = 0;
+    this.speed = 5;
+    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+    this.sprite_row = 0;
+    this.fruit_holding = 0;
+    this.fruit_held_id = 0;
+  }
+  
+  draw() {
+    push();
+    translate(this.x, this.y);
+    if (this.move == 1){
+      if (this.facing < 2){
+        scale(1-this.facing*2, 1);  
+        image(this.spriteSheet, 0, 0, 100, 100, 80*(this.sx+1), 0, 80, 80);
+        this.x = this.x + this.speed * (1-this.facing*2);
+      } else if (this.facing == 2) {
+        image(this.spriteSheet, 0, 0, 100, 100, 80*(this.sx), 400, 80, 80);
+        this.y = this.y - this.speed;
+      } else if (this.facing == 3) {
+        image(this.spriteSheet, 0, 0, 100, 100, 480 + 80*(this.sx), 400, 80, 80);
+        this.y = this.y + this.speed;
+      }
+
+      this.x = Math.min(width-40, Math.max(40, this.x));
+      this.y = Math.min(height-40, Math.max(40, this.y));
+
+    }
+    else {
+      if (this.facing < 2){
+        scale(1-this.facing*2, 1);  
+        image(this.spriteSheet, 0, 0, 100, 100, 0, 0, 80, 80);
+      } else if (this.facing == 2) {
+        image(this.spriteSheet, 0, 0, 100, 100, 0, 400, 80, 80);
+      } else if (this.facing == 3) {
+        image(this.spriteSheet, 0, 0, 100, 100, 480, 400, 80, 80);
+      }
+    }
+    
+    if (frameCount % 6 == 0) {
+      this.sx = (this.sx + 1) % 6;
+    }
+
+    pop();
+  }
+
+  get_pos_string(){
+    var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
+    return string_make;
+  }
+  
+  update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+    //if (sprite != null) {this.spriteSheet = }
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (facing != null) { this.facing = facing; }
+    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
+    if (fruit_id != null) { this.fruit_held_id = fruit_id; }
+  }
+
+  make_data_raw(){
+    return this.x+","+this.y+","+this.move+","+
+            this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+  }
+
+  make_data(player_index){
+    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+    return string_make;
+  }
+}
+
 function fruitGame() {
   this.setup = function() {
     this.fruits_count = 15;
@@ -746,7 +826,7 @@ function main_menu() {
   }
 
   this.draw_menu_1 = function() {
-    var r_color = rainbox_gradient(2*this.current_time);
+    var r_color = rainbow_gradient(2*this.current_time);
     textAlign(CENTER, CENTER);
     text_make(2, 90, 0, 2);
     fill(r_color[0], r_color[1], r_color[2]);
@@ -795,7 +875,7 @@ function main_menu() {
         box_width = 350, box_height = 100;
     fill(255, 78, 0);
     rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
-    var r_color = rainbox_gradient(this.current_time);
+    var r_color = rainbow_gradient(this.current_time);
     fill(r_color[0], r_color[1], r_color[2]);
     textAlign(CENTER, CENTER);
     text("RETRO ROYALE", text_position_x, height/2);
@@ -958,4 +1038,67 @@ function oninput_address() {
 
 function oninput_port() {
   current_state.temp_server_port = this.value();
+}
+
+function board_game() {
+  this.setup = function() {
+    this.camera_pos = [width/2, height/2];
+    this.camera_scale = 1;
+    this.players = [];
+    this.players[0] = new 
+  }
+
+  this.draw = function() {
+
+  }
+
+  this.key_pressed = function(keycode) {
+
+  }
+
+  this.key_released = function(keycode) {
+
+  }
+
+  this.mouse_pressed = function() {
+
+  }
+
+  this.mouse_released = function() {
+
+  }
+
+  this.read_network_data = function(flag, message) {
+
+  }
+}
+
+function template_game() {
+  this.setup = function() {
+    return;
+  }
+
+  this.draw = function() {
+    return;
+  }
+
+  this.key_pressed = function(keycode) {
+    return;
+  }
+
+  this.key_released = function(keycode) {
+    return;
+  }
+
+  this.mouse_pressed = function() {
+    return;
+  }
+
+  this.mouse_released = function() {
+    return;
+  }
+
+  this.read_network_data = function(flag, message) {
+    return;
+  }
 }
