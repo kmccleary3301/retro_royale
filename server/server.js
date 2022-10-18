@@ -84,8 +84,9 @@ server.on('connection', function connection(thisClient) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
-      if (flag == 'connected') { thisClient.send("connected"); }
+      if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
       if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
+      //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
       current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
   });
