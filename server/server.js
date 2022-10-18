@@ -1,8 +1,10 @@
 var current_state = new fruitGame();
+var current_state_flag = "fruit_game";
 let width = 600;
 let height = 600;
 
 let global_port = 3128;
+/*
 var express = require('express');	// include express.js
 var server = express(); // a local instance of express
 var wsServer = require('express-ws')(server); // instance of the websocket server
@@ -11,42 +13,58 @@ var clients_hash = new Array;
 
 // serve static files from /public:
 server.use('/', express.static('public'));
-
+*/
 // this runs after the server successfully starts:
+
+var fs = require('fs');
+var https = require('https');
+var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
+var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
+
+var credentials = {key: privateKey, cert: certificate};
+var express = require('express');
+var app = express();
+var clients = new Array;
+
+
+var httpsServer = https.createServer(credentials, app);
+httpsServer.listen(global_port);
+var WebSocketServer = require('ws').Server;
+var server = new WebSocketServer({ server: httpsServer });
+//current_state.setup();
 
 function game_start() {
   console.log("Game Reset");
-  //var current_state = new fruitGame();
-  //current_state.setup();
-}
-
-function serverStart() {
-  game_start();
-  var port = this.address().port;
-  console.log('Server listening on port ' + port);
-  console.log("Initializing game");
-  console.log(Date.now());
+  var current_state = new fruitGame();
   current_state.setup();
 }
 
-function handleClient(thisClient, request) {
+function server_start() {
+  game_start();
+  console.log('Server listening on port ' + global_port);
+  console.log("Initializing game");
+  console.log(Date.now());
+}
+
+server.on('open', function open() {console.log("server started");});
+
+server.on('connection', function connection(thisClient) {
   console.log("New Connection");        // you have a new client
   console.log("clients length "+clients.length);
   clients.push(thisClient);
   console.log("clients length "+clients.length);
   if (clients.length == 1) { game_start(); }
-    // add this client to the clients array
   console.log("user connecting");
-  current_state.user_connected(clients.indexOf(thisClient));
-
-  function endClient() {                        //Triggers on a client disconnect
+  
+                    
+  thisClient.on('close', function(msg){         //Triggers on a client disconnect
     var position = clients.indexOf(thisClient); //Gets clients position in array
     clients.splice(position, 1);                //Removes client from global client array
     current_state.user_disconnected(position);  //Triggers current_state's user disconnect function.
     console.log("connection closed, client: "+position);
-  }
+  });
 
-  function clientResponse(data) {             //Activates when a client sends data in.
+  thisClient.on('message', function incoming(data) { //Activates when a client sends data in.
     console.log(data);
     var lines = data.split("\n");             //Packets may contain multiple commands, separated by newline
     var index = clients.indexOf(thisClient);  //grabs the index of the client that sent it in
@@ -57,15 +75,11 @@ function handleClient(thisClient, request) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
-      current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
+      if (flag == 'connected') { thisClient.send("connected"); }
+      //current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
-  }
-
-  // set up client event listeners:
-  thisClient.on('message', clientResponse);
-  thisClient.on('close', endClient);
-
-}
+  });
+});
 
 function broadcast(data) {  //Send a message to all connected clients
   for (let c in clients) {
@@ -107,10 +121,6 @@ function swap_current_state() {
   current_state = new uiTest();
   current_state.setup();
 }
-
-server.listen(process.env.PORT || global_port, serverStart);  //start the server
-server.ws('/', handleClient);                                 //listen for ws connections
-
 
 class game_1_player {
   constructor(x, y, face) {
@@ -240,6 +250,9 @@ function fruitGame() {
     this.game_length = 30.000;
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
     for (i=0; i < this.fruits_count; i++) {
       this.fruits[i] = new game_1_fruit(width*Math.random(), height*Math.random(), 3+Math.random()*12);
     }
@@ -267,8 +280,8 @@ function fruitGame() {
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
     this.game_update();
-    if (flag == "connected") {
-      this.user_connected(usr_id);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
@@ -282,8 +295,8 @@ function fruitGame() {
     }
   }
 
-  this.user_connected = function(usr_id) {
-    clients[usr_id].send("connected");
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
@@ -349,3 +362,5 @@ function uiTest() {
     clients[usr_id].send("hello. current server state is uiTest");
   }
 }
+
+server_start();
