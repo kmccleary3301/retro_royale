@@ -1,9 +1,12 @@
-var current_state = new fruitGame();
-var current_state_flag = "fruit_game";
+var current_state = new purgatory();
+var current_state_flag = "purgatory";
 let width = 600;
 let height = 600;
 
 let global_port = 3128;
+
+let tick_interval = 200; //in milliseconds
+
 /*
 var express = require('express');	// include express.js
 var server = express(); // a local instance of express
@@ -32,10 +35,16 @@ httpsServer.listen(global_port);
 var WebSocketServer = require('ws').Server;
 var server = new WebSocketServer({ server: httpsServer });
 //current_state.setup();
+//process.nextTick(() => {console.log("tick");});
+
+function tick_function() { current_state.tick_function(); }
+
+setInterval(tick_function, tick_interval);
+
 
 function game_start() {
   console.log("Game Reset");
-  var current_state = new fruitGame();
+  current_state = new purgatory();
   current_state.setup();
 }
 
@@ -43,6 +52,7 @@ function server_start() {
   game_start();
   console.log('Server listening on port ' + global_port);
   console.log("Initializing game");
+  console.log("Current game: "+current_state_flag);
   console.log(Date.now());
 }
 
@@ -53,7 +63,6 @@ server.on('connection', function connection(thisClient) {
   console.log("clients length "+clients.length);
   clients.push(thisClient);
   console.log("clients length "+clients.length);
-  if (clients.length == 1) { game_start(); }
   console.log("user connecting");
   
                     
@@ -75,11 +84,14 @@ server.on('connection', function connection(thisClient) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
-      if (flag == 'connected') { thisClient.send("connected"); }
-      //current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
+      if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
+      if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
+      //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
+      current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
   });
 });
+
 
 function broadcast(data) {  //Send a message to all connected clients
   for (let c in clients) {
@@ -117,9 +129,13 @@ function convert_data_string(message, ints, floats, strings) {
   return return_vals
 }
 
-function swap_current_state() {
-  current_state = new uiTest();
+function swap_current_state(state_flag) {
+  if (state_flag == "fruit_game") { current_state = new fruitGame(); }
+  else if (state_flag == "purgatory") { current_state = new purgatory(); }
+  else { return; } // failsafe for invalid flags
   current_state.setup();
+  current_state_flag = state_flag;
+  broadcast("current_game:"+state_flag);
 }
 
 class game_1_player {
@@ -260,17 +276,19 @@ function fruitGame() {
     this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
   }
   
+  this.tick_function = function() { this.game_update(); }
+
   this.game_update = function() {
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 60;
+        this.game_length = 30;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
         this.game_active = 2;
-        this.game_length = 5;
+        this.game_length = 20;
         this.start_time = Date.now()/1000;
       }
       broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
@@ -339,27 +357,49 @@ function fruitGame() {
   }
 }
 
-function uiTest() {
+function purgatory() {
   this.setup = function() {
-    this.time = Date.now();
-    console.log("setting up uiTest class");
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
   }
 
-  this.read_network_data = function(flag, message) {
-    console.log("network_data_read");
-    return;
+  this.tick_function = function() { return; }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }
   }
 
-  this.user_connected = function(usr_id) {
-    clients[usr_id].send("hello. current server state is uiTest");
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
   }
 
   this.user_disconnected = function(usr_id) {
-    return;
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
   }
 
-  this.read_network_data = function(flag, message, usr_id) {
-    clients[usr_id].send("hello. current server state is uiTest");
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
   }
 }
 
