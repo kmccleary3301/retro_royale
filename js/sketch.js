@@ -1045,7 +1045,7 @@ function board_game() {
     this.camera_pos = [width/2, height/2];
     this.camera_scale = 1;
     this.players = [];
-    this.players[0] = new;
+    //this.players[0] = new;
   }
 
   this.draw = function() {
