@@ -2,7 +2,7 @@
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
 var repo_address = "";
-var current_state = new main_menu();
+var current_state = new main_menu(), current_state_flag = "main_menu";
 var host_address = "127.0.0.1", global_port = 3128;
 var font_set, font_size_scaling, connected_to_server;
 
@@ -87,6 +87,7 @@ function process_message(data) {          //Event function to process data recie
     var flag = line_split[0],
         message = null;
     if (line_split.length > 1) { message = line_split[1]; }
+    if (flag == "current_game") { swap_current_state(message); }
     current_state.read_network_data(flag, message);  //Feeds to current_state's local data recieved function.
   }
 }
@@ -148,7 +149,10 @@ function swap_current_state(flag) {
   if (flag == "main_menu") { current_state = new main_menu(); }
   else if (flag == "load_screen") { current_state = new load_screen(); }
   else if (flag == "fruit_game") { current_state = new fruitGame(); }
+  else if (flag == "purgatory") { current_state = new purgatory(); }
+  else { return; }
   current_state.setup();
+  current_state_flag = flag;
 }
 
 class game_1_player {
@@ -596,12 +600,13 @@ function fruitGame() {
     if (this.game_active == 0) { this.draw_game_load(); }
     else if (this.game_active == 1) { this.draw_game_active();}
     else if (this.game_active == 2) { this.draw_game_over(); }
+    this.draw_game_over();
   }
 
   this.draw_game_load = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
-    textSize(50);
+    text_make(0, 50, 0, 0);
     for (let i in this.players) {
       this.players[i].draw();
     }
@@ -615,6 +620,7 @@ function fruitGame() {
   this.draw_game_active = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
+    text_make(0, 50, 0, 0);
     textSize(50);
     for (let i in this.endzones) { this.endzones[i].draw(); }
     for (let i in this.players) {
@@ -626,7 +632,7 @@ function fruitGame() {
       this.players[i].draw();
     }
     for (let i in this.fruits){ this.fruits[i].draw(); }
-    text("Time: "+str(int(this.current_time)), width/2, 50);
+    text("Time: "+str(Math.max(0, int(this.current_time))), width/2, 50);
   }
 
   this.game_over = function() {
@@ -667,7 +673,6 @@ function fruitGame() {
     textAlign(CENTER, CENTER);
     textStyle(ITALIC);
     fill(127.5+g/2, 127.5+b/2, 127.5+r/2);
-    
     if (time < breakpoint - 5) {
       rect(box_position_x-250, height/2 - 100, 500, 200);
     }
@@ -756,14 +761,13 @@ function fruitGame() {
     if (p_vals[0] >= this.endzones.length) { this.endzones[p_vals[0]] = new game_1_endzone(0, 0, 0, 0); }
     this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
   }
-
   this.read_in_game_state = function(data_string) {
     p_vals = convert_data_string(data_string, [0], [1, 2]);
     if (this.game_active != 2 && p_vals[0] == 2) { this.game_over(); }
     this.current_time = p_vals[1];
     this.game_active = p_vals[0];
     this.game_length = p_vals[2];
-    this.start_time = millis()/1000 - (this.game_length - this.current_time);
+    this.start_time = millis()/1000;
   }
 }
 
@@ -927,7 +931,7 @@ function main_menu() {
   this.button_press = function(code) {
     if (this.current_menu == 1) {
       if (code == 0) { this.authorize_menu_enable(); }
-      else if (code == 1) { swap_current_state("load_screen"); }
+      else if (code == 1) { socket.send("load_game"); swap_current_state("load_screen"); }
       else if (code == 2) { this.server_menu_enable(); }
     } else if (this.current_menu == 2) {
       if (code == 0) { this.update_server_address(); }
@@ -1070,6 +1074,75 @@ function board_game() {
 
   this.read_network_data = function(flag, message) {
 
+  }
+}
+
+function purgatory() {
+  this.setup = function() {
+    this.players = [];
+    this.main_player_index;
+    this.arrow_keys = [39, 37, 38, 40];
+    this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    imageMode(CENTER);
+    this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
+    this.main_player_index = 0;
+  }
+
+  this.key_pressed = function(keycode) {
+    for (i=0;i<4;i++){
+      if (keycode == this.arrow_keys[i]){
+        this.players[this.main_player_index].facing = i;
+        this.players[this.main_player_index].move = 1;
+        this.players[this.main_player_index].sx = 0;
+        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+        return;
+      }
+    }
+  }
+
+  this.key_released = function(keycode) {
+    for (i=0;i<4;i++){
+      if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
+        this.players[this.main_player_index].move = 0;
+      }
+    }
+    send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+  }
+
+  this.mouse_pressed = function() { return; }
+  this.mouse_released = function() { return; }
+
+  this.draw = function() {
+    background(200, 200, 200);
+    fill(0, 0, 0);
+    for (let i in this.players) {
+      this.players[i].draw();
+    }
+  }
+
+  this.read_network_data = function(flag, message) {
+    if (flag == "player_count") {
+      for (j=this.players.length; j < parseInt(message); j++){
+        this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
+      }
+    } else if (flag == "assigned_id") {
+      this.main_player_index = parseInt(message);
+    } else if (flag == "pos_player") {
+      this.read_in_player_position(message);
+    } else if (flag == "new_player") {
+      this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+    } else if (flag == "rmv_player") {
+      var player_index = parseInt(message);
+      this.players.splice(player_index, 1);
+      if (this.main_player_index > player_index) {
+        this.main_player_index -= 1;
+      }
+    }
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
 }
 
