@@ -35,7 +35,7 @@ var server = new WebSocketServer({ server: httpsServer });
 
 function game_start() {
   console.log("Game Reset");
-  var current_state = new fruitGame();
+  current_state = new fruitGame();
   current_state.setup();
 }
 
