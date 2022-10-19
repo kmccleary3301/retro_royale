@@ -26,6 +26,7 @@ var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
+const PoissonDiskSampling = require('poisson-disk-sampling');
 var app = express();
 var clients = new Array;
 
@@ -258,6 +259,7 @@ class game_1_endzone {
 
 function fruitGame() {
   this.setup = function() {
+    
     this.fruits_count = 50;
     this.players = [];
     this.fruits = [];
@@ -266,14 +268,27 @@ function fruitGame() {
     this.game_length = 30.000;
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
+    this.game_dimensions = [2000, 1000];
     for (i=0; i < clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     }
-    for (i=0; i < this.fruits_count; i++) {
-      this.fruits[i] = new game_1_fruit(width*Math.random(), height*Math.random(), 3+Math.random()*12);
+    var p = new PoissonDiskSampling({
+      shape: [this.game_dimensions[0], this.game_dimensions[1]],
+      minDistance: 40,
+      maxDistance: 50,
+      tries: 3
+    });
+    var poisson_points = p.fill();
+    console.log("Poisson points: "+poisson_points[0]);
+    for (i = 0; i < poisson_points.length; i++) {console.log("poisson point:"+poisson_points[i]);
+      console.log(poisson_points[i][0]);
     }
-    this.endzones[0] = new game_1_endzone(0, 100, 200, 400);
-    this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
+    for (i = 0; i < poisson_points.length; i++) {
+      this.fruits[i] = new game_1_fruit(poisson_points[i][0], poisson_points[i][1], 3+Math.random()*12);
+    }
+    this.endzones[0] = new game_1_endzone(0, 100, this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
+    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[0], 
+                                          this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
   }
   
   this.tick_function = function() { this.game_update(); }
@@ -283,7 +298,7 @@ function fruitGame() {
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 30;
+        this.game_length = 60;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
@@ -324,6 +339,7 @@ function fruitGame() {
 
   this.user_disconnected = function(usr_id) {
     broadcast("rmv_player:"+usr_id);
+    if (!(this.players[usr_id])) { return; }
     if (this.players[usr_id].fruit_holding == 1) {
       this.fruits[this.players[usr_id].fruit_held_id].drop();
     } 
@@ -359,13 +375,18 @@ function fruitGame() {
 
 function purgatory() {
   this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
     this.players = [];
     for (i=0; i < clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     }
   }
 
-  this.tick_function = function() { return; }
+  this.tick_function = function() { 
+    this.current_time = Date.now()/1000 - this.start_time;
+    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+  }
 
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
