@@ -4,7 +4,6 @@ let width = 600;
 let height = 600;
 
 let global_port = 3128;
-
 let tick_interval = 200; //in milliseconds
 
 /*
@@ -21,6 +20,7 @@ server.use('/', express.static('public'));
 
 var fs = require('fs');
 var https = require('https');
+var ip = require('ip');
 var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
@@ -29,7 +29,7 @@ var express = require('express');
 const PoissonDiskSampling = require('poisson-disk-sampling');
 var app = express();
 var clients = new Array;
-
+var client_session_ids = new Array;
 
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(global_port);
@@ -51,7 +51,8 @@ function game_start() {
 
 function server_start() {
   game_start();
-  console.log('Server listening on port ' + global_port);
+  console.log('Server address: ' + ip.address());
+  console.log('Server port:    ' + global_port);
   console.log("Initializing game");
   console.log("Current game: "+current_state_flag);
   console.log(Date.now());
@@ -259,8 +260,8 @@ class game_1_endzone {
 
 function fruitGame() {
   this.setup = function() {
-    
-    this.fruits_count = 50;
+    this.fruits_count = 800;
+    this.remove_percentage_of_fruits = 0.2;
     this.players = [];
     this.fruits = [];
     this.endzones = [];
@@ -274,21 +275,32 @@ function fruitGame() {
     }
     var p = new PoissonDiskSampling({
       shape: [this.game_dimensions[0], this.game_dimensions[1]],
-      minDistance: 40,
-      maxDistance: 50,
+      minDistance: 20,
+      maxDistance: 30,
       tries: 3
     });
     var poisson_points = p.fill();
     console.log("Poisson points: "+poisson_points[0]);
-    for (i = 0; i < poisson_points.length; i++) {console.log("poisson point:"+poisson_points[i]);
-      console.log(poisson_points[i][0]);
-    }
-    for (i = 0; i < poisson_points.length; i++) {
-      this.fruits[i] = new game_1_fruit(poisson_points[i][0], poisson_points[i][1], 3+Math.random()*12);
-    }
+    console.log("made "+poisson_points.length+" poisson points");
     this.endzones[0] = new game_1_endzone(0, 100, this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
     this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[0], 
                                           this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
+    //The following code removes fruits that are generated in an endzone.
+    for (i=0; i < poisson_points.length; i++) { //counts downwards because we will be removing indices
+      for (let j in this.endzones) {
+        if (this.endzones[j].check_placement(poisson_points[i][0], poisson_points[i][1])) {
+          poisson_points.splice(i, 1);
+          break;
+        }
+      }
+    }
+    while (poisson_points.length > this.fruits_count) {
+      poisson_points.splice(Math.floor(Math.random()*poisson_points.length), 1);
+    }
+    console.log("Generated "+poisson_points.length+" fruits ( targeted: "+this.fruits_count+")");
+    for (i = 0; i < poisson_points.length; i++) {
+      this.fruits[i] = new game_1_fruit(poisson_points[i][0], poisson_points[i][1], 3+Math.random()*12);
+    }
   }
   
   this.tick_function = function() { this.game_update(); }
