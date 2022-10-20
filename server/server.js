@@ -4,7 +4,6 @@ let width = 600;
 let height = 600;
 
 let global_port = 3128;
-
 let tick_interval = 200; //in milliseconds
 
 /*
@@ -21,14 +20,16 @@ server.use('/', express.static('public'));
 
 var fs = require('fs');
 var https = require('https');
+var ip = require('ip');
 var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
+const PoissonDiskSampling = require('poisson-disk-sampling');
 var app = express();
 var clients = new Array;
-
+var client_session_ids = new Array;
 
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(global_port);
@@ -50,7 +51,8 @@ function game_start() {
 
 function server_start() {
   game_start();
-  console.log('Server listening on port ' + global_port);
+  console.log('Server address: ' + ip.address());
+  console.log('Server port:    ' + global_port);
   console.log("Initializing game");
   console.log("Current game: "+current_state_flag);
   console.log(Date.now());
@@ -258,7 +260,8 @@ class game_1_endzone {
 
 function fruitGame() {
   this.setup = function() {
-    this.fruits_count = 50;
+    this.fruits_count = 800;
+    this.remove_percentage_of_fruits = 0.2;
     this.players = [];
     this.fruits = [];
     this.endzones = [];
@@ -266,14 +269,38 @@ function fruitGame() {
     this.game_length = 30.000;
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
+    this.game_dimensions = [2000, 1000];
     for (i=0; i < clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     }
-    for (i=0; i < this.fruits_count; i++) {
-      this.fruits[i] = new game_1_fruit(width*Math.random(), height*Math.random(), 3+Math.random()*12);
+    var p = new PoissonDiskSampling({
+      shape: [this.game_dimensions[0], this.game_dimensions[1]],
+      minDistance: 20,
+      maxDistance: 30,
+      tries: 3
+    });
+    var poisson_points = p.fill();
+    console.log("Poisson points: "+poisson_points[0]);
+    console.log("made "+poisson_points.length+" poisson points");
+    this.endzones[0] = new game_1_endzone(0, 100, this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
+    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[0], 
+                                          this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
+    //The following code removes fruits that are generated in an endzone.
+    for (i=0; i < poisson_points.length; i++) { //counts downwards because we will be removing indices
+      for (let j in this.endzones) {
+        if (this.endzones[j].check_placement(poisson_points[i][0], poisson_points[i][1])) {
+          poisson_points.splice(i, 1);
+          break;
+        }
+      }
     }
-    this.endzones[0] = new game_1_endzone(0, 100, 200, 400);
-    this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
+    while (poisson_points.length > this.fruits_count) {
+      poisson_points.splice(Math.floor(Math.random()*poisson_points.length), 1);
+    }
+    console.log("Generated "+poisson_points.length+" fruits ( targeted: "+this.fruits_count+")");
+    for (i = 0; i < poisson_points.length; i++) {
+      this.fruits[i] = new game_1_fruit(poisson_points[i][0], poisson_points[i][1], 3+Math.random()*12);
+    }
   }
   
   this.tick_function = function() { this.game_update(); }
@@ -283,7 +310,7 @@ function fruitGame() {
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 30;
+        this.game_length = 60;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
@@ -324,6 +351,7 @@ function fruitGame() {
 
   this.user_disconnected = function(usr_id) {
     broadcast("rmv_player:"+usr_id);
+    if (!(this.players[usr_id])) { return; }
     if (this.players[usr_id].fruit_holding == 1) {
       this.fruits[this.players[usr_id].fruit_held_id].drop();
     } 
@@ -359,13 +387,18 @@ function fruitGame() {
 
 function purgatory() {
   this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
     this.players = [];
     for (i=0; i < clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     }
   }
 
-  this.tick_function = function() { return; }
+  this.tick_function = function() { 
+    this.current_time = Date.now()/1000 - this.start_time;
+    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+  }
 
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
