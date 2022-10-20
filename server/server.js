@@ -108,6 +108,12 @@ function broadcast_exclusive(data, excluded_clients_array) {  //Send a message t
   }
 }
 
+//Converts a message, or more specifically a packet, from the client into an array of data values
+//@param ints : an array of indices corresponding to data fields in the message from the
+//              client added as integers in the return_vals array
+//@param floats : 
+//@param strings : 
+//@param return_vals : an array of values representing the data fields of the message
 function convert_data_string(message, ints, floats, strings) {
   // Converts messages into an array of ints, floats, and strings according to passed indices for each.
   var message_split = message.split(",");
@@ -339,7 +345,9 @@ function fruitGame() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    //so this returns the id, move, facing, fruit_holding, fruit_id into 
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7],[1, 2, 4]);
+
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
