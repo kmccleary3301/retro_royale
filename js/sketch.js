@@ -455,12 +455,12 @@ class button {
     fill(this.color[0], this.color[1], this.color[2]);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
-    g_cam.rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height);
+    rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height);
     strokeWeight(0);
     textAlign(CENTER, CENTER);
     text_make(0, 0.3*Math.min(this.box_width, this.box_height), 0, 0);
     fill(this.text_color[0], this.text_color[1], this.text_color[2]);
-    g_cam.text(this.text, this.x_cen, this.y_cen);
+    text(this.text, this.x_cen, this.y_cen);
   }
 
   check_press(x, y) {
@@ -889,7 +889,7 @@ function main_menu() {
     this.button_funcs = [];
     this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
     this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
-    this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server\nAddress");
+    this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
     this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
     this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
     this.buttons_menu_3[0] = new button(width/2, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
@@ -909,16 +909,16 @@ function main_menu() {
     textAlign(CENTER, CENTER);
     text_make(2, 90, 0, 2);
     fill(r_color[0], r_color[1], r_color[2]);
-    g_cam.text("RETRO ROYALE", width/2, 50);
+    text("RETRO ROYALE", width/2, 50);
     for (let i in this.buttons_menu_1) { this.buttons_menu_1[i].draw(); }
     text_make(0, 10, 0, 1);
     stroke(11);
     if (connected_to_server) {
       fill(0, 255, 0);
-      g_cam.text("Connected", width - 50, 10);
+      text("Connected", width - 50, 10);
     } else {
       fill(255, 0, 0);
-      g_cam.text("Not connected", width - 50, 10);
+      text("Not connected", width - 50, 10);
     }
   }
 
@@ -926,23 +926,23 @@ function main_menu() {
     //background(255, 78, 0);
     strokeWeight(5);
     fill(200, 200, 255);
-    g_cam.rect(width/2 - 200, height/2 - 200, 400, 400);
+    rect(width/2 - 200, height/2 - 200, 400, 400);
     text_make(0, 20, 0, 0);
     fill(0, 0, 0);
     textAlign(CENTER, CENTER);
-    g_cam.text("Server address", width/2, height/2 - 125);
-    g_cam.text("Server port", width/2, height/2-50);
+    text("Server address", width/2, height/2 - 125);
+    text("Server port", width/2, height/2-50);
     for (let i in this.buttons_menu_2) { this.buttons_menu_2[i].draw(); }
   }
 
   this.draw_menu_3 = function() {
     strokeWeight(5);
     fill(200, 200, 255);
-    g_cam.rect(width/2 - 175, height/2 - 175, 350, 350);
+    rect(width/2 - 175, height/2 - 175, 350, 350);
     text_make(0, 20, 0, 0);
     fill(0, 0, 0);
     textAlign(CENTER, CENTER);
-    g_cam.text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
+    text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
                 width/2, height/2-100);
     for (let i in this.buttons_menu_3) { this.buttons_menu_3[i].draw(); }
   }
@@ -953,11 +953,11 @@ function main_menu() {
         box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], this.current_time),
         box_width = 350, box_height = 100;
     fill(255, 78, 0);
-    g_cam.rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
+    rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
     var r_color = rainbow_gradient(this.current_time);
     fill(r_color[0], r_color[1], r_color[2]);
     textAlign(CENTER, CENTER);
-    g_cam.text("RETRO ROYALE", text_position_x, height/2);
+    text("RETRO ROYALE", text_position_x, height/2);
   }
 
   this.key_pressed = function(keycode) {
