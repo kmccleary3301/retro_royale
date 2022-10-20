@@ -2,7 +2,7 @@
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
 var repo_address = "";
-var current_state = new main_menu();
+var current_state = new main_menu(), current_state_flag = "main_menu";
 var host_address = "127.0.0.1", global_port = 3128;
 var font_set, font_size_scaling, connected_to_server;
 
@@ -41,7 +41,7 @@ function sigmoid_array(p_array, t_array, speed_array, t) { //this sums sigmoids 
   return sum
 }
 
-function rainbox_gradient(t) {
+function rainbow_gradient(t) {
   var r = 255*(Math.sin(1+t*3.19)+1)/2,
       g = 255*(Math.cos(2+t*2.15)+1)/2,
       b = 255*(Math.sin(3+t*2.23)+1)/2;
@@ -52,9 +52,9 @@ function make_socket() {
   if (host_address.includes(":") && !(host_address.includes("["))) {
     host_address = "[" + host_address + "]"; //IPv6 correction, urls written as ws://[::1]:3128/
   }
-  console.log("Connecting to: "+"ws://"+host_address+str(global_port));
+  console.log("Connecting to: "+"wss://"+host_address+":"+str(global_port));
   connected_to_server = false;
-  socket = new WebSocket("ws://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
+  socket = new WebSocket("wss://"+host_address+":"+str(global_port)); //Declares the websocket for connecting to host server.
   socket.onopen = (event) => { open_socket(); };                  //Sets function trigger for websocket being opened
   socket.onmessage = (event) => { process_message(event.data); }; //Sets function trigger for websocket recieving data
 }
@@ -87,6 +87,7 @@ function process_message(data) {          //Event function to process data recie
     var flag = line_split[0],
         message = null;
     if (line_split.length > 1) { message = line_split[1]; }
+    if (flag == "current_game") { swap_current_state(message); }
     current_state.read_network_data(flag, message);  //Feeds to current_state's local data recieved function.
   }
 }
@@ -148,7 +149,10 @@ function swap_current_state(flag) {
   if (flag == "main_menu") { current_state = new main_menu(); }
   else if (flag == "load_screen") { current_state = new load_screen(); }
   else if (flag == "fruit_game") { current_state = new fruitGame(); }
+  else if (flag == "purgatory") { current_state = new purgatory(); }
+  else { return; }
   current_state.setup();
+  current_state_flag = flag;
 }
 
 class game_1_player {
@@ -406,6 +410,86 @@ class button {
 
 }
 
+class board_game_player {
+  constructor(spriteSheet, x, y, face) {
+    this.spriteSheet = spriteSheet;
+    this.sx = 0;
+    this.x = x;
+    this.y = y;
+    this.move = 0;
+    this.speed = 5;
+    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+    this.sprite_row = 0;
+    this.fruit_holding = 0;
+    this.fruit_held_id = 0;
+  }
+  
+  draw() {
+    push();
+    translate(this.x, this.y);
+    if (this.move == 1){
+      if (this.facing < 2){
+        scale(1-this.facing*2, 1);  
+        image(this.spriteSheet, 0, 0, 100, 100, 80*(this.sx+1), 0, 80, 80);
+        this.x = this.x + this.speed * (1-this.facing*2);
+      } else if (this.facing == 2) {
+        image(this.spriteSheet, 0, 0, 100, 100, 80*(this.sx), 400, 80, 80);
+        this.y = this.y - this.speed;
+      } else if (this.facing == 3) {
+        image(this.spriteSheet, 0, 0, 100, 100, 480 + 80*(this.sx), 400, 80, 80);
+        this.y = this.y + this.speed;
+      }
+
+      this.x = Math.min(width-40, Math.max(40, this.x));
+      this.y = Math.min(height-40, Math.max(40, this.y));
+
+    }
+    else {
+      if (this.facing < 2){
+        scale(1-this.facing*2, 1);  
+        image(this.spriteSheet, 0, 0, 100, 100, 0, 0, 80, 80);
+      } else if (this.facing == 2) {
+        image(this.spriteSheet, 0, 0, 100, 100, 0, 400, 80, 80);
+      } else if (this.facing == 3) {
+        image(this.spriteSheet, 0, 0, 100, 100, 480, 400, 80, 80);
+      }
+    }
+    
+    if (frameCount % 6 == 0) {
+      this.sx = (this.sx + 1) % 6;
+    }
+
+    pop();
+  }
+
+  get_pos_string(){
+    var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
+    return string_make;
+  }
+  
+  update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+    //if (sprite != null) {this.spriteSheet = }
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (facing != null) { this.facing = facing; }
+    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
+    if (fruit_id != null) { this.fruit_held_id = fruit_id; }
+  }
+
+  make_data_raw(){
+    return this.x+","+this.y+","+this.move+","+
+            this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+  }
+
+  make_data(player_index){
+    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+    return string_make;
+  }
+}
+
 function fruitGame() {
   this.setup = function() {
     this.fruits_count = 15;
@@ -516,12 +600,13 @@ function fruitGame() {
     if (this.game_active == 0) { this.draw_game_load(); }
     else if (this.game_active == 1) { this.draw_game_active();}
     else if (this.game_active == 2) { this.draw_game_over(); }
+    this.draw_game_over();
   }
 
   this.draw_game_load = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
-    textSize(50);
+    text_make(0, 50, 0, 0);
     for (let i in this.players) {
       this.players[i].draw();
     }
@@ -535,6 +620,7 @@ function fruitGame() {
   this.draw_game_active = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
+    text_make(0, 50, 0, 0);
     textSize(50);
     for (let i in this.endzones) { this.endzones[i].draw(); }
     for (let i in this.players) {
@@ -546,7 +632,7 @@ function fruitGame() {
       this.players[i].draw();
     }
     for (let i in this.fruits){ this.fruits[i].draw(); }
-    text("Time: "+str(int(this.current_time)), width/2, 50);
+    text("Time: "+str(Math.max(0, int(this.current_time))), width/2, 50);
   }
 
   this.game_over = function() {
@@ -587,7 +673,6 @@ function fruitGame() {
     textAlign(CENTER, CENTER);
     textStyle(ITALIC);
     fill(127.5+g/2, 127.5+b/2, 127.5+r/2);
-    
     if (time < breakpoint - 5) {
       rect(box_position_x-250, height/2 - 100, 500, 200);
     }
@@ -676,14 +761,13 @@ function fruitGame() {
     if (p_vals[0] >= this.endzones.length) { this.endzones[p_vals[0]] = new game_1_endzone(0, 0, 0, 0); }
     this.endzones[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
   }
-
   this.read_in_game_state = function(data_string) {
     p_vals = convert_data_string(data_string, [0], [1, 2]);
     if (this.game_active != 2 && p_vals[0] == 2) { this.game_over(); }
     this.current_time = p_vals[1];
     this.game_active = p_vals[0];
     this.game_length = p_vals[2];
-    this.start_time = millis()/1000 - (this.game_length - this.current_time);
+    this.start_time = millis()/1000;
   }
 }
 
@@ -720,18 +804,21 @@ function main_menu() {
     this.start_time = millis()/1000;
     this.server_address_input;
     this.server_port_input;
+    this.cert_hyperlink;
     this.temp_server_address = host_address;
     this.temp_server_port = str(global_port);
     this.current_time = 0.000;
     this.current_menu = 1;
     this.buttons_menu_1 = [];
     this.buttons_menu_2 = [];
+    this.buttons_menu_3 = [];
     this.button_funcs = [];
-    this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Button 1\nDON'T PUSH");
+    this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
     this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
     this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server\nAddress");
     this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
     this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
+    this.buttons_menu_3[0] = new button(width/2, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
   }
 
   this.draw = function() {
@@ -739,10 +826,11 @@ function main_menu() {
     if (this.current_time < 3) { this.draw_startup_animation(); return; }
     if (this.current_menu == 1) { this.draw_menu_1(); }
     else if (this.current_menu == 2) { this.draw_menu_2(); }
+    else if (this.current_menu == 3) { this.draw_menu_3(); }
   }
 
   this.draw_menu_1 = function() {
-    var r_color = rainbox_gradient(2*this.current_time);
+    var r_color = rainbow_gradient(2*this.current_time);
     textAlign(CENTER, CENTER);
     text_make(2, 90, 0, 2);
     fill(r_color[0], r_color[1], r_color[2]);
@@ -772,6 +860,18 @@ function main_menu() {
     for (let i in this.buttons_menu_2) { this.buttons_menu_2[i].draw(); }
   }
 
+  this.draw_menu_3 = function() {
+    strokeWeight(5);
+    fill(200, 200, 255);
+    rect(width/2 - 175, height/2 - 175, 350, 350);
+    text_make(0, 20, 0, 0);
+    fill(0, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
+        width/2, height/2-100);
+    for (let i in this.buttons_menu_3) { this.buttons_menu_3[i].draw(); }
+  }
+
   this.draw_startup_animation = function() {
     text_make(1, 50,  0, 2);
     var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
@@ -779,7 +879,7 @@ function main_menu() {
         box_width = 350, box_height = 100;
     fill(255, 78, 0);
     rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
-    var r_color = rainbox_gradient(this.current_time);
+    var r_color = rainbow_gradient(this.current_time);
     fill(r_color[0], r_color[1], r_color[2]);
     textAlign(CENTER, CENTER);
     text("RETRO ROYALE", text_position_x, height/2);
@@ -802,6 +902,10 @@ function main_menu() {
       for (let i in this.buttons_menu_2) {
         if (this.buttons_menu_2[i].check_press(mouseX, mouseY)) {return;}
       }
+    } else if (this.current_menu == 3) {
+      for (let i in this.buttons_menu_3) {
+        if (this.buttons_menu_3[i].check_press(mouseX, mouseY)) {return;}
+      }
     }
   }
 
@@ -816,17 +920,25 @@ function main_menu() {
         if (this.buttons_menu_2[i].pressed) {this.button_press(i);}
         this.buttons_menu_2[i].pressed = 0; 
       }
+    } else if (this.current_menu == 3) {
+      for (let i in this.buttons_menu_3) {
+        if (this.buttons_menu_3[i].pressed) {this.button_press(i);}
+        this.buttons_menu_3[i].pressed = 0; 
+      }
     }
   }
 
   this.button_press = function(code) {
     if (this.current_menu == 1) {
-      if (code == 0) { this.temp_function(); }
-      else if (code == 1) { swap_current_state("load_screen"); }
+      if (code == 0) { this.authorize_menu_enable(); }
+      else if (code == 1) { socket.send("load_game"); swap_current_state("load_screen"); }
       else if (code == 2) { this.server_menu_enable(); }
     } else if (this.current_menu == 2) {
       if (code == 0) { this.update_server_address(); }
       else if (code == 1) { this.server_menu_disable(); }
+    }
+    else if (this.current_menu == 3) {
+      if (code == 0) { this.authorize_menu_disable(); }
     }
   }
 
@@ -856,6 +968,17 @@ function main_menu() {
     global_port = parseInt(this.temp_server_port);
     make_socket();
     this.server_menu_disable();
+  }
+
+  this.authorize_menu_enable = function() {
+    this.cert_hyperlink = createA("https://"+host_address+":"+global_port, "Authorize Connection");
+    this.cert_hyperlink.position(width/2-70, height/2-20);
+    this.current_menu = 3;
+  }
+
+  this.authorize_menu_disable = function() {
+    this.cert_hyperlink.remove();
+    this.current_menu = 1;
   }
 }
 
@@ -919,4 +1042,136 @@ function oninput_address() {
 
 function oninput_port() {
   current_state.temp_server_port = this.value();
+}
+
+function board_game() {
+  this.setup = function() {
+    this.camera_pos = [width/2, height/2];
+    this.camera_scale = 1;
+    this.players = [];
+    //this.players[0] = new;
+  }
+
+  this.draw = function() {
+
+  }
+
+  this.key_pressed = function(keycode) {
+
+  }
+
+  this.key_released = function(keycode) {
+
+  }
+
+  this.mouse_pressed = function() {
+
+  }
+
+  this.mouse_released = function() {
+
+  }
+
+  this.read_network_data = function(flag, message) {
+
+  }
+}
+
+function purgatory() {
+  this.setup = function() {
+    this.players = [];
+    this.main_player_index;
+    this.arrow_keys = [39, 37, 38, 40];
+    this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    imageMode(CENTER);
+    this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
+    this.main_player_index = 0;
+  }
+
+  this.key_pressed = function(keycode) {
+    for (i=0;i<4;i++){
+      if (keycode == this.arrow_keys[i]){
+        this.players[this.main_player_index].facing = i;
+        this.players[this.main_player_index].move = 1;
+        this.players[this.main_player_index].sx = 0;
+        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+        return;
+      }
+    }
+  }
+
+  this.key_released = function(keycode) {
+    for (i=0;i<4;i++){
+      if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
+        this.players[this.main_player_index].move = 0;
+      }
+    }
+    send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+  }
+
+  this.mouse_pressed = function() { return; }
+  this.mouse_released = function() { return; }
+
+  this.draw = function() {
+    background(200, 200, 200);
+    fill(0, 0, 0);
+    for (let i in this.players) {
+      this.players[i].draw();
+    }
+  }
+
+  this.read_network_data = function(flag, message) {
+    if (flag == "player_count") {
+      for (j=this.players.length; j < parseInt(message); j++){
+        this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
+      }
+    } else if (flag == "assigned_id") {
+      this.main_player_index = parseInt(message);
+    } else if (flag == "pos_player") {
+      this.read_in_player_position(message);
+    } else if (flag == "new_player") {
+      this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+    } else if (flag == "rmv_player") {
+      var player_index = parseInt(message);
+      this.players.splice(player_index, 1);
+      if (this.main_player_index > player_index) {
+        this.main_player_index -= 1;
+      }
+    }
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+  }
+}
+
+function template_game() {
+  this.setup = function() {
+    return;
+  }
+
+  this.draw = function() {
+    return;
+  }
+
+  this.key_pressed = function(keycode) {
+    return;
+  }
+
+  this.key_released = function(keycode) {
+    return;
+  }
+
+  this.mouse_pressed = function() {
+    return;
+  }
+
+  this.mouse_released = function() {
+    return;
+  }
+
+  this.read_network_data = function(flag, message) {
+    return;
+  }
 }

@@ -4,10 +4,11 @@
   "description": "A websocket server using express.js and express-ws.js",
   "main": "server.js",
   "dependencies": {
-    "express": "^4.17.1",
-    "express-ws": "^5.0.0"
+    "express": "^4.18.2",
+    "express-ws": "^5.0.0",
+    "fs": "^0.0.1-security",
+    "https": "^1.0.0"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
