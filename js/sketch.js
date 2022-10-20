@@ -460,7 +460,7 @@ class button {
     textAlign(CENTER, CENTER);
     text_make(0, 0.3*Math.min(this.box_width, this.box_height), 0, 0);
     fill(this.text_color[0], this.text_color[1], this.text_color[2]);
-    text(this.text, this.x_cen, this.y_cen);
+    text(this.text, this.x_cen, this.y_cen);  
   }
 
   check_press(x, y) {
@@ -750,9 +750,9 @@ function fruitGame() {
       stroke(0, 0, 0);
       strokeWeight(4);
       fill(255, 78, 0);
-      g_cam.rect(box_position_x-250, height/2 - 100, 500, 200);
+      rect(box_position_x-250, height/2 - 100, 500, 200);
       fill(r, g, b);
-      g_cam.text("GAME OVER", text_position_x, height/2);
+      text("GAME OVER", text_position_x, height/2);
       return;
     }
     stroke(51);
@@ -766,7 +766,7 @@ function fruitGame() {
           g = 255*(Math.cos(time*2+i*PI/15)+1)/2,
           b = 255*(Math.sin(time*2+i*PI/15+5)+1)/2;
       fill(r, g, b);
-      g_cam.text(this.end_message, width/2, i*25+height/2-250);
+      text(this.end_message, width/2, i*25+height/2-250);
     }
     
   }
@@ -890,9 +890,9 @@ function main_menu() {
     this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
     this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
     this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
-    this.buttons_menu_2[0] = new button(width/2 - 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
-    this.buttons_menu_2[1] = new button(width/2 + 100, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
-    this.buttons_menu_3[0] = new button(width/2, 400, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
+    this.buttons_menu_2[0] = new button(width/2 - 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
+    this.buttons_menu_2[1] = new button(width/2 + 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
+    this.buttons_menu_3[0] = new button(width/2, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
     g_cam.reset();
   }
 
