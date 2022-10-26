@@ -15,6 +15,8 @@ function main_menu() {
 		this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
 		this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
 		this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
+		this.buttons_menu_1[3] = new button(width/2 + 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game");
+		this.buttons_menu_1[4] = new button(width/2 - 150, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board Game");
 		this.buttons_menu_2[0] = new button(width/2 - 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
 		this.buttons_menu_2[1] = new button(width/2 + 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
 		this.buttons_menu_3[0] = new button(width/2, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
@@ -133,6 +135,8 @@ function main_menu() {
 			if (code == 0) { this.authorize_menu_enable(); }
 			else if (code == 1) { swap_current_state("load_screen"); }
 			else if (code == 2) { this.server_menu_enable(); }
+			else if (code == 3) { this.switch_test_game(); }
+			else if (code == 4) { this.switch_board_game(); }
 		} else if (this.current_menu == 2) {
 			if (code == 0) { this.update_server_address(); }
 			else if (code == 1) { this.server_menu_disable(); }
@@ -179,6 +183,14 @@ function main_menu() {
 	this.authorize_menu_disable = function() {
 		this.cert_hyperlink.remove();
 		this.current_menu = 1;
+	}
+	
+	this.switch_test_game = function() {
+		swap_current_state("test_game");
+	}
+
+	this.switch_board_game = function() {
+		swap_current_state("board_game");
 	}
 }
 

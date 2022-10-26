@@ -62,6 +62,10 @@ class g_camera {
   rect(x, y, w, h) {
     rect(this.new_x(x), this.new_y(y), this.new_size(w), this.new_size(h));
   }
+
+  ellipse(x, y, w, h) {
+    ellipse(this.new_x(x), this.new_y(y), this.new_size(w), this.new_size(h));
+  }
 }
 
 class button {
@@ -100,5 +104,57 @@ class button {
 
   activate() {
     this.execute();
+  }
+}
+
+class player_sprite {
+  constructor(sprite, facing, row_length, grid_size_x, grid_size_y) {
+    this.image = sprite;
+    this.facing = facing;
+    this.row_length = row_length;
+    this.sx = 0;
+    this.x_mod = grid_size_x;
+    this.y_mod = grid_size_y;
+    this.move = 0;
+  }
+
+  draw() {
+    if (this.move) {
+      if (this.facing <= 1) {
+        scale(1-this.facing*2, 1);
+        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
+      } else {
+        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
+      }
+      this.sx = (this.sx + 1) % this.row_length;
+    } else {
+      this.sx = 0;
+      if (this.facing <= 1) {
+        scale(1-this.facing*2, 1);
+        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
+      } else {
+        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
+      }
+    }
+  }
+  
+  g_cam_draw() {
+    if (this.move) {
+      if (this.facing <= 1) {
+        scale(1-this.facing*2, 1);
+        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
+      } else {
+        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
+      }
+      this.sx = (this.sx + 1) % this.row_length;
+    } else {
+      this.sx = 0;
+      if (this.facing <= 1) {
+        scale(1-this.facing*2, 1);
+        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
+      } else {
+        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
+      }
+    }
   }
 }
