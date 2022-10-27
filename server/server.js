@@ -164,15 +164,15 @@ class game_2_ball {
   }
 
   update() {
-    console.log("x1:"+this.x+","+this.y+","+this.dx+","+this.dy);
+    //console.log("x1:"+this.x+","+this.y+","+this.dx+","+this.dy);
     this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
-    console.log("x2:"+this.x+","+this.y+","+this.dx+","+this.dy);
+    //console.log("x2:"+this.x+","+this.y+","+this.dx+","+this.dy);
     this.y += this.dy*this.speed*(Date.now()/1000 - this.last_update);
     if (this.x < 0 || this.x >= 500) {
       var adjust_factor = Math.max(0, Math.min(this.x, 500)) - this.x;
       adjust_factor /= this.dx;
       this.x += this.dx*adjust_factor;
-      console.log("x3:"+this.x+","+this.y+","+this.dx+","+this.dy);
+      //console.log("x3:"+this.x+","+this.y+","+this.dx+","+this.dy);
       this.y += this.dy*adjust_factor;
 
       this.dx *= -1;
@@ -182,7 +182,7 @@ class game_2_ball {
       var adjust_factor = Math.max(0, Math.min(this.y, 500)) - this.y;
       adjust_factor /= this.dy;
       this.x += this.dx*adjust_factor;
-      console.log("x4:"+this.x+","+this.y+","+this.dx+","+this.dy);
+      //console.log("x4:"+this.x+","+this.y+","+this.dx+","+this.dy);
       this.y += this.dy*adjust_factor;
       this.dy *= -1;
       this.dy += 0.3*seed_random(random_seed+this.dy+0.1);
@@ -454,10 +454,10 @@ function purgatory() {
     this.balls = [];
     for (i=0; i < clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-      this.balls[i] = new game_2_ball();
+      //this.balls[i] = new game_2_ball();
     }
     this.random_seed = Math.floor(Math.random()*100000);
-    tick_function_ids[tick_function_ids.length] = setInterval(this.tick_function_ball, 25);
+    tick_function_ids[tick_function_ids.length] = setInterval(function() { current_state.tick_function_ball(); }, 20);
   }
 
   this.tick_function = function() { 
@@ -467,14 +467,31 @@ function purgatory() {
       this.add_last_time = Date.now()/1000;
       this.balls[this.balls.length] = new game_2_ball();
       broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
+      console.log("added ball "+this.balls);
       //broadcast(this.make_everything());
     }
-    for (let i in this.balls) { this.balls[i].update(); }
-    broadcast(this.make_everything());
+    for (let i in this.balls) { 
+      console.log("updating ball "+i);
+      this.balls[i].update(); 
+    }
+    //broadcast(this.make_everything());
   }
 
   this.tick_function_ball = function() {
+    //console.log("ball_tick_function 1");
+    //console.log("players: "+this.players);
     for (let i in this.balls) { this.balls[i].update(); }
+    var str_make = "";
+    //console.log("ball_tick_function 2" + this.balls);
+
+    for (let i in this.balls) { 
+      //console.log("data for ball "+i);
+      //console.log(this.balls[i].make_data(i)); 
+      str_make += this.balls[i].make_data(i) + "\n";
+    }
+
+    //console.log("ball_tick_function 3");
+    broadcast(str_make);
   }
 
   this.read_network_data = function(flag, message, usr_id) {
