@@ -7,7 +7,7 @@ function seed_random(seed) {
 
 class game_2_ball {
   constructor() {
-      this.radius = 50;
+      this.radius = 35;
       this.x = 0;
       this.y = 0;
       this.dx = 1;
@@ -18,9 +18,9 @@ class game_2_ball {
 
     draw() {
       //console.log("drawing ball");
-      fill(255, 0, 100);
+      fill(30, 0, 20);
       stroke(255);
-      ellipse(this.x, this.y, this.radius*2);
+      ellipse(this.x, this.y, this.radius);
       //console.log("drawing - "+str(this.x)+","+str(this.y));
       this.x += this.dx*this.speed*(millis()/1000 - this.last_update);
       this.y += this.dy*this.speed*(millis()/1000 - this.last_update);
@@ -109,7 +109,7 @@ function purgatory() {
     // to remove player bc of collision
     for(let i in this.players){
       if(this.read_in_ball_position == this.read_in_player_position){
-      //replace sprite w dead girl, make location cant change
+      //replace sprite w dead girl, make so location cant change
         this.greenSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
         textAlign(CENTER, CENTER);
         text(this.players[i] + "is dead!");
