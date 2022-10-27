@@ -1,10 +1,15 @@
+// spawn in ball on server side
+// tick function runs a function every few milliseconds, tick interval and tick function, which can be moving the ball according to its position
 var current_state = new purgatory();
 var current_state_flag = "purgatory";
 let width = 600;
 let height = 600;
+var balls = [];
 
 let global_port = 3128;
 let tick_interval = 200; //in milliseconds
+var random_seed = Math.floor(Math.random()*100000);
+var tick_function_ids = [];
 
 /*
 var express = require('express');	// include express.js
@@ -40,8 +45,12 @@ var server = new WebSocketServer({ server: httpsServer });
 
 function tick_function() { current_state.tick_function(); }
 
-setInterval(tick_function, tick_interval);
+tick_function_ids[0] = setInterval(tick_function, tick_interval);
 
+function seed_random(seed) {
+  var x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 function game_start() {
   console.log("Game Reset");
@@ -138,6 +147,57 @@ function swap_current_state(state_flag) {
   current_state.setup();
   current_state_flag = state_flag;
   broadcast("current_game:"+state_flag);
+  for (i = 1; i < tick_function_ids.length; i++) { clearInterval(tick_function_ids[i]); }
+}
+
+
+
+class game_2_ball {
+  constructor() {
+    this.radius = 50;
+    this.x = 0;
+    this.y = 0;
+    this.dx = 1;
+    this.dy = 1;
+    this.speed = 300;
+    this.last_update = Date.now()/1000;
+  }
+
+  update() {
+    console.log("x1:"+this.x+","+this.y+","+this.dx+","+this.dy);
+    this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
+    console.log("x2:"+this.x+","+this.y+","+this.dx+","+this.dy);
+    this.y += this.dy*this.speed*(Date.now()/1000 - this.last_update);
+    if (this.x < 0 || this.x >= 500) {
+      var adjust_factor = Math.max(0, Math.min(this.x, 500)) - this.x;
+      adjust_factor /= this.dx;
+      this.x += this.dx*adjust_factor;
+      console.log("x3:"+this.x+","+this.y+","+this.dx+","+this.dy);
+      this.y += this.dy*adjust_factor;
+
+      this.dx *= -1;
+      this.dx -= 0.3*seed_random(random_seed+this.dx);
+    }
+    if (this.y < 0 || this.y >= 500) {
+      var adjust_factor = Math.max(0, Math.min(this.y, 500)) - this.y;
+      adjust_factor /= this.dy;
+      this.x += this.dx*adjust_factor;
+      console.log("x4:"+this.x+","+this.y+","+this.dx+","+this.dy);
+      this.y += this.dy*adjust_factor;
+      this.dy *= -1;
+      this.dy += 0.3*seed_random(random_seed+this.dy+0.1);
+    }
+    var factor = Math.sqrt(Math.pow(this.dx, 2)+Math.pow(this.dy, 2));
+    this.last_update = Date.now()/1000;
+    //console.log("updating ball:"+this.x+","+this.y);
+  }
+
+  make_data(id) {
+    var str_make = "ball_pos:";
+    str_make += id + "," + this.x + "," + this.y + "," + this.dx + ","
+              + this.dy + "," + this.speed;
+    return str_make;
+  }
 }
 
 class game_1_player {
@@ -389,15 +449,32 @@ function purgatory() {
   this.setup = function() {
     this.start_time = Date.now()/1000;
     this.current_time = 0;
+    this.add_last_time = Date.now()/1000;
     this.players = [];
+    this.balls = [];
     for (i=0; i < clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+      this.balls[i] = new game_2_ball();
     }
+    this.random_seed = Math.floor(Math.random()*100000);
+    tick_function_ids[tick_function_ids.length] = setInterval(this.tick_function_ball, 25);
   }
 
   this.tick_function = function() { 
     this.current_time = Date.now()/1000 - this.start_time;
-    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    if (Date.now()/1000 - this.add_last_time > 10) {
+      this.add_last_time = Date.now()/1000;
+      this.balls[this.balls.length] = new game_2_ball();
+      broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
+      //broadcast(this.make_everything());
+    }
+    for (let i in this.balls) { this.balls[i].update(); }
+    broadcast(this.make_everything());
+  }
+
+  this.tick_function_ball = function() {
+    for (let i in this.balls) { this.balls[i].update(); }
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -415,7 +492,7 @@ function purgatory() {
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
   }
 
   this.user_disconnected = function(usr_id) {
@@ -426,11 +503,13 @@ function purgatory() {
   this.make_everything = function() {
     str_make = "";
     for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    for (let i in this.balls) { str_make += this.balls[i].make_data(i) + "\n"; }
     return str_make;
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1); }
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }

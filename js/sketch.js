@@ -2,7 +2,7 @@
 //Run this command to get a live debug environment in browser
 //This will refresh everytime you save a file in vs code.
 var repo_address = "";
-var current_state = new main_menu(), current_state_flag = "main_menu";
+var current_state = new purgatory(), current_state_flag = "purgatory";
 var font_set, font_size_scaling, connected_to_server;
 var game_bounds, g_cam;
 
