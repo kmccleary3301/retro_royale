@@ -107,54 +107,92 @@ class button {
   }
 }
 
-class player_sprite {
-  constructor(sprite, facing, row_length, grid_size_x, grid_size_y) {
-    this.image = sprite;
-    this.facing = facing;
-    this.row_length = row_length;
+class sprite_animation_object {
+  constructor(sprite, draw_size, tile_width, tile_height, row_dictionary) {
+    //full sprite image, draw size of image, width of each grid tile, height of each grid tile, length of each animation, 
+    this.sprite = sprite;
     this.sx = 0;
-    this.x_mod = grid_size_x;
-    this.y_mod = grid_size_y;
-    this.move = 0;
+    this.x_mod = tile_width;
+    this.y_mod = tile_height;
+    this.running = 0;
+    this.draw_size = draw_size;
+    this.w_h_ratio = this.x_mod/this.y_mod;
+    this.row_dictionary = row_dictionary;
+    this.current_animation_row = 0;
+    this.current_row_length = 1;
+    this.flip_image = false;
   }
 
-  draw() {
-    if (this.move) {
-      if (this.facing <= 1) {
-        scale(1-this.facing*2, 1);
-        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
-      } else {
-        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
-      }
-      this.sx = (this.sx + 1) % this.row_length;
+  draw(x, y, use_g_cam) {
+    push();
+    /*
+    all parameters optional.
+    use_g_cam is true or false
+    if x and y not passed, it will draw at 0, 0
+    */
+
+    if (use_g_cam === undefined || !(use_g_cam)) { 
+      var use_g_cam = false; 
+      if (x === undefined) { var x = 0; }
+      if (y === undefined) { var y = 0; }
     } else {
-      this.sx = 0;
-      if (this.facing <= 1) {
-        scale(1-this.facing*2, 1);
-        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
+      if (x === undefined) { var y = null; }
+      if (y === undefined) { var y = null; }
+    }
+
+    if (this.running) {
+      if (this.flip_image) { scale(-1, 1); }
+      if (use_g_cam) {
+        g_cam.image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
+                    this.x_mod*this.sx, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
       } else {
-        image(this.image, 0, 0, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
+        image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
+              this.x_mod*this.sx, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
+      }
+      if (frameCount % 6 == 0) {
+        this.sx = (this.sx + 1) % this.current_row_length;
+      }
+    } else {
+      if (use_g_cam) {
+        g_cam.image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
+                    0, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
+      } else {
+        image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
+              0, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
       }
     }
+    pop();
   }
-  
-  g_cam_draw() {
-    if (this.move) {
-      if (this.facing <= 1) {
-        scale(1-this.facing*2, 1);
-        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
-      } else {
-        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
-      }
-      this.sx = (this.sx + 1) % this.row_length;
+
+  start() {
+    this.running = 1;
+    this.sx = 0;
+  }
+
+  stop() {
+    this.running = 0;
+    this.sx = 0;
+  }
+
+  change_animation(animation) {
+    if (typeof animation === "string") {
+      console.log("recieved animation as string");
+      this.current_animation_row = this.row_dictionary[animation]["row"];
+      this.current_row_length = this.row_dictionary[animation]["row_length"];
+    } else if (typeof animation === "number") {
+      var key = Object.keys(this.row_dictionary)[animation];
+      this.current_animation_row = this.row_dictionary[key]["row"];
+      this.current_row_length = this.row_dictionary[key]["row_length"];
+    }
+    this.sx = 0;
+  }
+
+  flip(value) {
+    //pass true or false
+    if (value === undefined) {
+      this.flip_image = !this.flip_image;
     } else {
-      this.sx = 0;
-      if (this.facing <= 1) {
-        scale(1-this.facing*2, 1);
-        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, 0, this.x_mod, this.y_mod);
-      } else {
-        g_cam.image(this.image, null, null, 100, 100, this.x_mod*this.sx, this.y_mod*this.facing, this.x_mod, this.y_mod);
-      }
+      this.flip_image = value;
     }
   }
 }
