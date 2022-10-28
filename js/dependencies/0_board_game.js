@@ -251,6 +251,9 @@ function board_game() {
 		this.turning_player_index = 0; 	//Player currently rolling dice
 		this.animation_info = [0, 0, 0, 0, 0, 0] //boolean, player_id, tile_start, tile_end, start_time, direction.
 		this.animation_element;
+		//this.board_template = loadImage('media/board_templates/test_template_1.png');
+		//console.log("width -> "+this.board_template.width);
+		parse_board_image("media/board_templates/test_template_1.png");
 	}
 
 	this.make_board_layout_preset_1 = function() {
