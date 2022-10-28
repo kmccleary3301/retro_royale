@@ -16,15 +16,11 @@ class board_game_player {
 				"row_length": 6
 			}
 		});
-	  this.sx = 0;
 	  this.x = x;
 	  this.y = y;
 	  this.move = 0;
 	  this.speed = 5;
 	  this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
-	  this.sprite_row = 0;
-	  this.fruit_holding = 0;
-	  this.fruit_held_id = 0;
 	  this.current_tile_index = 0;
 	}
 	
