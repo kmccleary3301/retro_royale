@@ -45,7 +45,7 @@ class g_camera {
   }
 
   stroke_weight_adjust() {
-    
+    return;
   }
 
   text_size_adjust() {
@@ -65,6 +65,10 @@ class g_camera {
 
   ellipse(x, y, w, h) {
     ellipse(this.new_x(x), this.new_y(y), this.new_size(w), this.new_size(h));
+  }
+
+  triangle(x1, y1, x2, y2, x3, y3) {
+    triangle(this.new_x(x1), this.new_y(y1), this.new_x(x2), this.new_y(y2), this.new_x(x3), this.new_y(y3)); 
   }
 }
 
@@ -120,7 +124,7 @@ class sprite_animation_object {
     this.row_dictionary = row_dictionary;
     this.current_animation_row = 0;
     this.current_row_length = 1;
-    this.flip_image = false;
+    this.flip_image = 0;
   }
 
   draw(x, y, use_g_cam) {
@@ -136,14 +140,15 @@ class sprite_animation_object {
       if (x === undefined) { var x = 0; }
       if (y === undefined) { var y = 0; }
     } else {
-      if (x === undefined) { var y = null; }
-      if (y === undefined) { var y = null; }
+      if (x === undefined) { var y = 0; }
+      if (y === undefined) { var y = 0; }
     }
-
+    //if (this.flip_image) { console.log("flip1"); scale(-1, 1); console.log("flip2"); }
     if (this.running) {
-      if (this.flip_image) { scale(-1, 1); }
       if (use_g_cam) {
-        g_cam.image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
+        g_cam.translate(x+(this.draw_size*this.w_h_ratio)*this.flip_image, y);
+        scale (1-2*this.flip_image, 1);
+        g_cam.image(this.sprite, null, null, this.draw_size*this.w_h_ratio, this.draw_size, 
                     this.x_mod*this.sx, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
       } else {
         image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
@@ -154,7 +159,9 @@ class sprite_animation_object {
       }
     } else {
       if (use_g_cam) {
-        g_cam.image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
+        g_cam.translate(x+(this.draw_size*this.w_h_ratio)*this.flip_image, y);
+        scale (1-2*this.flip_image, 1);
+        g_cam.image(this.sprite, null, null, this.draw_size*this.w_h_ratio, this.draw_size, 
                     0, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
       } else {
         image(this.sprite, x, y, this.draw_size*this.w_h_ratio, this.draw_size, 
@@ -190,9 +197,13 @@ class sprite_animation_object {
   flip(value) {
     //pass true or false
     if (value === undefined) {
-      this.flip_image = !this.flip_image;
+      this.flip_image = (this.flip_image+1)%2;
     } else {
-      this.flip_image = value;
+      if (value) {
+        this.flip_image = 1;
+      } else {
+        this.flip_image = 0;
+      }
     }
   }
 }
