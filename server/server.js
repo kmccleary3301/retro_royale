@@ -190,6 +190,12 @@ class game_2_ball {
     var factor = Math.sqrt(Math.pow(this.dx, 2)+Math.pow(this.dy, 2));
     this.last_update = Date.now()/1000;
     //console.log("updating ball:"+this.x+","+this.y);
+    for (let i in this.players) {
+      if(players[i].isDead = 1)
+      {
+        //change sprite to deadSprite
+      }
+    }
   }
 
   make_data(id) {
@@ -208,8 +214,8 @@ class game_1_player {
     this.move = 0;
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
-    this.fruit_holding = 0;
-    this.fruit_held_id = 0;
+    this.isDead = 0;
+
   }
 
   make_data(player_index){
@@ -488,6 +494,18 @@ function purgatory() {
       //console.log("data for ball "+i);
       //console.log(this.balls[i].make_data(i)); 
       str_make += this.balls[i].make_data(i) + "\n";
+    }
+    for (let i in this.players){
+      long dx= abs(this.balls.x-this.players.x)-this.players.width/2;
+      long dy= abs(this.balls.y-this.players.y)-this.players.height/2;
+
+        if (dx> this.radius || dy> this.radius) {
+          this.isDead = 0;
+        }
+        if (dx <= 0 || dy <= 0 ){
+          this.isDead = 1; 
+        }
+
     }
 
     //console.log("ball_tick_function 3");

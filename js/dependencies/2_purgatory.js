@@ -64,6 +64,7 @@ function purgatory() {
     this.main_player_index;
     this.arrow_keys = [39, 37, 38, 40];
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    this.deadSprite = loadImage(repo_address+"media/sprites/mario_1.png");
     imageMode(CENTER);
     this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
     // this.deadplayers[i] = new game_1_player(this.deadSprite)
