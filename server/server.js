@@ -4,7 +4,7 @@ let width = 600;
 let height = 600;
 
 let global_port = 3128;
-let tick_interval = 200; //in milliseconds
+let tick_interval = 35; //in milliseconds
 
 /*
 var express = require('express');	// include express.js
@@ -151,11 +151,18 @@ class game_1_player {
     this.sx = 0;
     this.x = x;
     this.y = y;
+    this.xVelocity = 400; //pixels per second
+    this.velocity = 0;
+		this.acceleration = -58; //pixels per second per second
     this.move = 0;
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
     this.fruit_holding = 0;
     this.fruit_held_id = 0;
+  }
+
+  jump() {
+    this.velocity = 700;
   }
 
   make_data(player_index){
@@ -173,7 +180,49 @@ class game_1_player {
     if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
     if (fruit_id != null) { this.fruit_held_id = fruit_id; }
   }
+}//player advances through x and pipes are stationary
+//when the pipes can't be seen, don't draw them
+
+//
+class game_2_pipe {
+  constructor(x,y, pipeWidth) {
+    this.pipeWidth = pipeWidth;
+    this.x = x;
+    this.y = y;
+  }
+  make_data() {
+    return "pipe:"+this.x+","+this.y+","+this.pipeWidth;
+  }
 }
+
+// class game_2_level {
+//   constructor() {
+//     this.pipesList = [];
+//   }
+//   addPipe(x,y,pipeWidth) {
+//     this.pipesList.push(new game_2_pipe(x,y,pipeWidth));
+//     //this remaining code removes pipes that can't be seen
+//   }
+//   //this removes pipes that can't be seen
+//   removePipes() {
+//     for(let i in this.pipesList) {
+//       if(this.pipesList[i].x <= this.players[0].x - width/2 ) {
+//         this.pipesList.shift();
+//       }
+//     }
+//   }
+
+//   make_data() {
+//     this.data_string = "game_level:";
+//     for(let i in this.pipesList) {
+//       this.data_string += make_data(this.pipesList[i]);
+//     }
+//     return this.data_string.slice(0,-1); //(slice removes trailing comma)
+//   }
+// }
+//maybe we generate a list of a thousand pipes, fill it with random numbers
+//from 0 to 1, and then map that to the height of the game, and we can send it to the client,
+//so they can print it? that, or the server provides a seed to the srand function
 
 class game_1_fruit {
   constructor(x, y, size) {
@@ -398,14 +447,55 @@ function purgatory() {
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-    }
+    this.pipesList = [];
+    this.pipesList.push(new game_2_pipe(100,300,230));
+    //for (i=0; i < clients.length; i++) {
+    //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    //}
   }
 
   this.tick_function = function() { 
-    this.current_time = Date.now()/1000 - this.start_time;
-    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    //this.current_time = Date.now()/1000 - this.start_time;
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    //console.log("Frick"+this.players+"l");
+    if(Date.now() % 500 < 10 && this.players.length > 0/*this.players.length > 0  && this.players[0].x % 470 < 10*/) { //if they travel 400 pixels
+      this.pipesList.push(new game_2_pipe(this.pipesList[this.pipesList.length-1].x+500,Math.random()*300+100,230));
+      //this.pipesList.push(new game_2_pipe(this.players[0].x+470,Math.random()*300+100,230));
+      console.log("new pipe added at "+this.pipesList[this.pipesList.length-1].x);
+      this.pipesList.shift();
+      if(this.pipesList.length > 0) {
+        broadcast(this.pipesList[this.pipesList.length-1].make_data());
+      }
+    }
+    for(let i in this.players) {
+      //if the player is in the air, make them rise or fall according to their
+      //velocity. if they aren't in the air, but they have a velocity greater
+      //than zero, put them into the air.
+      if(this.players[i].y < 500 || this.players[i].velocity > 0) {
+        this.players[i].velocity+=this.players[i].acceleration;
+        this.players[i].y -= this.players[i].velocity*0.035;
+        //this.tick_interval/1000 is NaN but 0.2 is fine?
+        //console.log("y is now: "+this.players[i].y);
+      } else if(this.players[i].velocity != 0) {
+        this.players[i].velocity+=this.players[i].acceleration;
+        this.players[i].y -= this.players[i].velocity*0.035;
+        //this.tick_interval/1000 is NaN but 0.2 is fine?
+        //console.log("y is now: "+this.players[i].y);
+        if(this.players[i].y >= 500) {
+          this.players[i].y = 500;
+          this.players[i].velocity = 0;
+        }
+      }
+      this.players[i].x += this.players[i].xVelocity*0.035;
+      broadcast(this.players[i].make_data(i), [i]);
+    }
+
+    // //shows the user the pipeses
+    // if(this.pipesList != null) {
+    //   for(let i in this.pipesList) {
+    //     broadcast(this.pipesList[i].make_data());
+    //   }
+    // }
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -415,6 +505,14 @@ function purgatory() {
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "jump") {
+      this.players[usr_id].jump();
+      // for(let i in this.pipesList) {
+      //   broadcast(this.pipesList[i].make_data());
+      // }
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "debug") {
+      console.log("client sent "+message);
     }
   }
 

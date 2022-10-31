@@ -1,9 +1,26 @@
+class game_2_pipe {
+	constructor(x,y,pipeWidth) {
+		this.x = x;
+		this.y = y;
+		this.pipeWidth = pipeWidth;
+	}
+	draw() {
+		push();
+		rect(this.x-100,0,200,this.y-(this.pipeWidth/2));//draws top half
+		rect(this.x-100,this.y+(this.pipeWidth/2),200,height-this.y-(this.pipeWidth/2)); //draws bottom half
+		//-100 makes it so the rectangle is drawn centered with the pipe's x position,
+		//not left-aligned
+		pop();
+	}
+}
 class game_1_player {
 	constructor(spriteSheet, x, y, face) {
 		this.spriteSheet = spriteSheet;
 		this.sx = 0;        //Frame counter for when the player is moving.
 		this.x = x;
 		this.y = y;
+		this.velocity = 0;
+		this.acceleration = -50; //pixels per second per second
 		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
 		this.speed = 5;     // Player movement speed
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
@@ -50,6 +67,10 @@ class game_1_player {
 
 		pop();
 	}
+
+	//jump() {
+	//	this.velocity = 100;
+	//}
 
 	grab_fruit(fruit_id, size){
 		this.fruit_holding = 1;
