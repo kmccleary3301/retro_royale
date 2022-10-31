@@ -66,6 +66,7 @@ function swap_current_state(flag) { //Global function for changing current_state
   else if (flag == "purgatory") { current_state = new purgatory(); }
   else if (flag == "test_game") {current_state = new test_game();}
   else if (flag == "board_game") { current_state = new board_game();}
+  else if (flag == "load_room") { current_state = new load_room(); }
   else { return; }
   current_state.setup();
   current_state_flag = flag;
