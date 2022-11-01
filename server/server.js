@@ -5,6 +5,8 @@ let height = 600;
 
 let global_port = 3128;
 let tick_interval = 200; //in milliseconds
+var random_seed = Math.floor(Math.random()*100000);
+var tick_function_ids = [];
 
 /*
 var express = require('express');	// include express.js
@@ -45,7 +47,12 @@ var server = new WebSocketServer({ server: httpsServer });
 
 function tick_function() { current_state.tick_function(); }
 
-setInterval(tick_function, tick_interval);
+tick_function_ids[0] = setInterval(tick_function, tick_interval);
+
+function seed_random(seed) {
+  var x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 function game_start() {
   console.log("Game Reset");
@@ -595,7 +602,7 @@ function ball_game() {
     }
     for (let i in this.balls) { 
       console.log("updating ball "+i);
-      this.balls[i].update(); 
+      this.balls[i].update(seed_random, random_seed); 
     }
     //broadcast(this.make_everything());
   }
@@ -603,7 +610,7 @@ function ball_game() {
   this.tick_function_ball = function() {
     //console.log("ball_tick_function 1");
     //console.log("players: "+this.players);
-    for (let i in this.balls) { this.balls[i].update(); }
+    for (let i in this.balls) { this.balls[i].update(seed_random, random_seed); }
     var str_make = "";
     //console.log("ball_tick_function 2" + this.balls);
 
