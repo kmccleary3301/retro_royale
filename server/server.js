@@ -448,10 +448,11 @@ function purgatory() {
     this.current_time = 0;
     this.players = [];
     this.pipesList = [];
-    this.pipesList.push(new game_2_pipe(100,300,230));
+    this.pipesList.push(new game_2_pipe(700,300,230));
     //for (i=0; i < clients.length; i++) {
     //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     //}
+    this.timeLastPipeWasGenerated;
   }
 
   this.tick_function = function() { 
@@ -460,11 +461,16 @@ function purgatory() {
     //console.log("Frick"+this.players+"l");
     if(Date.now() % 500 < 10 && this.players.length > 0/*this.players.length > 0  && this.players[0].x % 470 < 10*/) { //if they travel 400 pixels
       this.pipesList.push(new game_2_pipe(this.pipesList[this.pipesList.length-1].x+500,Math.random()*300+100,230));
+      this.timeLastPipeWasGenerated = Date.now();
       //this.pipesList.push(new game_2_pipe(this.players[0].x+470,Math.random()*300+100,230));
       console.log("new pipe added at "+this.pipesList[this.pipesList.length-1].x);
       this.pipesList.shift();
       if(this.pipesList.length > 0) {
         broadcast(this.pipesList[this.pipesList.length-1].make_data());
+        /*for(let c in clients) {
+          clients[c].send(new game_2_pipe(this.pipesList[this.pipesList.length-1].x-400*(Date.now()-this.timeLastPipeWasGenerated)/1000),this.pipesList[this.pipesList.length-1].y,230);
+          //^^^This corrects for offset a bit
+        }*/
       }
     }
     for(let i in this.players) {
@@ -486,7 +492,13 @@ function purgatory() {
           this.players[i].velocity = 0;
         }
       }
-      this.players[i].x += this.players[i].xVelocity*0.035;
+      /*if(i == 0) {
+        this.players[i].x += this.players[i].xVelocity*0.035;
+      }
+      if(i >= 1) {
+        this.players[i].x = this.players[i-1].x - 90;
+      }
+      */
       broadcast(this.players[i].make_data(i), [i]);
     }
 
@@ -518,7 +530,7 @@ function purgatory() {
 
   this.user_loaded = function(usr_id) {
     clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    this.players[usr_id] = new game_1_player(400-100*usr_id, 500, 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     clients[usr_id].send(this.make_everything());

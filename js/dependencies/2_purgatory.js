@@ -86,7 +86,7 @@ function purgatory() {
     p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     //send_data("debug:"+p_vals[1]);
-    for(let i in this.pipesList) {
+    for(let i in this.pipesList) { //this activates on every tick
       this.pipesList[i].x -= 400*0.035; //speed times tick interval
     }
   }
