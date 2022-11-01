@@ -496,16 +496,17 @@ function purgatory() {
       str_make += this.balls[i].make_data(i) + "\n";
     }
     for (let i in this.players){
-      long dx= abs(this.balls.x-this.players.x)-this.players.width/2;
-      long dy= abs(this.balls.y-this.players.y)-this.players.height/2;
-
-        if (dx> this.radius || dy> this.radius) {
-          this.isDead = 0;
-        }
-        if (dx <= 0 || dy <= 0 ){
-          this.isDead = 1; 
-        }
-
+      if (this.players[i].isDead) { continue; }
+      for (let j in this.balls) {
+        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
+        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
+        var distance = Math.sqrt(dx*dx + dy*dy);
+        console.log("distance: "+distance);
+          if (distance <= this.balls[j].radius){
+            console.log("Player "+i+" is dead");
+            this.players[i].isDead = 1; 
+          }
+      }
     }
 
     //console.log("ball_tick_function 3");
