@@ -1,3 +1,8 @@
+function seed_random(seed) {
+	var x = Math.sin(seed) * 10000;
+	return x - Math.floor(x);
+}
+
 class game_2_ball {
 	constructor() {
 		this.radius = 50;
@@ -9,7 +14,7 @@ class game_2_ball {
 		this.last_update = Date.now()/1000;
 	}
 
-	update() {
+	update(seed_random, random_seed) {
 		//console.log("x1:"+this.x+","+this.y+","+this.dx+","+this.dy);
 		this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
 		//console.log("x2:"+this.x+","+this.y+","+this.dx+","+this.dy);
