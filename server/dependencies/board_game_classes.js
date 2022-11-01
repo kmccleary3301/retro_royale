@@ -7,7 +7,7 @@ class board_game_player {
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
 		this.previous_tile_index = 0;
-		this.last_update = millis()/1000;
+		this.last_update = Date.now()/1000;
 		this.name = "temp name";
 	}
 
@@ -103,16 +103,16 @@ class board_game_tile {
 	}
 
 	make_data_raw() {
-		str_make = this.tile_x + ","+this.tile_y+","+this.x+","+this.y+","+this.type;
+		str_make = this.tile_x+","+this.tile_y+","+this.x+","+this.y+","+this.type;
 		for (let i in this.connected_tiles) {
 			for (let j in this.connected_tiles[i]) { str_make += ","+this.connected_tiles[i][j]; }
 		}
+		return str_make;
 	}
 
 	make_data(tile_id){
 		return "tile_pos:"+tile_id+","+this.make_data_raw();
 	}
 }
-
 
 module.exports = {board_game_player, board_game_tile};

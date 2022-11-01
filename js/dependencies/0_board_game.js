@@ -250,7 +250,7 @@ class dice_display_element {
 		for (let i in element_weights) {element_weights[i] /= sum};
 		this.display_list = [];
 		for (i = 0; i < 10; i++) {
-			select_random_element(elements, element_weights);
+			this.display_list[i] = select_random_element(elements, element_weights);
 		}
 		this.start_time = millis()/1000;
 		this.current_time = 0; 
@@ -291,35 +291,6 @@ class dice_display_element {
 	}
 }
 
-const getCircularReplacer = () => {
-	const seen = new WeakSet();
-	return (key, value) => {
-	  if (typeof value === "object" && value !== null) {
-			if (seen.has(value)) {
-				console.log("collision: "+key+", "+value);
-				return;
-			}
-			seen.add(value);
-	  }
-	  return value;
-	};
-};
-
-class test_class{
-	constructor(image, x, y){
-		this.image = image;
-		this.x = x;
-		this.y = y;
-	}
-}
-
-function test_stringify(){
-	var temp_img = loadImage("media/sprites/Green.png");
-	var temp_obj = new test_class(temp_img, 15, 20);
-	console.log("stringify test");
-	console.log(JSON.stringify(temp_obj, getCircularReplacer()));
-}
-
 function board_game() {
 	this.setup = function() {
 		this.camera_scale = 1;
@@ -351,17 +322,14 @@ function board_game() {
 		this.animation_info = [0, 0, 0, 0, 0, 0]; //boolean, player_id, tile_start, tile_end, start_time, direction.
 		this.animation_element;
 
-		//var timer = millis();
-		//this.make_board_from_image("media/board_templates/test_template_1.png");
-		image_process("media/board_templates/test_template_1.png", parse_board_from_image);
+		this.buttons = {
+			"overlay" : []
+		};
+		this.current_button_menu = "overlay";
+		this.buttons["overlay"][0] = new button(width/6, 100, 150, 100, [255, 78, 0], [10, 10, 10], "Center");
 
-		//timer = millis() - timer;
-		//console.log("Processed in "+timer+" ms");
-		
-		//timer(marvin_test_1, "media/board_templates/test_template_1.png", marvin_alternative_path_find);
-
-
-		//function_log_execution_time(function(a) { console.log("got "+a); }, 1);
+		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
+		this.make_board_layout_preset_1();
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -434,8 +402,7 @@ function board_game() {
 			}
 		}
 
-		//triangle(width/2+50, height/2, width/2-50, height/2, width/2, height/2+50);
-
+		for (let i in this.buttons[this.current_button_menu]) { this.buttons[this.current_button_menu][i].draw(); }
 	}
 
 	this.start_tile_animate = function(player_id, direction) {
@@ -511,6 +478,8 @@ function board_game() {
 
 	this.reset_event_timer = function() { this.event_timer_start = millis()/1000; }
 
+
+	/*
 	this.key_pressed = function(keycode) {
 		console.log("KEY PRESSED: "+keycode);
 		for (let i in this.arrow_keys){
@@ -520,12 +489,28 @@ function board_game() {
 			}
 		}
 	}
+	*/
+
+	this.key_pressed = function(keycode) {
+		console.log("KEY PRESSED: "+keycode);
+		if (this.user_player_index != this.turning_player_index) { return; }
+		for (let i in this.arrow_keys){
+			if (keycode == this.arrow_keys[i]){
+				send_data("move_tile_direction:"+i);
+			}
+		}
+	}
 
 	this.key_released = function(keycode) {
 		return;
 	}
 
 	this.mouse_pressed = function() {
+		for (let i in this.buttons[this.current_button_menu]) {
+			if (this.buttons[this.current_button_menu][i].check_press(mouseX, mouseY)) {
+				return;
+			}
+		}
 		this.center_on_player = false;
 		this.mouse_click_location = [mouseX, mouseY];
 		this.starting_camera_coordinates = this.camera_center_coordinates;
@@ -535,10 +520,77 @@ function board_game() {
 
 	this.mouse_released = function() {
 		this.mouse_held = false;
+		for (let i in this.buttons[this.current_button_menu]) {
+			if (this.buttons[this.current_button_menu][i].pressed) {
+				this.button_press(i);
+			}
+			this.buttons[this.current_button_menu][i].pressed = 0;
+		}
 		return;
 	}
 
+	this.button_press = function(code) {
+		if (this.current_button_menu == "overlay") {
+			if (code == 0) { console.log("button_pressed"); this.toggle_camera_center_on_player(); }
+		}
+	}
+
 	this.read_network_data = function(flag, message) {
-		return
+		if (flag == "player_move_tile") {
+			this.read_in_tile_movement(message);
+		} else if (flag == "tile_pose") {
+			this.read_in_tile_data(message);
+		} else if (flag == "pos_player") {
+			this.read_in_player_data(message);
+		} else if (flag == "assigned_id") {
+			this.user_player_index = parseInt(message);
+		} else if (flag == "rmv_player") {
+			this.player_removed(message);
+		} else if (flag == "turning_player") {
+			this.turning_player_index = parseInt(message);
+		}
+	}
+
+	this.read_in_tile_movement = function(data) {
+		p_vals = convert_data_string(data, [0], [], [1]);
+		this.start_tile_animate(p_vals[0], p_vals[1]);
+	}
+
+	this.read_in_tile_data = function(data) {
+		p_vals = convert_data_string(data, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
+		if (p_vals[0] >= this.tiles.length) { this.tiles[p_vals[0]] = new board_game_tile(p_vals[1], p_vals[2], p_vals[5], []); }
+		this.tiles[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], 
+										p_vals[8], p_vals[9], p_vals[10], p_vals[11], p_vals[12], p_vals[13], p_vals[14], 
+										p_vals[15], p_vals[16], p_vals[17], p_vals[18], p_vals[19], p_vals[20], p_vals[21]);
+	}
+
+	this.read_in_player_data = function(data) {
+		p_vals = convert_data_string(data, [0, 6, 7], [1, 2, 3, 4], [5, 8]);
+		if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new board_game_player(this.green_sprite_2, p_vals[1], p_vals[2], p_vals[5]); }
+		this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
+	}
+
+	this.player_removed = function(data) {
+		var player_id_in = parseInt(data);
+		this.players.splice(player_id_in, 1);
+		if (this.user_player_index >= player_id_in) {
+			this.user_player_index--;
+		}
+		if (this.turning_player_index > player_id_in) {
+			this.turning_player_index--;
+		} else if (this.turning_player_index == player_id_in) {
+			this.turning_player_index = this.user_player_index;
+		}
+	}
+
+	this.toggle_camera_center_on_player = function() {
+		if (arguments.length >= 1) { 
+			if (arguments[0]) { this.center_on_player = 1; }
+			else { this.center_on_player = 0; }
+		} else {
+			if (this.center_on_player) { this.center_on_player = 0; }
+			else { this.center_on_player = 1; }
+		}
+		console.log("toggle center called: centered_on_player: "+this.center_on_player);
 	}
 }

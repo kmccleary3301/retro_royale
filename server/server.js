@@ -24,8 +24,10 @@ var ip = require('ip');
 var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
-var {game_1_player, game_1_fruit, game_1_endzone} = require("./dependencies/fruit_game_classes");
-var {board_game_player, board_game_tile} = require("./dependencies/board_game_classes");
+var {game_1_player, game_1_fruit, game_1_endzone} = 
+        require("./dependencies/fruit_game_classes");
+var {board_game_player, board_game_tile} = 
+        require("./dependencies/board_game_classes");
 
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
@@ -135,6 +137,8 @@ function convert_data_string(message, ints, floats, strings) {
 function swap_current_state(state_flag) {
   if (state_flag == "fruit_game") { current_state = new fruitGame(); }
   else if (state_flag == "purgatory") { current_state = new purgatory(); }
+  else if (state_flag == "load_room") { current_state = new load_room(); }
+  else if (state_flag == "board_game") {current_state = new board_game(); }
   else { return; } // failsafe for invalid flags
   current_state.setup();
   current_state_flag = state_flag;
@@ -353,7 +357,7 @@ function load_room() {
 
   this.tick_function = function() {
     this.current_time = Date.now()/1000 - this.start_time;
-    if (this.start_game && this.current_time >= 30) { 
+    if (this.start_game && this.current_time >= 10) { 
       start_board_game(); 
     }
   }
@@ -380,8 +384,6 @@ function load_room() {
     clients[usr_id].send(this.make_everything());
     if (this.start_game) { clients[usr_id].send("host_started_game:"+this.current_time); }
     if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
-    console.log("JSON STRINGIFY");
-    console.log(JSON.stringify(this.players[usr_id]));
   }
 
   this.user_disconnected = function(usr_id) {
@@ -416,14 +418,16 @@ function board_game() {
 		this.tile_grid_dimensions = [50, 50];
 		this.make_board_layout_preset_1();
 		
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new board_game_player(0, 0, 1);
-    }
+    
 
 		this.turning_player_index = 0; 	//Player currently rolling dice
 		this.make_board_layout_preset_1();
 
-
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new board_game_player(0, 0, 1);
+      this.players[i].x = this.tiles[0].x;
+      this.players[i].y = this.tiles[0].y;
+    }
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -489,6 +493,15 @@ function board_game() {
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+    if (this.turning_player_index > usr_id) {
+      this.turning_player_index--;
+    }
+    broadcast("turning_player:"+this.turning_player_index);
   }
 
   this.read_in_player_position = function(message) {

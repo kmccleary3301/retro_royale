@@ -68,7 +68,7 @@ function load_room() {
 		text_make(0, 50, 0, 2);
 		textAlign(CENTER, CENTER);
 		if (this.host_started_game) {
-			text("Game starting in "+str(Math.max(0, int(30-this.current_time))), width/2, height/2);
+			text("Game starting in "+str(Math.max(0, int(10-this.current_time))), width/2, height/2);
 		} else {
 			text("Waiting for host to start game", width/2, height/2);
 		}
