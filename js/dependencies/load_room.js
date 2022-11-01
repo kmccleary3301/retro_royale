@@ -38,8 +38,28 @@ function load_room() {
 		send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
 	}
 
-	this.mouse_pressed = function() { return; }
-	this.mouse_released = function() { return; }
+	this.mouse_pressed = function() {
+		for (let i in this.buttons[this.current_menu]) {
+			if (this.buttons[this.current_menu][i].check_press(mouseX, mouseY)) {
+				return;
+			}
+		}
+	}
+
+	this.mouse_released = function() {
+		for (let i in this.buttons[this.current_menu]) {
+			if (this.buttons[this.current_menu][i].pressed) {
+				this.button_press(i);
+			}
+			this.buttons[this.current_menu][i].pressed = 0;
+		}
+	}
+
+	this.button_press = function(code) {
+		if (this.current_menu == "overlay") {
+			if (code == 0) { send_data("start_game"); }
+		}
+	}
 
 	this.draw = function() {
 		this.current_time = Date.now()/1000 - this.start_time;

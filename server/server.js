@@ -25,6 +25,7 @@ var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
 var {game_1_player, game_1_fruit, game_1_endzone} = require("./dependencies/fruit_game_classes");
+var {board_game_player, board_game_tile} = require("./dependencies/board_game_classes");
 
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
@@ -379,6 +380,8 @@ function load_room() {
     clients[usr_id].send(this.make_everything());
     if (this.start_game) { clients[usr_id].send("host_started_game:"+this.current_time); }
     if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+    console.log("JSON STRINGIFY");
+    console.log(JSON.stringify(this.players[usr_id]));
   }
 
   this.user_disconnected = function(usr_id) {
@@ -399,9 +402,99 @@ function load_room() {
   }
 }
 
+function swap_new_direction(dir) {
+  if (dir == "up") { return "down"; }
+  if (dir == "down") { return "up"; }
+  if (dir == "left") { return "right"; }
+  if (dir == "right") { return "left"; }
+}
+
 function board_game() {
-  this.setup = function() {
+	this.setup = function() {
+		this.players = [];
+		this.tiles = [];
+		this.tile_grid_dimensions = [50, 50];
+		this.make_board_layout_preset_1();
+		
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new board_game_player(0, 0, 1);
+    }
+
+		this.turning_player_index = 0; 	//Player currently rolling dice
+		this.make_board_layout_preset_1();
+
+
+	}
+
+	this.make_board_layout_preset_1 = function() {
+		this.tiles[0] = new board_game_tile(0, 25, 0, [1]);
+		for (i = 1; i < 49; i++) {
+			this.tiles[i] = new board_game_tile(i, 25, 1+Math.floor(Math.random()*4), [1]);
+			this.pair_tiles(i-1, i, "right");
+			this.pair_tiles(i, i-1, "left");
+		}
+		this.tiles[49] = new board_game_tile(49, 25, 5, [1]);
+		this.pair_tiles(48, 49, "right");
+		this.pair_tiles(49, 48, "left");
+		this.tiles[50] = new board_game_tile(2, 24, 4, [1]);
+		this.pair_tiles(2, 50, "up");
+		this.pair_tiles(50, 2, "down");
+    for (let i in this.players) {
+      this.players[i].x = this.tiles[0].x;
+      this.players[i].y = this.tiles[0].y;
+    }
+	}
+
+  this.tick_function = function() {
     return;
+  }
+
+	this.pair_tiles = function(parent, child, flow_direction) {
+		var reverse_direction = swap_new_direction(flow_direction);
+		this.tiles[parent].make_child(flow_direction, child);
+		this.tiles[child].make_parent(reverse_direction, parent);
+	}
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i)+"\n"; }
+    for (let i in this.tiles) { str_make += this.tiles[i].make_data(i)+"\n"; }
+    return str_make;
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
+      this.move_player_to_tile(usr_id, message);
+    }
+  }
+
+  this.move_player_to_tile = function(usr_id, direction) {
+    if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
+		{ console.log("child failed"); return; }
+    this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
+    this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
+    this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
+    broadcast("player_move_tile:"+usr_id+","+direction);
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new board_game_player(0, 0, 1);
+    this.players[usr_id].x = this.tiles[0].x;
+    this.players[usr_id].y = this.tiles[0].y;
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.read_in_player_position = function(message) {
+    p_vals = convert_data_string(message, [0, 6, 7], [1, 2, 3, 4], [5, 8]);
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new board_game_player(0, 0, 1); }
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
   }
 }
 

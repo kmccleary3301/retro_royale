@@ -86,6 +86,7 @@ class button {
   }
 
   draw() {
+    push();
     fill(this.color[0], this.color[1], this.color[2]);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
@@ -94,7 +95,8 @@ class button {
     textAlign(CENTER, CENTER);
     text_make(0, 0.3*Math.min(this.box_width, this.box_height), 0, 0);
     fill(this.text_color[0], this.text_color[1], this.text_color[2]);
-    text(this.text, this.x_cen, this.y_cen);  
+    text(this.text, this.x_cen, this.y_cen);
+    pop();
   }
 
   check_press(x, y) {

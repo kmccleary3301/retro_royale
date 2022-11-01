@@ -79,26 +79,25 @@ class board_game_player {
 		}
 	}
 
-	update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+	update_data(sprite, x, y, move, speed, facing, current_tile_index, previous_tile_index, name){
 	  //if (sprite != null) {this.spriteSheet = }
 	  if (x != null) { this.x = x; }
 	  if (y != null) { this.y = y; }
 	  if (move != null) { this.move = move; }
 	  if (speed != null) { this.speed = speed; }
 	  if (facing != null) { this.update_facing(facing); }
-	  if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
-	  if (fruit_id != null) { this.fruit_held_id = fruit_id; }
+	  if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
+	  if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
+		if (name != null) { this.name = name; }
 	}
   
 	make_data_raw(){
-	  return this.x+","+this.y+","+this.move+","+
-			  this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+	  return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
+						this.previous_tile_index+","+this.name;
 	}
   
 	make_data(player_index){
-	  var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-						this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
-	  return string_make;
+	  return "pos_player:"+player_index+","+this.make_data_raw();
 	}
 }
 
@@ -186,6 +185,34 @@ class board_game_tile {
 	check_child (direction) {
 		return (this.connected_tiles[direction]["connected"] && this.connected_tiles[direction]["is_child"]); 
 	}
+
+	update_data(tile_x, tile_y, x, y, type, r1, r2, r3, 
+						r4, l1, l2, l3, l4, u1, u2, u3, u4, d1, d2, d3, d4) {
+		if (tile_x != null) { this.tile_x = tile_x; }
+		if (tile_y != null) { this.tile_y = tile_y; }
+		if (x != null) { this.x = x; }
+		if (y != null) { this.y = y; }
+		if (type != null) {this.type = type; }
+		var connected_tiles_array = [[r1, r2, r3, r4], [l1, l2, l3, l4], [u1, u2, u3, u4], [d1, d2, d3, d4]];
+		for (let i in Object.keys(this.connected_tiles)) {
+			var key_1 = Object.keys(this.connected_tiles)[i];
+			for (let j in Object.keys(this.connected_tiles[key_1])) {
+				var key_2 = Object.keys(this.connected_tiles[key_1])[j];
+				if (connected_tiles_array[i][j] != null) { this.connected_tiles[key_1][key_2] = connected_tiles_array[i][j]; }
+			}
+		}
+	}
+
+	make_data_raw() {
+		str_make = this.tile_x + ","+this.tile_y+","+this.x+","+this.y+","+this.type;
+		for (let i in this.connected_tiles) {
+			for (let j in this.connected_tiles[i]) { str_make += ","+this.connected_tiles[i][j]; }
+		}
+	}
+
+	make_data(tile_id){
+		return "tile_pos:"+tile_id+","+this.make_data_raw();
+	}
 }
 
 class message_display_element {
@@ -262,6 +289,35 @@ class dice_display_element {
 		}
 		if (this.current_time > this.expire) { this.expired = true; }
 	}
+}
+
+const getCircularReplacer = () => {
+	const seen = new WeakSet();
+	return (key, value) => {
+	  if (typeof value === "object" && value !== null) {
+			if (seen.has(value)) {
+				console.log("collision: "+key+", "+value);
+				return;
+			}
+			seen.add(value);
+	  }
+	  return value;
+	};
+};
+
+class test_class{
+	constructor(image, x, y){
+		this.image = image;
+		this.x = x;
+		this.y = y;
+	}
+}
+
+function test_stringify(){
+	var temp_img = loadImage("media/sprites/Green.png");
+	var temp_obj = new test_class(temp_img, 15, 20);
+	console.log("stringify test");
+	console.log(JSON.stringify(temp_obj, getCircularReplacer()));
 }
 
 function board_game() {
@@ -347,7 +403,7 @@ function board_game() {
 			this.players[i].current_tile_index = 0;
 			this.players[i].y = this.tiles[0].y;
 			this.players[i].x = this.tiles[0].x;
-		}0
+		}
 	}
 
 	this.draw = function() {

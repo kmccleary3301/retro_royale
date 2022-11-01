@@ -1,5 +1,3 @@
-
-
 class pixel {
     constructor(x, y) {
         this.x = x;
@@ -97,91 +95,6 @@ function swap_new_direction(dir) {
     if (dir == "down") { return "up"; }
     if (dir == "left") { return "right"; }
     if (dir == "right") { return "left"; }
-}
-
-function flood_fill(image, start_pixel, get_rgb_function) {
-    var img_width = image.getWidth();
-    var img_height = image.getHeight();
-
-    if (get_rgb_function === undefined) {
-        get_rgb_function = function(x, y) {
-            var r = image.getIntComponent0(x,y);
-            var g = image.getIntComponent1(x,y);
-            var b = image.getIntComponent2(x,y);
-            return [r, g, b];
-        }
-    }
-
-    this.check_pixel_isnt_white = function(pixel) {
-        var p_get = get_rgb_function(pixel.x, pixel.y);
-        return (p_get[0] != 255 && p_get[1] != 255 && p_get[2] != 255);
-    }
-
-    this.flood_fill_backend = function(processed_layer, old_layer, current_layer, current_iteration, condition) {
-        var move_directions = [0, 1, 2, 3];
-        var new_layer = [];
-        for (let i in current_layer) {
-            for (let m in move_directions) {
-                var new_pixel = new linked_pixel(current_layer[i].x, current_layer[i].y);
-                new_pixel.increment(move_directions[m]);
-                if (new_pixel.in_bounds(img_width, img_height)) {
-                    console.log("checking pixel "+new_pixel.x+","+new_pixel.y+" -> "+condition(new_pixel));
-                    if (condition(new_pixel)) {
-                        var in_current_layer = false, in_new_layer = false;
-                        /*
-                        for (let j in old_layer) {
-                            if (new_pixel.compare(old_layer[j])) {
-                                in_old_layer = true;
-                                break;
-                            }
-                        }
-                        */
-                        for (let j in current_layer) {
-                            if (new_pixel.compare(current_layer[j])) {
-                                current_layer[i].link(processed_layer.length + old_layer.length + j, move_directions[m]);
-                                current_layer[j].link(processed_layer.length + old_layer.length + i, swap_compass_direction(move_directions[m]));
-                                in_current_layer = true;
-                                break;
-                            }
-                        }
-                        for (let j in new_layer) {
-                            if (new_pixel.compare(new_layer[j])) {
-                                current_layer[i].link(processed_layer.length + old_layer.length + current_layer.length + j,
-                                                        move_directions[m]);
-                                new_layer[j].link(processed_layer.length + old_layer.length + i, swap_compass_direction(move_directions[m]));
-                                in_new_layer = true;
-                                break;
-                            }
-                        }
-                        if (!(in_current_layer || in_new_layer)) {
-                            current_layer[i].link(processed_layer.length + old_layer.length + current_layer.length + new_layer.length,
-                                                    move_directions[m]);
-                            new_pixel.link(processed_layer.length + old_layer.length + i, swap_compass_direction(move_directions[m]));
-                            new_layer[new_layer.length] = new_pixel;
-                        }
-                    }
-                }
-            }
-        }
-        if (new_layer.length == 0) { 
-            processed_layer = processed_layer.concat(old_layer);
-            processed_layer = processed_layer.concat(current_layer);
-
-            for (let  i in processed_layer) {
-                processed_layer[i].set_rgb(get_rgb_function(processed_layer[i].x, processed_layer[i].y));
-            }
-
-            console.log("Flood Fill completed in "+(current_iteration+1)+" iterations");
-            return processed_layer;
-        } else {
-            processed_layer = processed_layer.concat(old_layer);
-            return this.flood_fill_backend(processed_layer, current_layer, new_layer, current_iteration+1, condition);
-        }
-
-    }
-
-    var condition = this.check_pixel_isnt_white;
-    return this.flood_fill_backend([], [], [start_pixel], 0, condition);
 }
 
 function parse_board_from_image(image) {
@@ -305,18 +218,6 @@ function parse_board_from_image(image) {
     console.log("start pixel -> "+start_pixel.x+","+start_pixel.y);
     if (start_pixel) {
         var list_make = this.flood_fill(start_pixel, this.check_pixel_isnt_white);
-        
-        for (let i in list_make) {
-            str_make = i + " : " + list_make[i].to_string() + " | " + dict_to_str(list_make[i].rgb) + " | "+dict_to_str(list_make[i].connected);
-            /*
-            for (let j in list_make[i].connected) {
-                if (list_make[i].connected[j] != false) {
-                    //str_make += this.print_direction(j) + " : ";
-                }
-            }
-            */
-            console.log(str_make);
-        }
         
         return list_make;
     } else {
