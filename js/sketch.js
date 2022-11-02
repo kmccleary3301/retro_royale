@@ -60,18 +60,10 @@ function draw() { //Global frame render function.
 }
 
 function swap_current_state(flag) { //Global function for changing current_state
-  console.log("SWAP STATE: "+flag);
   if (flag == "main_menu") { current_state = new main_menu(); }
   else if (flag == "load_screen") { current_state = new load_screen(); }
   else if (flag == "fruit_game") { current_state = new fruitGame(); }
   else if (flag == "purgatory") { current_state = new purgatory(); }
-  else if (flag == "test_game") {current_state = new test_game();}
-  else if (flag == "board_game") { current_state = new board_game();}
-  else if (flag == "load_room") { current_state = new load_room(); }
-  else if (flag == "dev_room") {current_state = new dev_room(); }
-  else if (flag == "ball_game") { current_state = new ball_game(); }
-  else if (flag == "fighting_game") { current_state = new fighting_game(); }
-  else if (flag == "flappy_bird") { current_state = new flappy_bird(); }
   else { return; }
   current_state.setup();
   current_state_flag = flag;
