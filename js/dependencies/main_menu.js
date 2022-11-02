@@ -7,31 +7,26 @@ function main_menu() {
 		this.temp_server_address = host_address;
 		this.temp_server_port = str(global_port);
 		this.current_time = 0.000;
-		this.current_menu = "main";
+		this.current_menu = 1;
+		this.buttons_menu_1 = [];
+		this.buttons_menu_2 = [];
+		this.buttons_menu_3 = [];
 		this.button_funcs = [];
-
-		this.buttons = {
-			"main" : [],
-			"server" : [],
-			"certify" : []
-		};
-		this.buttons["main"][0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
-		this.buttons["main"][1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
-		this.buttons["main"][2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
-		this.buttons["main"][3] = new button(width/2 + 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game");
-		this.buttons["main"][4] = new button(width/2 - 150, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board Game");
-		this.buttons["server"][0] = new button(width/2 - 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
-		this.buttons["server"][1] = new button(width/2 + 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
-		this.buttons["certify"][0] = new button(width/2, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
+		this.buttons_menu_1[0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
+		this.buttons_menu_1[1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
+		this.buttons_menu_1[2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
+		this.buttons_menu_2[0] = new button(width/2 - 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
+		this.buttons_menu_2[1] = new button(width/2 + 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
+		this.buttons_menu_3[0] = new button(width/2, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
 		g_cam.reset();
 	}
 
 	this.draw = function() {
 		this.current_time = millis()/1000 - this.start_time;
 		if (this.current_time < 3) { this.draw_startup_animation(); return; }
-		if (this.current_menu == "main") { this.draw_menu_1(); }
-		else if (this.current_menu == "server") { this.draw_menu_2(); }
-		else if (this.current_menu == "certify") { this.draw_menu_3(); }
+		if (this.current_menu == 1) { this.draw_menu_1(); }
+		else if (this.current_menu == 2) { this.draw_menu_2(); }
+		else if (this.current_menu == 3) { this.draw_menu_3(); }
 	}
 
 	this.draw_menu_1 = function() {
@@ -40,7 +35,7 @@ function main_menu() {
 		text_make(2, 90, 0, 2);
 		fill(r_color[0], r_color[1], r_color[2]);
 		text("RETRO ROYALE", width/2, 50);
-		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
+		for (let i in this.buttons_menu_1) { this.buttons_menu_1[i].draw(); }
 		text_make(0, 10, 0, 1);
 		stroke(11);
 		if (connected_to_server) {
@@ -62,7 +57,7 @@ function main_menu() {
 		textAlign(CENTER, CENTER);
 		text("Server address", width/2, height/2 - 125);
 		text("Server port", width/2, height/2-50);
-		for (let i in this.buttons["server"]) { this.buttons["server"][i].draw(); }
+		for (let i in this.buttons_menu_2) { this.buttons_menu_2[i].draw(); }
 	}
 
 	this.draw_menu_3 = function() {
@@ -74,7 +69,7 @@ function main_menu() {
 		textAlign(CENTER, CENTER);
 		text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
 								width/2, height/2-100);
-		for (let i in this.buttons["certify"]) { this.buttons["certify"][i].draw(); }
+		for (let i in this.buttons_menu_3) { this.buttons_menu_3[i].draw(); }
 	}
 
 	this.draw_startup_animation = function() {
@@ -99,31 +94,50 @@ function main_menu() {
 	}
 
 	this.mouse_pressed = function() {
-
-		for (let i in this.buttons[this.current_menu]) {
-			if (this.buttons[this.current_menu][i].check_press(mouseX, mouseY)) { return; }
+		if (this.current_menu == 1) {
+			for (let i in this.buttons_menu_1) { 
+				if (this.buttons_menu_1[i].check_press(mouseX, mouseY)) {return;} 
+			}
+		} else if (this.current_menu == 2) {
+			for (let i in this.buttons_menu_2) {
+				if (this.buttons_menu_2[i].check_press(mouseX, mouseY)) {return;}
+			}
+		} else if (this.current_menu == 3) {
+			for (let i in this.buttons_menu_3) {
+				if (this.buttons_menu_3[i].check_press(mouseX, mouseY)) {return;}
+			}
 		}
 	}
 
 	this.mouse_released = function() {
-		for (let i in this.buttons[this.current_menu]) {
-			if (this.buttons[this.current_menu][i].pressed) { this.button_press(i); }
-			this.buttons[this.current_menu][i].pressed = 0;
+		if (this.current_menu == 1) {
+			for (let i in this.buttons_menu_1) {
+				if (this.buttons_menu_1[i].pressed) {this.button_press(i);}
+				this.buttons_menu_1[i].pressed = 0; 
+			}
+		} else if (this.current_menu == 2) {
+			for (let i in this.buttons_menu_2) {
+				if (this.buttons_menu_2[i].pressed) {this.button_press(i);}
+				this.buttons_menu_2[i].pressed = 0; 
+			}
+		} else if (this.current_menu == 3) {
+			for (let i in this.buttons_menu_3) {
+				if (this.buttons_menu_3[i].pressed) {this.button_press(i);}
+				this.buttons_menu_3[i].pressed = 0; 
+			}
 		}
 	}
 
 	this.button_press = function(code) {
-		if (this.current_menu == "main") {
+		if (this.current_menu == 1) {
 			if (code == 0) { this.authorize_menu_enable(); }
 			else if (code == 1) { swap_current_state("load_screen"); }
 			else if (code == 2) { this.server_menu_enable(); }
-			else if (code == 3) { this.switch_test_game(); }
-			else if (code == 4) { this.switch_board_game(); }
-		} else if (this.current_menu == "server") {
+		} else if (this.current_menu == 2) {
 			if (code == 0) { this.update_server_address(); }
 			else if (code == 1) { this.server_menu_disable(); }
 		}
-		else if (this.current_menu == "certify") {
+		else if (this.current_menu == 3) {
 			if (code == 0) { this.authorize_menu_disable(); }
 		}
 	}
@@ -165,14 +179,6 @@ function main_menu() {
 	this.authorize_menu_disable = function() {
 		this.cert_hyperlink.remove();
 		this.current_menu = 1;
-	}
-	
-	this.switch_test_game = function() {
-		swap_current_state("test_game");
-	}
-
-	this.switch_board_game = function() {
-		swap_current_state("board_game");
 	}
 }
 

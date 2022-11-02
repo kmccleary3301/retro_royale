@@ -53,15 +53,3 @@ function text_make(font_index, size, stroke, stroke_weight) {
   strokeWeight(stroke_weight);
   //stroke(stroke);
 }
-
-function select_random_element(entries, weights, return_index) {
-  if (return_index === undefined) {return_index = false;}
-  sum = 0;
-  var index_current = 0, target = Math.random();
-  while (sum < target) {
-    sum += weights[index_current];
-    index_current++;
-  }
-  if (return_index) { return index_current-1; }
-  return entries[index_current-1];
-}
