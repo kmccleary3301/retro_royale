@@ -1,10 +1,12 @@
-var current_state = new purgatory();
-var current_state_flag = "purgatory";
+var current_state = new dev_room();
+var current_state_flag = "dev_room";
 let width = 600;
 let height = 600;
 
 let global_port = 3128;
-let tick_interval = 35; //in milliseconds
+let tick_interval = 200; //in milliseconds
+var random_seed = Math.floor(Math.random()*100000);
+var tick_function_ids = [];
 
 /*
 var express = require('express');	// include express.js
@@ -24,6 +26,17 @@ var ip = require('ip');
 var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
+var {game_1_player, game_1_fruit, game_1_endzone} = 
+        require("./dependencies/fruit_game_classes");
+var {board_game_player, board_game_tile} = 
+        require("./dependencies/board_game_classes");
+var {game_2_ball, ball_game_player} =
+        require("./dependencies/ball_game_classes");
+var {fighting_game_player} =
+        require("./dependencies/fighting_game_classes");
+var {flappy_bird_pipe, flappy_bird_player} =
+        require("./dependencies/flappy_bird_classes");
+
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
 const PoissonDiskSampling = require('poisson-disk-sampling');
@@ -35,18 +48,21 @@ var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(global_port);
 var WebSocketServer = require('ws').Server;
 var server = new WebSocketServer({ server: httpsServer });
-//current_state.setup();
-//process.nextTick(() => {console.log("tick");});
 
 function tick_function() { current_state.tick_function(); }
 
-setInterval(tick_function, tick_interval);
+tick_function_ids[0] = setInterval(tick_function, tick_interval);
 
+function seed_random(seed) {
+  var x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
 function game_start() {
   console.log("Game Reset");
-  current_state = new purgatory();
+  current_state = new dev_room();
   current_state.setup();
+  current_state_flag = "dev_room";
 }
 
 function server_start() {
@@ -66,11 +82,11 @@ server.on('connection', function connection(thisClient) {
   clients.push(thisClient);
   console.log("clients length "+clients.length);
   console.log("user connecting");
-  
                     
   thisClient.on('close', function(msg){         //Triggers on a client disconnect
     var position = clients.indexOf(thisClient); //Gets clients position in array
     clients.splice(position, 1);                //Removes client from global client array
+    for (i = position; i < clients.length; i++) { clients[i].test_position--; }
     current_state.user_disconnected(position);  //Triggers current_state's user disconnect function.
     console.log("connection closed, client: "+position);
   });
@@ -140,176 +156,35 @@ function convert_data_string(message, ints, floats, strings) {
 function swap_current_state(state_flag) {
   if (state_flag == "fruit_game") { current_state = new fruitGame(); }
   else if (state_flag == "purgatory") { current_state = new purgatory(); }
+  else if (state_flag == "load_room") { current_state = new load_room(); }
+  else if (state_flag == "board_game") {current_state = new board_game(); }
+  else if (state_flag == "ball_game") { current_state = new ball_game(); }
+  else if (state_flag == "dev_room") { current_state = new dev_room(); }
+  else if (state_flag == "fighting_game") { current_state = new fighting_game(); }
+  else if (state_flag == "flappy_bird") { current_state = new flappy_bird(); }
   else { return; } // failsafe for invalid flags
   current_state.setup();
   current_state_flag = state_flag;
   broadcast("current_game:"+state_flag);
 }
 
-class game_1_player {
-  constructor(x, y, face) {
-    this.sx = 0;
-    this.x = x;
-    this.y = y;
-    this.xVelocity = 400; //pixels per second
-    this.velocity = 0;
-		this.acceleration = -58; //pixels per second per second
-    this.move = 0;
-    this.speed = 5;
-    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
-    this.fruit_holding = 0;
-    this.fruit_held_id = 0;
-  }
-
-  jump() {
-    this.velocity = 700;
-  }
-
-  make_data(player_index){
-    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
-    return string_make;
-  }
-
-  update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
-    if (x != null) { this.x = x; }
-    if (y != null) { this.y = y; }
-    if (move != null) { this.move = move; }
-    if (speed != null) { this.speed = speed; }
-    if (facing != null) { this.facing = facing; }
-    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
-    if (fruit_id != null) { this.fruit_held_id = fruit_id; }
-  }
-}//player advances through x and pipes are stationary
-//when the pipes can't be seen, don't draw them
-
-//
-class game_2_pipe {
-  constructor(x,y, pipeWidth) {
-    this.pipeWidth = pipeWidth;
-    this.x = x;
-    this.y = y;
-  }
-  make_data() {
-    return "pipe:"+this.x+","+this.y+","+this.pipeWidth;
-  }
+function start_board_game(message) {
+  swap_current_state("board_game");
+  broadcast("start_board_game");
 }
 
-// class game_2_level {
-//   constructor() {
-//     this.pipesList = [];
-//   }
-//   addPipe(x,y,pipeWidth) {
-//     this.pipesList.push(new game_2_pipe(x,y,pipeWidth));
-//     //this remaining code removes pipes that can't be seen
-//   }
-//   //this removes pipes that can't be seen
-//   removePipes() {
-//     for(let i in this.pipesList) {
-//       if(this.pipesList[i].x <= this.players[0].x - width/2 ) {
-//         this.pipesList.shift();
-//       }
-//     }
-//   }
-
-//   make_data() {
-//     this.data_string = "game_level:";
-//     for(let i in this.pipesList) {
-//       this.data_string += make_data(this.pipesList[i]);
-//     }
-//     return this.data_string.slice(0,-1); //(slice removes trailing comma)
-//   }
-// }
-//maybe we generate a list of a thousand pipes, fill it with random numbers
-//from 0 to 1, and then map that to the height of the game, and we can send it to the client,
-//so they can print it? that, or the server provides a seed to the srand function
-
-class game_1_fruit {
-  constructor(x, y, size) {
-    this.x = x;
-    this.y = y;
-    this.size = ~~size;
-    this.held = 0
-    this.scored = 0;
-    this.player_holding_id = 0;
-    if ((size < 5) || (size > 15)) {
-      size = Math.min(15, Math.max(0, 5));
-    }
+class client_info {
+  constructor() {
+    this.connected_to_game;
+    this.session_id;
+    this.latency;
+    if (arguments.length >= 1) { this.update_info(arguments); } 
   }
 
-  update_position(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  check_grabbed(x, y, player_index) {
-    if (this.held || this.scored) {
-      return;
-    }
-    var player_x_norm = Math.abs(x - this.x),
-        player_y_norm = Math.abs(y - this.y);
-    if ((player_x_norm <= 40) & (player_y_norm <= 40)) {
-      this.held = 1;
-      this.player_holding_id = player_index;
-    }
-  }
-
-  drop() {
-    this.held = 0;
-  }
-
-  update_data(x, y, size, held, scored, player_holding_id) {
-    if (x != null) {this.x = x;}
-    if (y != null) {this.y = y;}
-    if (size != null) {this.size = size;}
-    if (held != null) {this.held = held;}
-    if (scored != null) {this.scored = scored;}
-    if (player_holding_id != null) {this.player_holding_id = player_holding_id;}
-  }
-
-  make_data(index) {
-    var str_make = "pos_fruit:"+index+","+this.x+","+this.y+","+
-                    this.size+","+this.held+","+this.scored+","+this.player_holding_id;
-    return str_make;
-  }
-}
-
-class game_1_endzone {
-  constructor(x1, x2, y1, y2) {
-    this.x = x1;
-    this.y = y1;
-    this.width = x2 - x1;
-    this.height = y2 - y1;  
-    this.score = 0;
-  }
-
-  draw(){
-    fill(255, 204, 0);
-    rect(this.x, this.y, this.width, this.height);
-
-    fill(0, 0, 0);
-    text(str(this.score), this.width/2+this.x, this.height/2+this.y);
-  }
-
-  check_placement(x, y){
-    x -= this.x;
-    y -= this.y;
-    if ((x >= 0) && (x <= this.width) && (y >= 0) && (y <= this.height)) {
-      return true;
-    }
-    return false;
-  }
-
-  update_data(x, y, width, height, score){
-    if (!isNaN(x)) { this.x = x; }
-    if (!isNaN(y)) { this.y = y; }
-    if (!isNaN(width)) { this.width = width; }
-    if (!isNaN(height)) { this.height = height; }
-    if (!isNaN(score)) { this.score = score; }
-  }
-
-  make_data(index){
-    return "upd_endzone:"+index+","+this.x+","+this.y+","+this.width+","+this.height+","+this.score;
+  update_info() {
+    if (arguments.length >= 1) { this.connected_to_game = arguments[0]; }
+    if (arguments.length >= 2) { this.connected_to_game = arguments[1]; }
+    if (arguments.length >= 3) { this.connected_to_game = arguments[2]; }
   }
 }
 
@@ -447,12 +322,404 @@ function purgatory() {
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
+  }
+
+  this.tick_function = function() { 
+    this.current_time = Date.now()/1000 - this.start_time;
+    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+    if (this.start_game) { clients[usr_id].send("host_started_game:"+this.current_time); }
+    if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function dev_room() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.start_game = false;
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
+    this.host_id = 0;
+  }
+
+  this.tick_function = function() { return; }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "start_game" && usr_id == this.host_id) {
+      swap_current_state(message);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+    if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function swap_new_direction(dir) {
+  if (dir == "up") { return "down"; }
+  if (dir == "down") { return "up"; }
+  if (dir == "left") { return "right"; }
+  if (dir == "right") { return "left"; }
+}
+
+function board_game() {
+	this.setup = function() {
+		this.players = [];
+		this.tiles = [];
+		this.tile_grid_dimensions = [50, 50];
+		
+    
+
+		this.turning_player_index = 0; 	//Player currently rolling dice
+
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new board_game_player(0, 0, 1);
+    }
+    this.make_board_layout_preset_1();
+	}
+
+	this.make_board_layout_preset_1 = function() {
+		this.tiles[0] = new board_game_tile(0, 25, 0, [1]);
+		for (i = 1; i < 49; i++) {
+			this.tiles[i] = new board_game_tile(i, 25, 1+Math.floor(Math.random()*4), [1]);
+			this.pair_tiles(i-1, i, "right");
+			this.pair_tiles(i, i-1, "left");
+		}
+		this.tiles[49] = new board_game_tile(49, 25, 5, [1]);
+		this.pair_tiles(48, 49, "right");
+		this.pair_tiles(49, 48, "left");
+		this.tiles[50] = new board_game_tile(2, 24, 4, [1]);
+		this.pair_tiles(2, 50, "up");
+		this.pair_tiles(50, 2, "down");
+    for (let i in this.players) {
+      this.players[i].x = this.tiles[0].x;
+      this.players[i].y = this.tiles[0].y;
+      this.user_loaded(i);
+    }
+	}
+
+  this.tick_function = function() {
+    return;
+  }
+
+	this.pair_tiles = function(parent, child, flow_direction) {
+		var reverse_direction = swap_new_direction(flow_direction);
+		this.tiles[parent].make_child(flow_direction, child);
+		this.tiles[child].make_parent(reverse_direction, parent);
+	}
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i)+"\n"; }
+    for (let i in this.tiles) { str_make += this.tiles[i].make_data(i)+"\n"; }
+    return str_make;
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
+      this.move_player_to_tile(usr_id, message);
+    }
+  }
+
+  this.move_player_to_tile = function(usr_id, direction) {
+    if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
+		{ console.log("child failed"); return; }
+    this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
+    this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
+    this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
+    broadcast("player_move_tile:"+usr_id+","+direction);
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new board_game_player(this.tiles[0].x, this.tiles[0].y, 1);
+    this.players[usr_id].x = this.tiles[0].x;
+    this.players[usr_id].y = this.tiles[0].y;
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+    console.log("player_info:"+this.players[usr_id].make_data_raw());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+    if (this.turning_player_index > usr_id) {
+      this.turning_player_index--;
+    }
+    broadcast("turning_player:"+this.turning_player_index);
+  }
+
+  this.read_in_player_position = function(message) {
+    p_vals = convert_data_string(message, [0, 6, 7], [1, 2, 3, 4], [5, 8]);
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new board_game_player(0, 0, 1); }
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
+  }
+}
+
+function ball_game() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.add_last_time = Date.now()/1000;
+    this.players = [];
+    this.balls = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+      //this.balls[i] = new game_2_ball();
+    }
+    this.random_seed = Math.floor(Math.random()*100000);
+    tick_function_ids[tick_function_ids.length] = setInterval(function() { current_state.tick_function_ball(); }, 20);
+  }
+
+  this.tick_function = function() { 
+    this.current_time = Date.now()/1000 - this.start_time;
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    if (Date.now()/1000 - this.add_last_time > 10) {
+      this.add_last_time = Date.now()/1000;
+      this.balls[this.balls.length] = new game_2_ball();
+      broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
+      console.log("added ball "+this.balls);
+      //broadcast(this.make_everything());
+    }
+    for (let i in this.balls) { 
+      console.log("updating ball "+i);
+      this.balls[i].update(seed_random, random_seed); 
+    }
+    //broadcast(this.make_everything());
+  }
+
+  this.tick_function_ball = function() {
+    //console.log("ball_tick_function 1");
+    //console.log("players: "+this.players);
+    for (let i in this.balls) { this.balls[i].update(seed_random, random_seed); }
+    var str_make = "";
+    //console.log("ball_tick_function 2" + this.balls);
+
+    for (let i in this.balls) { 
+      //console.log("data for ball "+i);
+      //console.log(this.balls[i].make_data(i)); 
+      str_make += this.balls[i].make_data(i) + "\n";
+    }
+    for (let i in this.players){
+      if (this.players[i].isDead) { continue; }
+      for (let j in this.balls) {
+        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
+        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
+        var distance = Math.sqrt(dx*dx + dy*dy);
+        console.log("distance: "+distance);
+          if (distance <= this.balls[j].radius){
+            console.log("Player "+i+" is dead");
+            this.players[i].isDead = 1; 
+          }
+      }
+    }
+
+    //console.log("ball_tick_function 3");
+    broadcast(str_make);
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    for (let i in this.balls) { str_make += this.balls[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1); }
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function fighting_game() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.floor = 600;
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+    }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    if (usr_id >= this.players.length) { this.user_loaded(usr_id); }
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }else if(flag == "attack"){
+      this.attack(usr_id);
+      broadcast_exclusive("attack:"+usr_id+","+this.players[usr_id].make_data_raw(), [usr_id]);
+    }else if (flag == "hit"){
+      this.attack_end(usr_id);
+    }else if (flag == "debug") {
+      console.log("debug:"+message);
+    }
+  }
+
+  this.tick_function = function() {
+    for(let i in this.players) {
+      console.log("Y position is: " + this.players[i].make_data(i));
+      broadcast_exclusive(this.players[i].make_data(i),[i]);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, this.floor, 0, usr_id%4);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) 
+  { //format packet as pos_player: id, x, y, dx, dy, facing, health, isAttacking, isDucking
+    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4]);
+    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]); //just removed null as first argument in update_data, not sure if it's right
+    return p_vals[0];
+  }
+
+  
+  this.attack = function(usr_id){
+    var player = this.players[usr_id];
+    var hit_radius = 100;
+    for (let i in this.players) {
+      var x_dist = this.players[i].x - this.players[usr_id].x,
+          y_dist = this.players[i].y - this.players[usr_id].y;
+      if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
+        this.players[i].health -= 10;
+        broadcast("hit:"+i+","+this.players[i].health);
+      }
+    }
+  }
+}
+
+function flappy_bird() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.players = [];
     this.pipesList = [];
-    this.pipesList.push(new game_2_pipe(700,300,230));
+    this.pipesList.push(new flappy_bird_pipe(700,300,230));
     //for (i=0; i < clients.length; i++) {
     //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     //}
     this.timeLastPipeWasGenerated;
+    for (let i in clients) {
+      this.players[i] = new flappy_bird_player(400-100*i, 500, 1);
+    }
   }
 
   this.tick_function = function() { 
@@ -460,7 +727,7 @@ function purgatory() {
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     //console.log("Frick"+this.players+"l");
     if(Date.now() % 500 < 10 && this.players.length > 0/*this.players.length > 0  && this.players[0].x % 470 < 10*/) { //if they travel 400 pixels
-      this.pipesList.push(new game_2_pipe(this.pipesList[this.pipesList.length-1].x+500,Math.random()*300+100,230));
+      this.pipesList.push(new flappy_bird_pipe(this.pipesList[this.pipesList.length-1].x+500,Math.random()*300+100,230));
       this.timeLastPipeWasGenerated = Date.now();
       //this.pipesList.push(new game_2_pipe(this.players[0].x+470,Math.random()*300+100,230));
       console.log("new pipe added at "+this.pipesList[this.pipesList.length-1].x);
@@ -530,7 +797,519 @@ function purgatory() {
 
   this.user_loaded = function(usr_id) {
     clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(400-100*usr_id, 500, 1);
+    this.players[usr_id] = new flappy_bird_player(400-100*usr_id, 500, 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function load_room() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.start_game = false;
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
+    this.host_id = 0;
+  }
+
+  this.tick_function = function() {
+    this.current_time = Date.now()/1000 - this.start_time;
+    if (this.start_game && this.current_time >= 10) { 
+      start_board_game(); 
+    }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "start_game" && usr_id == this.host_id) {
+      this.start_game = true;
+      this.start_time = Date.now()/1000;
+      broadcast("host_started_game:"+0);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+    if (this.start_game) { clients[usr_id].send("host_started_game:"+this.current_time); }
+    if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function dev_room() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.start_game = false;
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    }
+    this.host_id = 0;
+  }
+
+  this.tick_function = function() { return; }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "start_game" && usr_id == this.host_id) {
+      swap_current_state(message);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+    if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function swap_new_direction(dir) {
+  if (dir == "up") { return "down"; }
+  if (dir == "down") { return "up"; }
+  if (dir == "left") { return "right"; }
+  if (dir == "right") { return "left"; }
+}
+
+function board_game() {
+	this.setup = function() {
+		this.players = [];
+		this.tiles = [];
+		this.tile_grid_dimensions = [50, 50];
+		
+    
+
+		this.turning_player_index = 0; 	//Player currently rolling dice
+
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new board_game_player(0, 0, 1);
+    }
+    this.make_board_layout_preset_1();
+	}
+
+	this.make_board_layout_preset_1 = function() {
+		this.tiles[0] = new board_game_tile(0, 25, 0, [1]);
+		for (i = 1; i < 49; i++) {
+			this.tiles[i] = new board_game_tile(i, 25, 1+Math.floor(Math.random()*4), [1]);
+			this.pair_tiles(i-1, i, "right");
+			this.pair_tiles(i, i-1, "left");
+		}
+		this.tiles[49] = new board_game_tile(49, 25, 5, [1]);
+		this.pair_tiles(48, 49, "right");
+		this.pair_tiles(49, 48, "left");
+		this.tiles[50] = new board_game_tile(2, 24, 4, [1]);
+		this.pair_tiles(2, 50, "up");
+		this.pair_tiles(50, 2, "down");
+    for (let i in this.players) {
+      this.players[i].x = this.tiles[0].x;
+      this.players[i].y = this.tiles[0].y;
+      this.user_loaded(i);
+    }
+	}
+
+  this.tick_function = function() {
+    return;
+  }
+
+	this.pair_tiles = function(parent, child, flow_direction) {
+		var reverse_direction = swap_new_direction(flow_direction);
+		this.tiles[parent].make_child(flow_direction, child);
+		this.tiles[child].make_parent(reverse_direction, parent);
+	}
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i)+"\n"; }
+    for (let i in this.tiles) { str_make += this.tiles[i].make_data(i)+"\n"; }
+    return str_make;
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
+      this.move_player_to_tile(usr_id, message);
+    }
+  }
+
+  this.move_player_to_tile = function(usr_id, direction) {
+    if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
+		{ console.log("child failed"); return; }
+    this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
+    this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
+    this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
+    broadcast("player_move_tile:"+usr_id+","+direction);
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new board_game_player(this.tiles[0].x, this.tiles[0].y, 1);
+    this.players[usr_id].x = this.tiles[0].x;
+    this.players[usr_id].y = this.tiles[0].y;
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+    console.log("player_info:"+this.players[usr_id].make_data_raw());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+    if (this.turning_player_index > usr_id) {
+      this.turning_player_index--;
+    }
+    broadcast("turning_player:"+this.turning_player_index);
+  }
+
+  this.read_in_player_position = function(message) {
+    p_vals = convert_data_string(message, [0, 6, 7], [1, 2, 3, 4], [5, 8]);
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new board_game_player(0, 0, 1); }
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
+  }
+}
+
+function ball_game() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.add_last_time = Date.now()/1000;
+    this.players = [];
+    this.balls = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+      //this.balls[i] = new game_2_ball();
+    }
+    this.random_seed = Math.floor(Math.random()*100000);
+    tick_function_ids[tick_function_ids.length] = setInterval(function() { current_state.tick_function_ball(); }, 20);
+  }
+
+  this.tick_function = function() { 
+    this.current_time = Date.now()/1000 - this.start_time;
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    if (Date.now()/1000 - this.add_last_time > 10) {
+      this.add_last_time = Date.now()/1000;
+      this.balls[this.balls.length] = new game_2_ball();
+      broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
+      console.log("added ball "+this.balls);
+      //broadcast(this.make_everything());
+    }
+    for (let i in this.balls) { 
+      console.log("updating ball "+i);
+      this.balls[i].update(seed_random, random_seed); 
+    }
+    //broadcast(this.make_everything());
+  }
+
+  this.tick_function_ball = function() {
+    //console.log("ball_tick_function 1");
+    //console.log("players: "+this.players);
+    for (let i in this.balls) { this.balls[i].update(seed_random, random_seed); }
+    var str_make = "";
+    //console.log("ball_tick_function 2" + this.balls);
+
+    for (let i in this.balls) { 
+      //console.log("data for ball "+i);
+      //console.log(this.balls[i].make_data(i)); 
+      str_make += this.balls[i].make_data(i) + "\n";
+    }
+    for (let i in this.players){
+      if (this.players[i].isDead) { continue; }
+      for (let j in this.balls) {
+        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
+        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
+        var distance = Math.sqrt(dx*dx + dy*dy);
+        console.log("distance: "+distance);
+          if (distance <= this.balls[j].radius){
+            console.log("Player "+i+" is dead");
+            this.players[i].isDead = 1; 
+          }
+      }
+    }
+
+    //console.log("ball_tick_function 3");
+    broadcast(str_make);
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    for (let i in this.balls) { str_make += this.balls[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1); }
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function fighting_game() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.floor = 600;
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+    }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    if (usr_id >= this.players.length) { this.user_loaded(usr_id); }
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }else if(flag == "attack"){
+      this.attack(usr_id);
+      broadcast_exclusive("attack:"+usr_id+","+this.players[usr_id].make_data_raw(), [usr_id]);
+    }else if (flag == "hit"){
+      this.attack_end(usr_id);
+    }else if (flag == "debug") {
+      console.log("debug:"+message);
+    }
+  }
+
+  this.tick_function = function() {
+    for(let i in this.players) {
+      console.log("Y position is: " + this.players[i].make_data(i));
+      broadcast_exclusive(this.players[i].make_data(i),[i]);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, this.floor, 0, usr_id%4);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) 
+  { //format packet as pos_player: id, x, y, dx, dy, facing, health, isAttacking, isDucking
+    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4]);
+    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]); //just removed null as first argument in update_data, not sure if it's right
+    return p_vals[0];
+  }
+
+  
+  this.attack = function(usr_id){
+    var player = this.players[usr_id];
+    var hit_radius = 100;
+    for (let i in this.players) {
+      var x_dist = this.players[i].x - this.players[usr_id].x,
+          y_dist = this.players[i].y - this.players[usr_id].y;
+      if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
+        this.players[i].health -= 10;
+        broadcast("hit:"+i+","+this.players[i].health);
+      }
+    }
+  }
+}
+
+function flappy_bird() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.players = [];
+    this.pipesList = [];
+    this.pipesList.push(new flappy_bird_pipe(700,300,230));
+    //for (i=0; i < clients.length; i++) {
+    //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    //}
+    this.timeLastPipeWasGenerated;
+    for (let i in clients) {
+      this.players[i] = new flappy_bird_player(400-100*i, 500, 1);
+    }
+  }
+
+  this.tick_function = function() { 
+    //this.current_time = Date.now()/1000 - this.start_time;
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    //console.log("Frick"+this.players+"l");
+    if(Date.now() % 500 < 10 && this.players.length > 0/*this.players.length > 0  && this.players[0].x % 470 < 10*/) { //if they travel 400 pixels
+      this.pipesList.push(new flappy_bird_pipe(this.pipesList[this.pipesList.length-1].x+500,Math.random()*300+100,230));
+      this.timeLastPipeWasGenerated = Date.now();
+      //this.pipesList.push(new game_2_pipe(this.players[0].x+470,Math.random()*300+100,230));
+      console.log("new pipe added at "+this.pipesList[this.pipesList.length-1].x);
+      this.pipesList.shift();
+      if(this.pipesList.length > 0) {
+        broadcast(this.pipesList[this.pipesList.length-1].make_data());
+        /*for(let c in clients) {
+          clients[c].send(new game_2_pipe(this.pipesList[this.pipesList.length-1].x-400*(Date.now()-this.timeLastPipeWasGenerated)/1000),this.pipesList[this.pipesList.length-1].y,230);
+          //^^^This corrects for offset a bit
+        }*/
+      }
+    }
+    for(let i in this.players) {
+      //if the player is in the air, make them rise or fall according to their
+      //velocity. if they aren't in the air, but they have a velocity greater
+      //than zero, put them into the air.
+      if(this.players[i].y < 500 || this.players[i].velocity > 0) {
+        this.players[i].velocity+=this.players[i].acceleration;
+        this.players[i].y -= this.players[i].velocity*0.035;
+        //this.tick_interval/1000 is NaN but 0.2 is fine?
+        //console.log("y is now: "+this.players[i].y);
+      } else if(this.players[i].velocity != 0) {
+        this.players[i].velocity+=this.players[i].acceleration;
+        this.players[i].y -= this.players[i].velocity*0.035;
+        //this.tick_interval/1000 is NaN but 0.2 is fine?
+        //console.log("y is now: "+this.players[i].y);
+        if(this.players[i].y >= 500) {
+          this.players[i].y = 500;
+          this.players[i].velocity = 0;
+        }
+      }
+      /*if(i == 0) {
+        this.players[i].x += this.players[i].xVelocity*0.035;
+      }
+      if(i >= 1) {
+        this.players[i].x = this.players[i-1].x - 90;
+      }
+      */
+      broadcast(this.players[i].make_data(i), [i]);
+    }
+
+    // //shows the user the pipeses
+    // if(this.pipesList != null) {
+    //   for(let i in this.pipesList) {
+    //     broadcast(this.pipesList[i].make_data());
+    //   }
+    // }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "jump") {
+      this.players[usr_id].jump();
+      // for(let i in this.pipesList) {
+      //   broadcast(this.pipesList[i].make_data());
+      // }
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "debug") {
+      console.log("client sent "+message);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new flappy_bird_player(400-100*usr_id, 500, 1);
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     clients[usr_id].send(this.make_everything());
