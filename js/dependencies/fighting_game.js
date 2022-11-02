@@ -15,7 +15,7 @@ class fighting_game_player  {
     this.health = 100;    //Player's health
     this.isDucking = 0;   // 0 = not ducking, 1 = ducking
     this.isAttacking = 0; // 0 = not attacking, 1 = attacking
-		this.bounds = [0, 1440/2, 0, 1440/2];
+    this.bounds = [0+100, 1440-100, 0, 1440/2];
     this.is_hit = 0;
     this.start_hit;
 	}
@@ -29,7 +29,11 @@ class fighting_game_player  {
     //gravity animation
     this.y += this.dy;
 
-    
+    //draw rectangle respresenting health in top right corner
+    fill(255, 0, 0);
+    rect(-50, -60, 100, 10);
+    fill(0, 255, 0);
+    rect(-50, -60, this.health, 10);
 
     if(this.y > floor) {
         this.y = floor;
@@ -327,5 +331,14 @@ function fighting_game() {
 
 }
 
-
+//create a collision detection function
+function collisionDetection(player, enemy) {
+  if (player.x < enemy.x + enemy.width &&
+    player.x + player.width > enemy.x &&
+    player.y < enemy.y + enemy.height &&
+    player.y + player.height > enemy.y) {
+    return true;
+  }
+  return false;
+}
 
