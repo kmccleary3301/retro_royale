@@ -3,8 +3,6 @@ Multiplayer flappy bird, with some dramatic effects.
 You get to watch other players jump around and crash.
 Whoever goes the longest wins.
 Each person earns the number of jumps they made, winner gets a large bonus.
-//finna multiplayer flabby berd
-
 
 idea 2 (FFA):
 Everyone is in a square arena, and every 30 seconds a ball-type object is shot in. It ricochets around the arena,
