@@ -32,6 +32,8 @@ var {board_game_player, board_game_tile} =
         require("./dependencies/board_game_classes");
 var {game_2_ball, ball_game_player} =
         require("./dependencies/ball_game_classes");
+var {fighting_game_player} =
+        require("./dependencies/fighting_game_classes");
 
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
@@ -150,6 +152,7 @@ function swap_current_state(state_flag) {
   else if (state_flag == "board_game") {current_state = new board_game(); }
   else if (state_flag == "ball_game") { current_state = new ball_game(); }
   else if (state_flag == "dev_room") { current_state = new dev_room(); }
+  else if (state_flag == "fighting_game") { current_state = new fighting_game(); }
   else { return; } // failsafe for invalid flags
   current_state.setup();
   current_state_flag = state_flag;
@@ -671,6 +674,83 @@ function ball_game() {
     if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1); }
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
+  }
+}
+
+function fighting_game() {
+  this.setup = function() {
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.floor = 600;
+    this.players = [];
+    for (i=0; i < clients.length; i++) {
+      this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+    }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    if (usr_id >= this.players.length) { this.user_loaded(usr_id); }
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }else if(flag == "attack"){
+      this.attack(usr_id);
+      broadcast_exclusive("attack:"+usr_id+","+this.players[usr_id].make_data_raw(), [usr_id]);
+    }else if (flag == "hit"){
+      this.attack_end(usr_id);
+    }else if (flag == "debug") {
+      console.log("debug:"+message);
+    }
+  }
+
+  this.tick_function = function() {
+    for(let i in this.players) {
+      console.log("Y position is: " + this.players[i].make_data(i));
+      broadcast_exclusive(this.players[i].make_data(i),[i]);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, this.floor, 0, usr_id%4);
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) 
+  { //format packet as pos_player: id, x, y, dx, dy, facing, health, isAttacking, isDucking
+    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4]);
+    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]); //just removed null as first argument in update_data, not sure if it's right
+    return p_vals[0];
+  }
+
+  
+  this.attack = function(usr_id){
+    var player = this.players[usr_id];
+    var hit_radius = 100;
+    for (let i in this.players) {
+      var x_dist = this.players[i].x - this.players[usr_id].x,
+          y_dist = this.players[i].y - this.players[usr_id].y;
+      if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
+        this.players[i].health -= 10;
+        broadcast("hit:"+i+","+this.players[i].health);
+      }
+    }
   }
 }
 

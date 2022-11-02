@@ -70,6 +70,7 @@ function swap_current_state(flag) { //Global function for changing current_state
   else if (flag == "load_room") { current_state = new load_room(); }
   else if (flag == "dev_room") {current_state = new dev_room(); }
   else if (flag == "ball_game") { current_state = new ball_game(); }
+  else if (flag == "fighting_game") { current_state = new fighting_game(); }
   else { return; }
   current_state.setup();
   current_state_flag = flag;

@@ -15,7 +15,7 @@ function dev_room() {
 			"overlay": []
 		};
 		this.current_menu = "overlay";
-        this.global_games = ["ball_game", "fruit_game", "board_game", "load_room", "purgatory"];
+        this.global_games = ["ball_game", "fruit_game", "board_game", "load_room", "purgatory", "fighting_game"];
 
 	}
 
