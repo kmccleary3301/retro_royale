@@ -480,18 +480,15 @@ function board_game() {
 		this.players = [];
 		this.tiles = [];
 		this.tile_grid_dimensions = [50, 50];
-		this.make_board_layout_preset_1();
 		
     
 
 		this.turning_player_index = 0; 	//Player currently rolling dice
-		this.make_board_layout_preset_1();
 
     for (i=0; i < clients.length; i++) {
       this.players[i] = new board_game_player(0, 0, 1);
-      this.players[i].x = this.tiles[0].x;
-      this.players[i].y = this.tiles[0].y;
     }
+    this.make_board_layout_preset_1();
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -510,6 +507,7 @@ function board_game() {
     for (let i in this.players) {
       this.players[i].x = this.tiles[0].x;
       this.players[i].y = this.tiles[0].y;
+      this.user_loaded(i);
     }
 	}
 
@@ -551,12 +549,13 @@ function board_game() {
 
   this.user_loaded = function(usr_id) {
     clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new board_game_player(0, 0, 1);
+    this.players[usr_id] = new board_game_player(this.tiles[0].x, this.tiles[0].y, 1);
     this.players[usr_id].x = this.tiles[0].x;
     this.players[usr_id].y = this.tiles[0].y;
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     clients[usr_id].send(this.make_everything());
+    console.log("player_info:"+this.players[usr_id].make_data_raw());
   }
 
   this.user_disconnected = function(usr_id) {

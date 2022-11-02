@@ -42,7 +42,7 @@ class board_game_player {
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
-		this.sprite_anim.draw(this.x-50, this.y-50, true);
+		this.sprite_anim.draw(this.x, this.y, true);
 		pop();
 	}
   
@@ -375,6 +375,7 @@ function board_game() {
 	}
 
 	this.draw = function() {
+		console.log("my_player:"+this.players[this.user_player_index].x+","+this.players[this.user_player_index].y);
 		translate(0, 0);
 		this.event_timer = millis()/1000 - this.event_timer_start;
 		if (this.center_on_player) {
