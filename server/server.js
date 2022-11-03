@@ -37,6 +37,9 @@ var {fighting_game_player} =
 var {flappy_bird_pipe, flappy_bird_player} =
         require("./dependencies/flappy_bird_classes");
 
+var {handle_image} =
+        require("./dependencies/board_from_image");
+
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
 const PoissonDiskSampling = require('poisson-disk-sampling');

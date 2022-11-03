@@ -65,3 +65,22 @@ function select_random_element(entries, weights, return_index) {
   if (return_index) { return index_current-1; }
   return entries[index_current-1];
 }
+
+const getCircularReplacer = () => {
+  const seen = new WeakSet();
+  return (key, value) => {
+    if (typeof value === "object" && value !== null) {
+      if (seen.has(value)) {
+        return;
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+};
+
+function test_reset_draw_settings() {
+  translate(0, 0);
+  scale(1, 1);
+  textSize(10);
+}
