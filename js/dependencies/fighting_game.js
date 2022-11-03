@@ -17,6 +17,7 @@ class fighting_game_player  {
     this.isAttacking = 0; // 0 = not attacking, 1 = attacking
     this.bounds = [0+100, 1440-100, 0, 1440/2];
     this.is_hit = 0;
+    this.dead = 0;
     this.start_hit;
 	}
 
@@ -30,10 +31,17 @@ class fighting_game_player  {
     this.y += this.dy;
 
     //draw rectangle respresenting health in top right corner
+    if (this.dead == 0) {
     fill(255, 0, 0);
-    rect(-50, -60, 100, 10);
+    rect(-25, -80, 100/2, 10);
     fill(0, 255, 0);
-    rect(-50, -60, this.health, 10);
+    rect(-25, -80, this.health/2, 10);
+    }
+
+    //make an if statement to make the player dead once health is 0
+    if (this.health <= 0) {
+      this.dead = 1;
+    }
 
     if(this.y > floor) {
         this.y = floor;
@@ -46,6 +54,7 @@ class fighting_game_player  {
         
      }
         
+     if(this.dead == 0) {
     if(this.isDucking == 1) {
       scale(1-this.facing*2, 1);  
       g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 6*64+(640*this.spriteColor), 64, 64);
@@ -80,6 +89,11 @@ class fighting_game_player  {
 		  this.y = Math.min(this.bounds[3]-40, Math.max(this.bounds[2]+40, this.y));  
       
     }
+  }
+  else {
+    scale(1-this.facing*2, 1);
+    g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 7*64+(640*this.spriteColor), 64, 64);
+  }
 
     console.log('debug:facing value ='+this.facing+" dx value = "+this.dx);
 
@@ -196,8 +210,10 @@ function fighting_game() {
   
 
   this.key_pressed = function(keycode) {
+    if(this.players[this.main_player_index].dead == 0) {
     for (i=0;i<2;i++)
     {
+
       if (keycode == this.arrow_keys[i])
       {
         
@@ -228,10 +244,12 @@ function fighting_game() {
           this.players[this.main_player_index].isAttacking = 1;
           this.players[this.main_player_index].sx = 0;
           send_data("my_pos:"+this.players[this.main_player_index].make_data_raw()+"\nattack");
+          send_data("attack"+this.players[this.main_player_index].make_data_raw());
         }
         return;
       }
     }
+  }
   }
 
   this.key_released = function(keycode) {
@@ -309,7 +327,7 @@ function fighting_game() {
     this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
   }
 
-  /*
+  
   
   this.read_attack = function(data_string) 
   {
@@ -318,16 +336,17 @@ function fighting_game() {
     this.players[p_vals[0]].sx = 0;
   }
 
+  /*
   this.attack = function(player_attacking_id) {
     this.players[player_attacking_id].isAttacking = 1;
   }
-
+*/
   this.hit_parse = function(data_string) {
     p_vals = convert_data_string(data_string, [0, 1]);
     this.players[p_vals[0]].health = p_vals[1];
     this.players[p_vals[0]].hit();
   }
-*/
+
 
 }
 

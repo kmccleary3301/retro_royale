@@ -714,7 +714,7 @@ function fighting_game() {
   this.tick_function = function() {
     for(let i in this.players) {
       console.log("Y position is: " + this.players[i].make_data(i));
-      broadcast_exclusive(this.players[i].make_data(i),[i]);
+     // broadcast_exclusive(this.players[i].make_data(i),[i]);
     }
   }
 
@@ -749,6 +749,7 @@ function fighting_game() {
     var player = this.players[usr_id];
     var hit_radius = 100;
     for (let i in this.players) {
+      if (i != usr_id) {
       var x_dist = this.players[i].x - this.players[usr_id].x,
           y_dist = this.players[i].y - this.players[usr_id].y;
       if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
@@ -756,6 +757,7 @@ function fighting_game() {
         broadcast("hit:"+i+","+this.players[i].health);
       }
     }
+  }
   }
 }
 
