@@ -12,9 +12,16 @@ function load_room() {
 		this.current_time = 0;
 		this.client_is_host = 0;
 		this.buttons = {
-			"overlay": []
+			"overlay": [],
+			"host_menu": [20],
 		};
+
+		this.host_settings = [20]; //# of turns turns;
+
 		this.current_menu = "overlay";
+		this.buttons["host_menu"][0] = new button(width/6, 100, 50, 50, [0, 0, 255], [10, 10, 10], "+1");
+		this.buttons["host_menu"][1] = new button(width/6, 200, 50, 50, [0, 0, 255], [10, 10, 10], "-1");
+		this.buttons["host_menu"][2] = new button(width/6, 300, 50, 50, [0, 0, 255], [10, 10, 10], "Back");
 	}
 
 	this.key_pressed = function(keycode) {
@@ -49,15 +56,20 @@ function load_room() {
 	this.mouse_released = function() {
 		for (let i in this.buttons[this.current_menu]) {
 			if (this.buttons[this.current_menu][i].pressed) {
+				this.buttons[this.current_menu][i].pressed = 0;
 				this.button_press(i);
 			}
-			this.buttons[this.current_menu][i].pressed = 0;
 		}
 	}
 
 	this.button_press = function(code) {
 		if (this.current_menu == "overlay") {
 			if (code == 0) { send_data("start_game"); }
+			else if (code == 1) { this.current_menu = "host_menu"; }
+		} else if (this.current_menu == "host_menu") {
+			if (code == 0) { this.host_settings[0] = 20 + ((this.host_settings[0] + 1 - 20 ) % 31); }
+			else if (code == 1) { this.host_settings[0] = 20 + ((this.host_settings[0] - 1 - 20 ) % 31); }
+			else if (code == 2) { this.current_menu = "overlay"; }
 		}
 	}
 
@@ -76,6 +88,16 @@ function load_room() {
 			this.players[i].draw();
 		}
 		for (let i in this.buttons[this.current_menu]) { this.buttons[this.current_menu][i].draw(); }
+		if (this.current_menu == "host_menu") { this.draw_host_menu(); }
+	}
+
+	this.draw_host_menu = function() {
+		push();
+		text_make(0, 20, 0, 0);
+		textAlign(CENTER, CENTER);
+		fill(0, 0, 0);
+		text("Turns : "+this.host_settings[0], 200, 150);
+		pop();
 	}
 
 	this.read_network_data = function(flag, message) {
@@ -102,6 +124,7 @@ function load_room() {
 		} else if (flag == "assigned_host") {
 			this.client_is_host = 1;
 			this.buttons["overlay"][0] = new button(width/6, 100, 150, 100, [255, 78, 0], [10, 10, 10], "Start");
+			this.buttons["overlay"][1] = new button(width/6, 300, 150, 100, [255, 78, 0], [10, 10, 10], "Menu");
 		}
 	}
 

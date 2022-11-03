@@ -15,14 +15,15 @@ function main_menu() {
 			"server" : [],
 			"certify" : []
 		};
-		this.buttons["main"][0] = new button(width/2 - 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify");
-		this.buttons["main"][1] = new button(width/2 + 150, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect");
-		this.buttons["main"][2] = new button(width/2 - 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server");
-		this.buttons["main"][3] = new button(width/2 + 150, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game");
-		this.buttons["main"][4] = new button(width/2 - 150, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board Game");
-		this.buttons["server"][0] = new button(width/2 - 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Submit");
-		this.buttons["server"][1] = new button(width/2 + 100, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel");
-		this.buttons["certify"][0] = new button(width/2, height/2+80, 150, 100, [255, 78, 0], [10, 10, 10], "Back");
+		console.log("WINDOW DIMS : "+width+", "+height);
+		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify", true);
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect", true);
+		this.buttons["main"][2] = new button(810, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server", true);
+		this.buttons["main"][3] = new button(1110, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game", true);
+		this.buttons["main"][4] = new button(810, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board\nGame\nTime", true);
+		this.buttons["server"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
+		this.buttons["server"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
+		this.buttons["certify"][0] = new button(960, 620, 150, 100, [255, 78, 0], [10, 10, 10], "Back", true);
 		g_cam.reset();
 	}
 
@@ -37,9 +38,9 @@ function main_menu() {
 	this.draw_menu_1 = function() {
 		var r_color = rainbow_gradient(2*this.current_time);
 		textAlign(CENTER, CENTER);
-		text_make(2, 90, 0, 2);
+		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
 		fill(r_color[0], r_color[1], r_color[2]);
-		text("RETRO ROYALE", width/2, 50);
+		text("RETRO ROYALE", width/2, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
 		stroke(11);
@@ -56,25 +57,34 @@ function main_menu() {
 		//background(255, 78, 0);
 		strokeWeight(5);
 		fill(200, 200, 255);
-		rect(width/2 - 200, height/2 - 200, 400, 400);
+		rect(width*4/10, height*3/10, width*2/10, height*4/10);
 		text_make(0, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		text("Server address", width/2, height/2 - 125);
-		text("Server port", width/2, height/2-50);
+		text("Server address", width/2, height*415/1080);
+		text("Server port", width/2, height*525/1080);
 		for (let i in this.buttons["server"]) { this.buttons["server"][i].draw(); }
 	}
 
 	this.draw_menu_3 = function() {
 		strokeWeight(5);
 		fill(200, 200, 255);
-		rect(width/2 - 175, height/2 - 175, 350, 350);
-		text_make(0, 20, 0, 0);
+		rect(width*4/10, height*3/10, width*2/10, height*4/10);
+		text_make(0, Math.min(25*width/1920, 30*height/1080), 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
 		text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
-								width/2, height/2-100);
+								width/2, height*440/1080);
 		for (let i in this.buttons["certify"]) { this.buttons["certify"][i].draw(); }
+	}
+
+	this.window_resize = function() {
+		if (this.current_menu == "server") {
+			this.server_address_input.position(width/2 - 77, height*440/1080);
+			this.server_port_input.position(width/2 - 75, height*550/1080);
+		} else if (this.current_menu == "certify") {
+			this.cert_hyperlink.position(width/2-70, height*520/1080);
+		}
 	}
 
 	this.draw_startup_animation = function() {
@@ -99,7 +109,6 @@ function main_menu() {
 	}
 
 	this.mouse_pressed = function() {
-
 		for (let i in this.buttons[this.current_menu]) {
 			if (this.buttons[this.current_menu][i].check_press(mouseX, mouseY)) { return; }
 		}
@@ -107,8 +116,11 @@ function main_menu() {
 
 	this.mouse_released = function() {
 		for (let i in this.buttons[this.current_menu]) {
-			if (this.buttons[this.current_menu][i].pressed) { this.button_press(i); }
-			this.buttons[this.current_menu][i].pressed = 0;
+			if (this.buttons[this.current_menu][i].pressed) { 
+				this.buttons[this.current_menu][i].pressed = 0;
+				this.button_press(i);
+				return;
+			}
 		}
 	}
 
@@ -134,19 +146,19 @@ function main_menu() {
 
 	this.server_menu_enable = function() {
 		this.server_address_input = createInput(host_address);
-		this.server_address_input.position(width/2 - 75, height/2-105);
+		this.server_address_input.position(width/2 - 77, height*440/1080);
 		this.server_address_input.input(oninput_address);  
 
 		this.server_port_input = createInput(str(global_port));
-		this.server_port_input.position(width/2 - 75, height/2-30);
+		this.server_port_input.position(width/2 - 75, height*550/1080);
 		this.server_port_input.input(oninput_port);
-		this.current_menu = 2;
+		this.current_menu = "server";
 	}
 
 	this.server_menu_disable = function() {
 		this.server_address_input.remove();
 		this.server_port_input.remove();
-		this.current_menu = 1;
+		this.current_menu = "main";
 	}
 
 	this.update_server_address = function() {
@@ -158,13 +170,13 @@ function main_menu() {
 
 	this.authorize_menu_enable = function() {
 		this.cert_hyperlink = createA("https://"+host_address+":"+global_port, "Authorize Connection");
-		this.cert_hyperlink.position(width/2-70, height/2-20);
-		this.current_menu = 3;
+		this.cert_hyperlink.position(width/2-70, height*520/1080);
+		this.current_menu = "certify";
 	}
 
 	this.authorize_menu_disable = function() {
 		this.cert_hyperlink.remove();
-		this.current_menu = 1;
+		this.current_menu = "main";
 	}
 	
 	this.switch_test_game = function() {

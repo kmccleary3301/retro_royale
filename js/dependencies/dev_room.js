@@ -67,6 +67,7 @@ function dev_room() {
 
 	this.draw = function() {
 		this.current_time = Date.now()/1000 - this.start_time;
+		push();
 		background(200, 200, 200);
 		fill(0, 0, 0);
 		text_make(0, 50, 0, 2);
@@ -80,6 +81,7 @@ function dev_room() {
 			this.players[i].draw();
 		}
 		for (let i in this.buttons[this.current_menu]) { this.buttons[this.current_menu][i].draw(); }
+		pop();
 	}
 
 	this.read_network_data = function(flag, message) {

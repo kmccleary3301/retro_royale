@@ -138,12 +138,15 @@ class board_game_tile {
 	}
 
 	draw() {
+		push();
 		if (this.type == 0) { fill(0, 0, 125); }
 		else if (this.type == 1) { fill(250, 0, 0); }
 		else if (this.type == 2) { fill(0, 250, 0); }
 		else if (this.type == 3) { fill(180, 0, 180); }
 		else if (this.type == 4) { fill(255, 78, 0); }
 		else if (this.type == 5) { fill(255, 255, 0); }
+		stroke(50);
+		strokeWeight(5);
 		g_cam.ellipse(this.x, this.y, 100, 100);
 
 		for (let i in Object.keys(this.connected_tiles)) {
@@ -167,6 +170,7 @@ class board_game_tile {
 			g_cam.triangle(x1, y1, x2, y2, x3, y3);
 			*/
 		}
+		pop();
 
 	}
 
@@ -234,7 +238,6 @@ class message_display_element {
 				box_width = 350, box_height = 100;
 		fill(255, 78, 0);
 		rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
-		console.log("center is "+height/2);
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
@@ -293,6 +296,9 @@ class dice_display_element {
 
 function board_game() {
 	this.setup = function() {
+		pop();
+		test_reset_draw_settings();
+		//reset();
 		this.camera_scale = 1;
 		this.players = [];
 		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
@@ -326,7 +332,8 @@ function board_game() {
 			"overlay" : []
 		};
 		this.current_button_menu = "overlay";
-		this.buttons["overlay"][0] = new button(width/6, 100, 150, 100, [255, 78, 0], [10, 10, 10], "Center");
+		this.buttons["overlay"][0] = new button(50, 50, 50, 50, [255, 78, 0], [10, 10, 10], "Center");
+		this.buttons["overlay"][1] = new button(50, 125, 50, 50, [255, 78, 0], [10, 10, 10], "Menu");
 
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
@@ -375,7 +382,8 @@ function board_game() {
 	}
 
 	this.draw = function() {
-		console.log("my_player:"+this.players[this.user_player_index].x+","+this.players[this.user_player_index].y);
+		push();
+		this.players[this.user_player_index].sprite_anim.rotation = this.event_timer*10;
 		translate(0, 0);
 		this.event_timer = millis()/1000 - this.event_timer_start;
 		if (this.center_on_player) {
@@ -387,7 +395,7 @@ function board_game() {
 		}
 		g_cam.x = this.camera_center_coordinates[0];
 		g_cam.y = this.camera_center_coordinates[1];
-		g_cam.scale = 1.3;
+		g_cam.scale = this.camera_scale;
 		for (let i in this.tiles) {
 			this.tiles[i].draw();
 		}
@@ -404,6 +412,7 @@ function board_game() {
 		}
 
 		for (let i in this.buttons[this.current_button_menu]) { this.buttons[this.current_button_menu][i].draw(); }
+		pop();
 	}
 
 	this.start_tile_animate = function(player_id, direction) {
@@ -530,6 +539,11 @@ function board_game() {
 		return;
 	}
 
+	this.mouse_wheel = function(delta) {
+		this.camera_scale += 0.1*delta;
+		this.camera_scale = Math.max(0.5, Math.min(this.camera_scale, 3));
+	}
+
 	this.button_press = function(code) {
 		if (this.current_button_menu == "overlay") {
 			if (code == 0) { console.log("button_pressed"); this.toggle_camera_center_on_player(); }
@@ -539,7 +553,7 @@ function board_game() {
 	this.read_network_data = function(flag, message) {
 		if (flag == "player_move_tile") {
 			this.read_in_tile_movement(message);
-		} else if (flag == "tile_pose") {
+		} else if (flag == "tile_pos") {
 			this.read_in_tile_data(message);
 		} else if (flag == "pos_player") {
 			this.read_in_player_data(message);

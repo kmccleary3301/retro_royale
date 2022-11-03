@@ -41,18 +41,41 @@ function setup() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  if (current_state.window_resize !== undefined) {
+    current_state.window_resize();
+  }
 }
 
 function keyPressed() { //Event function that triggers upon user pressing a key on their keyboard.
-  current_state.key_pressed(keyCode); 
+  if (current_state.key_pressed !== undefined) {
+    current_state.key_pressed(keyCode); 
+  }
 }
 
 function keyReleased() {  //Event function that triggers upon user releasing a key on their keyboard.
-  current_state.key_released(keyCode);
+  if (current_state.key_released !== undefined) {
+    current_state.key_released(keyCode);
+  }
 }
 
-function mousePressed() { current_state.mouse_pressed(); }
-function mouseReleased() { current_state.mouse_released(); }
+function mousePressed() {
+  if (current_state.mouse_pressed !== undefined) {
+   current_state.mouse_pressed(); 
+  }
+}
+
+function mouseReleased() { 
+  if (current_state.mouse_released !== undefined) {
+    current_state.mouse_released();
+  }
+}
+
+function mouseWheel(event) {
+  console.log("mouse_wheel called; delta -> "+event.delta);
+  if (current_state.mouse_wheel !== undefined) {
+    current_state.mouse_wheel(event.delta);
+  }
+}
 
 function draw() { //Global frame render function.
   background(200, 200, 200);
