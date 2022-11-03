@@ -36,7 +36,6 @@ var {fighting_game_player} =
         require("./dependencies/fighting_game_classes");
 var {flappy_bird_pipe, flappy_bird_player} =
         require("./dependencies/flappy_bird_classes");
-
 var {handle_image} =
         require("./dependencies/board_from_image");
 
