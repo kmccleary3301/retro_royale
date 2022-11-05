@@ -29,6 +29,7 @@ class flappy_bird_player {
 		this.fruit_holding = 0;
 		this.fruit_held_id = 0;
 		this.bounds = [0, 2000, 0, 1000];
+		this.isDead = false;
 		this.pipesPassed = 0;
 	}
 
@@ -125,7 +126,6 @@ function flappy_bird() {
       this.players[0] = new flappy_bird_player(this.greenSprite, 200, 200, 0);
       this.main_player_index = 0;
 	  this.playerIsInPipe = false;
-	  this.playerIsDead = false;
     }
   
     this.key_pressed = function(keycode) {
@@ -141,6 +141,7 @@ function flappy_bird() {
       if(keycode == this.space_bar) {
         //this.players[this.main_player_index].jump();
         send_data("jump");
+		send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       }
     }
   
@@ -164,6 +165,8 @@ function flappy_bird() {
       text_make(0, 200, 0, 2);
       textAlign(CENTER, CENTER);
       text("FLAP!", width/2, height/2);
+
+	  //draws the pipes
       for (let i in this.pipesList) {
         if(this.pipesList[i].x > 0) {
           this.pipesList[i].draw();
@@ -173,35 +176,39 @@ function flappy_bird() {
         }
       }
 
-	  this.playerIsInPipe = false;
+	  //draws the players
       for (let i in this.players) {
-        this.players[i].draw();
-		for(let p in this.pipesList) {
-			if(this.players[this.main_player_index].x > this.pipesList[p].x-200-40 && this.players[this.main_player_index].x < this.pipesList[p].x+40) {
-				if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
-					//if player is in top pipe plus half of the height of their spreight
-					this.playerIsInPipe = true;
-					this.playerIsDead = true;
-				}
-				else if(this.players[this.main_player_index].y > this.pipesList[p].y+(this.pipesList[p].pipeWidth/2)-40) {
-					//if player is in bottom pipe minus half of the height of their spreight
-					this.playerIsInPipe = true;
-					this.playerIsDead = true;
-				}
-			}
-			else if(this.pipesList[p].hasBeenPassed == false && this.players[this.main_player_index].x > this.pipesList[p].x) {
-				this.players[this.main_player_index].pipesPassed++;
-				console.log("Passed da pipe");
-				this.pipesList[p].hasBeenPassed = true;
-			}
-		}
+		this.players[i].draw();
 	  }
+
+	  //collision loop for main player
+	  //if(this.players[i].y < height+40  || this.players[i].isDead == false){
+		// for(let p in this.pipesList) {
+		// 	if(this.players[this.main_player_index].x > this.pipesList[p].x-200-40 && this.players[this.main_player_index].x < this.pipesList[p].x+40) {
+		// 		if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
+		// 			//if player is in top pipe plus half of the height of their spreight
+		// 			this.players[main_player_index].isDead = true;
+		// 			//this.playerIsInPipe = false;
+		// 		}
+		// 		else if(this.players[this.main_player_index].y > this.pipesList[p].y+(this.pipesList[p].pipeWidth/2)-40) {
+		// 			//if player is in bottom pipe minus half of the height of their spreight
+		// 			this.players[main_player_index].isDead = true;
+		// 			//this.playerIsInPipe = false;
+		// 		}
+		// 	}
+		// 	else if(this.pipesList[p].hasBeenPassed == false && this.players[this.main_player_index].x > this.pipesList[p].x) {
+		// 		//if the player hasn't passed the pipe and is ahead of it
+		// 		this.players[this.main_player_index].pipesPassed++;
+		// 		this.pipesList[p].hasBeenPassed = true;
+		// 	}
+		// }
+	//}
 	  
 	  text_make(0,20,0,2);
 	  textAlign(LEFT,CENTER);
-	  text("Player is in Pipe: "+this.playerIsInPipe, 20, 20);
-      text("Player is dead: "+this.playerIsDead,20,50);
-      text("Pipes Passed: "+this.players[this.main_player_index].pipesPassed,20,80);
+	  //text("Player is in Pipe: "+this.playerIsInPipe, 20, 20);
+      text("Player is dead: "+this.players[this.main_player_index].isDead,20,30);
+      text("Pipes Passed: "+this.players[this.main_player_index].pipesPassed,20,50);
     }
   
     this.read_network_data = function(flag, message) {

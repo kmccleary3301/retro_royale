@@ -25,7 +25,7 @@ class flappy_bird_player {
   }
 
   jump() {
-    this.velocity = 940;
+    this.velocity = 1100;
   }
 
   make_data(player_index){
