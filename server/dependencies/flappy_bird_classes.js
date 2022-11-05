@@ -16,7 +16,7 @@ class flappy_bird_player {
     this.y = y;
     this.xVelocity = 400; //pixels per second
     this.velocity = 0;
-		this.acceleration = -58; //pixels per second per second
+		this.acceleration = -130; //pixels per second per second
     this.move = 0;
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
@@ -25,7 +25,7 @@ class flappy_bird_player {
   }
 
   jump() {
-    this.velocity = 700;
+    this.velocity = 940;
   }
 
   make_data(player_index){

@@ -4,7 +4,7 @@ let width = 600;
 let height = 600;
 
 let global_port = 3128;
-let tick_interval = 200; //in milliseconds
+let tick_interval = 35; //in milliseconds
 var random_seed = Math.floor(Math.random()*100000);
 var tick_function_ids = [];
 
@@ -159,6 +159,12 @@ function swap_current_state(state_flag) {
   else if (state_flag == "fighting_game") { current_state = new fighting_game(); }
   else if (state_flag == "flappy_bird") { current_state = new flappy_bird(); }
   else { return; } // failsafe for invalid flags
+
+  for(let i in this.tick_function_ids) {
+    if(i > 0)
+      this.tick_function_ids.splice(i,1);
+  }
+
   current_state.setup();
   current_state_flag = state_flag;
   broadcast("current_game:"+state_flag);
@@ -765,7 +771,7 @@ function flappy_bird() {
     this.current_time = 0;
     this.players = [];
     this.pipesList = [];
-    this.pipesList.push(new flappy_bird_pipe(700,300,230));
+    this.pipesList.push(new flappy_bird_pipe(2500,300,230));
     //for (i=0; i < clients.length; i++) {
     //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     //}
@@ -779,8 +785,8 @@ function flappy_bird() {
     //this.current_time = Date.now()/1000 - this.start_time;
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     //console.log("Frick"+this.players+"l");
-    if(Date.now() % 500 < 10 && this.players.length > 0/*this.players.length > 0  && this.players[0].x % 470 < 10*/) { //if they travel 400 pixels
-      this.pipesList.push(new flappy_bird_pipe(this.pipesList[this.pipesList.length-1].x+500,Math.random()*300+100,230));
+    if(Date.now() % 200 < 7 && this.players.length > 0/*this.players.length > 0  && this.players[0].x % 470 < 10*/) { //if they travel 400 pixels
+      this.pipesList.push(new flappy_bird_pipe(this.pipesList[this.pipesList.length-1].x+340+2*(Math.random()-0.5)*120,Math.random()*300+100,230));
       this.timeLastPipeWasGenerated = Date.now();
       //this.pipesList.push(new game_2_pipe(this.players[0].x+470,Math.random()*300+100,230));
       console.log("new pipe added at "+this.pipesList[this.pipesList.length-1].x);
@@ -821,6 +827,8 @@ function flappy_bird() {
       */
       broadcast(this.players[i].make_data(i), [i]);
     }
+
+    broadcast("move_pipes");
 
     // //shows the user the pipeses
     // if(this.pipesList != null) {
