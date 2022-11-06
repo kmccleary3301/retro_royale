@@ -803,7 +803,7 @@ function flappy_bird() {
       //if the player is in the air, make them rise or fall according to their
       //velocity. if they aren't in the air, but they have a velocity greater
       //than zero, put them into the air.
-      if(this.players[i].y < 500 || this.players[i].velocity > 0) {
+      if(this.players[i].y < 1000 || this.players[i].velocity > 0) {
         this.players[i].velocity+=this.players[i].acceleration;
         this.players[i].y -= this.players[i].velocity*0.035;
         //this.tick_interval/1000 is NaN but 0.2 is fine?
@@ -813,8 +813,8 @@ function flappy_bird() {
         this.players[i].y -= this.players[i].velocity*0.035;
         //this.tick_interval/1000 is NaN but 0.2 is fine?
         //console.log("y is now: "+this.players[i].y);
-        if(this.players[i].y >= 500) {
-          this.players[i].y = 500;
+        if(this.players[i].y >= 1000) {
+          this.players[i].y = 1000;
           this.players[i].velocity = 0;
         }
       }
