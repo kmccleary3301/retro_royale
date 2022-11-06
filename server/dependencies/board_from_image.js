@@ -198,9 +198,11 @@ function parse_board_from_image(image) {
     console.log("start pixel -> "+start_pixel.x+","+start_pixel.y);
     if (start_pixel) {
         var list_make = this.flood_fill(start_pixel, this.check_pixel_isnt_white);
+        /*
         for (let i in list_make) {
             console.log("list["+i+"] -> "+JSON.stringify(list_make[i]));
         }
+        */
         return list_make;
     } else {
         return null;

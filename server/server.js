@@ -1,5 +1,11 @@
-var current_state = new dev_room();
-var current_state_flag = "dev_room";
+//var current_state = new dev_room();
+//var current_state_flag = "dev_room";
+
+var sessions = {
+  "temp": undefined
+};
+
+
 let width = 600;
 let height = 600;
 
@@ -40,15 +46,6 @@ var {flappy_bird_pipe, flappy_bird_player} =
 var {parse_board_from_image, swap_new_direction, pixel, linked_pixel} =
         require("./dependencies/board_from_image");
 
-Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
-  if (err) throw err;
-  console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
-  
-  console.log("pixel -> "+JSON.stringify(Jimp.intToRGBA(img.getPixelColor(0, 0))));
-
-  var list_make = parse_board_from_image(img);
-});
-
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
 const PoissonDiskSampling = require('poisson-disk-sampling');
@@ -60,10 +57,6 @@ var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(global_port);
 var WebSocketServer = require('ws').Server;
 var server = new WebSocketServer({ server: httpsServer });
-
-function tick_function() { current_state.tick_function(); }
-
-tick_function_ids[0] = setInterval(tick_function, tick_interval);
 
 function seed_random(seed) {
   var x = Math.sin(seed) * 10000;
@@ -78,11 +71,11 @@ function game_start() {
 }
 
 function server_start() {
-  game_start();
+  //game_start();
   console.log('Server address: ' + ip.address());
   console.log('Server port:    ' + global_port);
-  console.log("Initializing game");
-  console.log("Current game: "+current_state_flag);
+  console.log("Initializing server");
+  //console.log("Current game: "+current_state_flag);
   console.log(Date.now());
 }
 
@@ -96,21 +89,29 @@ server.on('connection', function connection(thisClient) {
   console.log("user connecting");
   clients_info.push(new client_info());
   thisClient.send("request_info");
+  //console.log("Client ip: "+JSON.stringify(thisClient));
+  
+  console.log("Client ip: "+JSON.stringify(thisClient._socket.remoteAddress));
 
 
   thisClient.on('close', function(msg){         //Triggers on a client disconnect
     var position = clients.indexOf(thisClient); //Gets clients position in array
+    if (clients_info[position].session_id !== undefined) {
+      var session_id = clients_info[position].session_id;
+      sessions[session_id].remove_client(thisClient);
+    }
     clients.splice(position, 1);                //Removes client from global client array
     clients_info.splice(position, 0);
     for (i = position; i < clients.length; i++) { clients[i].test_position--; }
-    current_state.user_disconnected(position);  //Triggers current_state's user disconnect function.
+    //current_state.user_disconnected(position);  //Triggers current_state's user disconnect function.
     console.log("connection closed, client: "+position);
   });
 
   thisClient.on('message', function incoming(data) { //Activates when a client sends data in.
-    console.log(data);
+    console.log("msg -> "+data);
     var lines = data.split("\n");             //Packets may contain multiple commands, separated by newline
     var index = clients.indexOf(thisClient);  //grabs the index of the client that sent it in
+    var session_id = clients_info[index].session_id;
     for (let i in lines) {                    //Processes each individual command in the packet
       var line_pieces = lines[i].split(":");  //Commands are formatted as flag:data, flag indicating what to activate.
       var flag = line_pieces[0],  
@@ -118,11 +119,34 @@ server.on('connection', function connection(thisClient) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
-      if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
-      if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
-      if (flag == 'user_info') { clients_info[index].name = message; continue; }
+      if (session_id === undefined) {
+        if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
+        //else if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
+        else if (flag == 'user_info') { clients_info[index].name = message; thisClient.send("request_session"); continue; }
+        else if (flag == 'create_session') {
+          console.log("creating_session_called -> "+message);
+          if (sessions[message] === undefined) {
+            clients_info[index].session_id = message;
+            sessions[message] = new game_session(message);
+            thisClient.send("session_created:"+message+"\nassigned_session:"+message);
+            sessions[message].push_client(thisClient, clients_info[index]);
+          } else {
+            thisClient.send("session_warning:Session already exists");
+          }
+        } else if (flag == 'join_session') {
+          if (sessions[message] === undefined) {
+            thisClient.send("session_warning:Session doesn't exist");
+          } else {
+            clients_info[index].session_id = message;
+            thisClient.send("assigned_session:"+message);
+            sessions[message].push_client(thisClient, clients_info[index]);
+          }
+        }
+      } else if (sessions[session_id] !== undefined) {
+        sessions[session_id].read_network_data(flag, message, thisClient);
+      }
       //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
-      current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
+      //current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
   });
 });
@@ -186,6 +210,97 @@ function start_board_game(message) {
   broadcast("start_board_game");
 }
 
+class game_session {
+  constructor(session_id) {
+    this.session_id = session_id;
+    console.log("this.session_id -> "+this.session_id);
+    this.clients = [];
+    this.clients_info = [];
+    this.current_state = new dev_room();
+    //this.current_state.set_session_id(this.session_id);
+    this.current_state.setup(this.session_id);
+    this.current_state_flag = "dev_room";
+    this.board_game;
+    this.tick_function_ids = [];
+    this.tick_function_ids[0] = setInterval(this.tick_function, 100);
+  }
+
+  tick_function() { 
+    try {
+      this.current_state.tick_function();
+    } catch (TypeError) {
+      return;
+    }
+  }
+
+  swap_current_state(state_flag) {
+    if (state_flag == "fruit_game") { this.current_state = new fruitGame(); }
+    else if (state_flag == "purgatory") { this.current_state = new purgatory(); }
+    else if (state_flag == "load_room") { this.current_state = new load_room(); }
+    else if (state_flag == "board_game") { 
+      if (this.board_game === undefined) {
+        this.board_game = new board_game();
+        this.board_game.setup(this.session_id);
+      }
+      this.current_state = this.board_game;
+    }
+    else if (state_flag == "ball_game") { this.current_state = new ball_game(); }
+    else if (state_flag == "dev_room") { this.current_state = new dev_room(); }
+    else if (state_flag == "fighting_game") { this.current_state = new fighting_game(); }
+    else if (state_flag == "flappy_bird") { this.current_state = new flappy_bird(); }
+    else { return; } // failsafe for invalid flags
+    this.current_state.session_id = this.session_id;
+    if (state_flag != "board_game") {
+      this.current_state.setup(this.session_id);
+    }
+    this.current_state_flag = state_flag;
+    this.broadcast("current_game:"+state_flag);
+  }
+
+  broadcast(data) {  //Send a message to all connected clients
+    for (let c in this.clients) {
+      this.clients[c].send(data);
+    }
+  }
+  
+  broadcast_exclusive(data, excluded_clients_array) {  //Send a message to all clients excluding a passed array.
+    if (excluded_clients_array.length > 1) {
+      for (let c in this.clients) { if (!(excluded_clients_array.includes(c))) { this.clients[c].send(data); } }
+    }
+    else {  //For whatever reason javascript treats an array of 1 as an element, so array.includes doesn't work. This accounts for that.
+      for (let c in this.clients) { if (c != excluded_clients_array) { this.clients[c].send(data); } }
+    }
+  }
+
+  read_network_data(flag, message, client_in) {
+    var index = this.clients.indexOf(client_in);
+    if (index == -1) { return; }
+    if (flag == 'connected') { this.clients[index].send("connected"); } //This only constitutes a hello, establishes that the connection was made
+    //if (flag == 'load_game') { this.clients[index].send("current_game:"+this.current_state_flag); }
+    if (flag == 'user_info') { this.clients_info[index].name = message; return; }
+    //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
+    this.current_state.read_network_data(flag, message, index);
+  }
+
+  push_client(client, client_info) {
+    this.clients[this.clients.length] = client;
+    this.clients_info[this.clients_info.length] = client_info;
+    this.clients[this.clients.length-1].send("remove_inputs");
+    this.clients[this.clients.length-1].send("current_game:"+this.current_state_flag);
+    this.clients[this.clients.length-1].send("please work v0.5");
+    client.send("Please work");
+    this.broadcast("HELLO");
+    this.current_state.user_loaded(this.clients.length-1);
+  }
+
+  remove_client(client) {
+    var index = this.clients.indexOf(client);
+    this.clients.splice(index, 1);
+    this.clients_info.splice(index, 1);
+    this.current_state.user_disconnected(index);
+  }
+}
+
 class client_info {
   constructor() {
     this.connected_to_game;
@@ -205,6 +320,8 @@ class client_info {
 
 function fruitGame() {
   this.setup = function() {
+    this.session_id = "";
+    if (arguments.length >= 1) { this.session_id = arguments[0]; }
     this.fruits_count = 800;
     this.remove_percentage_of_fruits = 0.2;
     this.players = [];
@@ -332,10 +449,12 @@ function fruitGame() {
 
 function purgatory() {
   this.setup = function() {
+    this.session_id = "";
+    if (arguments.length >= 1) { this.session_id = arguments[0]; }
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
-    for (i=0; i < clients.length; i++) {
+    for (i=0; i < sessions[this.session_id].clients.length; i++) {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     }
   }
@@ -356,11 +475,11 @@ function purgatory() {
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + sessions[this.session_id].clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
   }
 
   this.user_disconnected = function(usr_id) {
@@ -383,6 +502,8 @@ function purgatory() {
 
 function load_room() {
   this.setup = function() {
+    this.session_id = "";
+    if (arguments.length >= 1) { this.session_id = arguments[0]; }
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.start_game = false;
@@ -445,14 +566,15 @@ function load_room() {
 }
 
 function dev_room() {
-  this.setup = function() {
+  this.setup = function(session_id) {
+    this.session_id = session_id;
+    //if (arguments.length >= 1) { this.session_id = arguments[0]; }
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.start_game = false;
     this.players = [];
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-    }
+    console.log("this.session_id -> "+this.session_id);
+    console.log("sessions -> "+sessions);
     this.host_id = 0;
   }
 
@@ -464,19 +586,19 @@ function dev_room() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "start_game" && usr_id == this.host_id) {
-      swap_current_state(message);
+      sessions[this.session_id].swap_current_state(message);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
-    if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + sessions[this.session_id].clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
+    if (usr_id == this.host_id) { sessions[this.session_id].clients[usr_id].send("assigned_host"); }
   }
 
   this.user_disconnected = function(usr_id) {
@@ -505,7 +627,9 @@ function swap_new_direction(dir) {
 }
 
 function board_game() {
-	this.setup = function() {
+	this.setup = function(session_id) {
+    this.session_id = session_id;
+    console.log("board game session_id -> "+this.session_id);
     Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
       if (err) throw err;
       console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
@@ -523,13 +647,14 @@ function board_game() {
     this.current_turn = 1;
 		this.turning_player_index = 0; 	//Player currently rolling dice
     this.current_turn_moves = 0;
-
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new board_game_player(0, 0, 1);
-      this.players[i].name = clients_info[i].name;
-      clients[i].send("assigned_id:"+i);
+    if (sessions[this.session_id] !== undefined) {
+      for (i=0; i < sessions[this.session_id].clients.length; i++) {
+        this.players[i] = new board_game_player(0, 0, 1);
+        this.players[i].name = sessions[this.session_id].clients_info[i].name;
+        sessions[this.session_id].clients[i].send("assigned_id:"+i);
+      }
     }
-    this.make_board_layout_preset_1();
+    //this.make_board_layout_preset_1();
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -570,18 +695,19 @@ function board_game() {
 					this.pair_tiles(c_id, i, swap_new_direction(j));
 				}
 			}
+      for (let i in this.players) {
+        this.players[i].current_tile_index = 0;
+        this.players[i].y = this.tiles[0].y;
+        this.players[i].x = this.tiles[0].x;
+      }
+      sessions[this.session_id].broadcast("reset_tiles");
+      sessions[this.session_id].broadcast(this.make_everything());
+      for (let i in this.players) {
+        sessions[this.session_id].clients[i].send("assigned_id:"+i);
+      }
 		}
 
-		for (let i in this.players) {
-			this.players[i].current_tile_index = 0;
-			this.players[i].y = this.tiles[0].y;
-			this.players[i].x = this.tiles[0].x;
-		}
-    broadcast("reset_tiles");
-    broadcast(this.make_everything());
-    for (let i in this.players) {
-      clients[i].send("assigned_id:"+i);
-    }
+		
 	}
 
   this.tick_function = function() {
@@ -605,9 +731,9 @@ function board_game() {
 
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
-    if (flag == "load_game") {
+    /*if (flag == "load_game") {
       this.user_loaded(usr_id);
-    } else if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
+    } else */if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
       this.move_player_to_tile(usr_id, message);
     } else if (flag == "begin_dice" && usr_id == this.turning_player_index) {
       var dice_make = new dice_element([1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]);
@@ -620,24 +746,24 @@ function board_game() {
   this.move_player_to_tile = function(usr_id, direction) {
     if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
 		{ console.log("child failed"); return; }
-    broadcast(this.players[usr_id].make_data(usr_id));
+    sessions[this.session_id].broadcast(this.players[usr_id].make_data(usr_id));
     this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
     this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
     this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
-    broadcast("player_move_tile:"+usr_id+","+direction);
+    sessions[this.session_id].broadcast("player_move_tile:"+usr_id+","+direction);
     this.current_turn_moves--;
     console.log("this.current_turn_moves = "+this.current_turn_moves);
     if (this.current_turn_moves <= 0) {
       this.turning_player_index = (this.turning_player_index + 1) % this.players.length;
       if (this.turning_player_index == 0) {
         this.current_turn += 1;
-        broadcast("current_turn:"+this.current_turn);
+        sessions[this.session_id].broadcast("current_turn:"+this.current_turn);
         if (this.current_turn == this.max_turns) {
-          broadcast("GAME_OVER");
+          sessions[this.session_id].broadcast("GAME_OVER");
         }
       }
-      broadcast("turning_player:"+this.turning_player_index);
+      sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
       console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
     }
   }
@@ -652,22 +778,22 @@ function board_game() {
     this.players[usr_id].name = clients_info[usr_id].name;
     this.players[usr_id].x = this.tiles[0].x;
     this.players[usr_id].y = this.tiles[0].y;
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send("reset_tiles");
-    clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send("reset_tiles");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
     console.log("player_info:"+this.players[usr_id].make_data_raw());
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
     if (this.turning_player_index > usr_id) {
       this.turning_player_index--;
     } else if (this.turning_player_index == usr_id) {
       this.turning_player_index %= this.players.length;
     }
-    broadcast("turning_player:"+this.turning_player_index);
+    sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
   }
 
 
@@ -680,6 +806,9 @@ function board_game() {
 
 function ball_game() {
   this.setup = function() {
+    this.session_id = "";
+    if (arguments.length >= 1) { this.session_id = arguments[0]; }
+
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.add_last_time = Date.now()/1000;
@@ -780,6 +909,9 @@ function ball_game() {
 
 function fighting_game() {
   this.setup = function() {
+    this.session_id = "";
+    if (arguments.length >= 1) { this.session_id = arguments[0]; }
+
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.floor = 600;
@@ -857,6 +989,9 @@ function fighting_game() {
 
 function flappy_bird() {
   this.setup = function() {
+    this.session_id = "";
+    if (arguments.length >= 1) { this.session_id = arguments[0]; }
+
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
