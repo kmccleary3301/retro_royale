@@ -23,12 +23,13 @@ server.use('/', express.static('public'));
 var fs = require('fs');
 var https = require('https');
 var ip = require('ip');
+var Jimp = require("jimp");
 var privateKey  = fs.readFileSync('sslcert/key.pem', 'utf8');
 var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
 var {game_1_player, game_1_fruit, game_1_endzone} = 
         require("./dependencies/fruit_game_classes");
-var {board_game_player, board_game_tile} = 
+var {board_game_player, board_game_tile, dice_element} = 
         require("./dependencies/board_game_classes");
 var {game_2_ball, ball_game_player} =
         require("./dependencies/ball_game_classes");
@@ -36,15 +37,24 @@ var {fighting_game_player} =
         require("./dependencies/fighting_game_classes");
 var {flappy_bird_pipe, flappy_bird_player} =
         require("./dependencies/flappy_bird_classes");
-var {handle_image} =
+var {parse_board_from_image, swap_new_direction, pixel, linked_pixel} =
         require("./dependencies/board_from_image");
+
+Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
+  if (err) throw err;
+  console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
+  
+  console.log("pixel -> "+JSON.stringify(Jimp.intToRGBA(img.getPixelColor(0, 0))));
+
+  var list_make = parse_board_from_image(img);
+});
 
 var credentials = {key: privateKey, cert: certificate};
 var express = require('express');
 const PoissonDiskSampling = require('poisson-disk-sampling');
 var app = express();
 var clients = new Array;
-var client_session_ids = new Array;
+var clients_info = new Array;
 
 var httpsServer = https.createServer(credentials, app);
 httpsServer.listen(global_port);
@@ -84,10 +94,14 @@ server.on('connection', function connection(thisClient) {
   clients.push(thisClient);
   console.log("clients length "+clients.length);
   console.log("user connecting");
-                    
+  clients_info.push(new client_info());
+  thisClient.send("request_info");
+
+
   thisClient.on('close', function(msg){         //Triggers on a client disconnect
     var position = clients.indexOf(thisClient); //Gets clients position in array
     clients.splice(position, 1);                //Removes client from global client array
+    clients_info.splice(position, 0);
     for (i = position; i < clients.length; i++) { clients[i].test_position--; }
     current_state.user_disconnected(position);  //Triggers current_state's user disconnect function.
     console.log("connection closed, client: "+position);
@@ -106,6 +120,7 @@ server.on('connection', function connection(thisClient) {
       }
       if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
       if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
+      if (flag == 'user_info') { clients_info[index].name = message; continue; }
       //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
       current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
     }
@@ -172,6 +187,8 @@ function swap_current_state(state_flag) {
 
 function start_board_game(message) {
   swap_current_state("board_game");
+  var p_vals = convert_data_string(message, [0]);
+  current_state.max_turns = p_vals[0];
   broadcast("start_board_game");
 }
 
@@ -180,13 +197,15 @@ class client_info {
     this.connected_to_game;
     this.session_id;
     this.latency;
+    this.name;
     if (arguments.length >= 1) { this.update_info(arguments); } 
   }
 
   update_info() {
     if (arguments.length >= 1) { this.connected_to_game = arguments[0]; }
-    if (arguments.length >= 2) { this.connected_to_game = arguments[1]; }
-    if (arguments.length >= 3) { this.connected_to_game = arguments[2]; }
+    if (arguments.length >= 2) { this.session_id = arguments[1]; }
+    if (arguments.length >= 3) { this.latency = arguments[2]; }
+    if (arguments.length >= 4) { this.name = arguments[3]; }
   }
 }
 
@@ -378,12 +397,13 @@ function load_room() {
       this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     }
     this.host_id = 0;
+    this.start_message = "";
   }
 
   this.tick_function = function() {
     this.current_time = Date.now()/1000 - this.start_time;
     if (this.start_game && this.current_time >= 10) { 
-      start_board_game(); 
+      start_board_game(this.start_message); 
     }
   }
 
@@ -396,6 +416,7 @@ function load_room() {
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "start_game" && usr_id == this.host_id) {
       this.start_game = true;
+      this.start_message = message;
       this.start_time = Date.now()/1000;
       broadcast("host_started_game:"+0);
     }
@@ -491,16 +512,28 @@ function swap_new_direction(dir) {
 
 function board_game() {
 	this.setup = function() {
+    Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
+      if (err) throw err;
+      console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
+      console.log("pixel -> "+JSON.stringify(Jimp.intToRGBA(img.getPixelColor(0, 0))));
+      var list_make = parse_board_from_image(img);
+      this.make_board_from_image(list_make);
+    });
+    
+
 		this.players = [];
 		this.tiles = [];
 		this.tile_grid_dimensions = [50, 50];
 		
-    
-
+    this.max_turns = 20;
+    this.current_turn = 1;
 		this.turning_player_index = 0; 	//Player currently rolling dice
+    this.current_turn_moves = 0;
 
     for (i=0; i < clients.length; i++) {
       this.players[i] = new board_game_player(0, 0, 1);
+      this.players[i].name = clients_info[i].name;
+      clients[i].send("assigned_id:"+i);
     }
     this.make_board_layout_preset_1();
 	}
@@ -525,7 +558,40 @@ function board_game() {
     }
 	}
 
+  this.make_board_from_image = function(pixel_list) {
+		this.tiles = [];
+		for (let i in pixel_list) {
+			var type = 1 + Math.floor(Math.random()*4);
+			if (pixel_list[i].compare_rgb(0, 0, 255)) { type = 0; }
+			else if (pixel_list[i].compare_rgb(255, 255, 0)) { type = 5; }
+			else if (pixel_list[i].compare_rgb(255, 0, 255)) { type = 3; }
+			else if (pixel_list[i].compare_rgb(255, 0, 0)) { type = 4; }
+			this.tiles[i] = new board_game_tile(pixel_list[i].x, pixel_list[i].y, type, [1]);
+		}
+		for (let i in pixel_list) {
+			for (let j in pixel_list[i].connected) {
+				var c_id = pixel_list[i].connected[j];
+				if (c_id != false) {
+					this.pair_tiles(i, c_id, j);
+					this.pair_tiles(c_id, i, swap_new_direction(j));
+				}
+			}
+		}
+
+		for (let i in this.players) {
+			this.players[i].current_tile_index = 0;
+			this.players[i].y = this.tiles[0].y;
+			this.players[i].x = this.tiles[0].x;
+		}
+    broadcast("reset_tiles");
+    broadcast(this.make_everything());
+    for (let i in this.players) {
+      clients[i].send("assigned_id:"+i);
+    }
+	}
+
   this.tick_function = function() {
+    if (isNaN(this.turning_player_index)) { this.turning_player_index = 0; }
     return;
   }
 
@@ -537,8 +603,9 @@ function board_game() {
 
   this.make_everything = function() {
     str_make = "";
-    for (let i in this.players) { str_make += this.players[i].make_data(i)+"\n"; }
     for (let i in this.tiles) { str_make += this.tiles[i].make_data(i)+"\n"; }
+    for (let i in this.players) { str_make += this.players[i].make_data(i)+"\n"; }
+    str_make += "turning_player:"+this.turning_player_index+"\ncurrent_turn:"+this.current_turn+"\n";
     return str_make;
   }
 
@@ -548,26 +615,52 @@ function board_game() {
       this.user_loaded(usr_id);
     } else if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
       this.move_player_to_tile(usr_id, message);
+    } else if (flag == "begin_dice" && usr_id == this.turning_player_index) {
+      var dice_make = new dice_element([1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]);
+      broadcast("dice_roll_turn:"+dice_make.make_data());
+      this.current_turn_moves = dice_make.chosen_value;
+      broadcast("current_turn_moves:"+this.current_turn_moves);
     }
   }
 
   this.move_player_to_tile = function(usr_id, direction) {
     if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
 		{ console.log("child failed"); return; }
+    broadcast(this.players[usr_id].make_data(usr_id));
     this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
     this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
     this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
     broadcast("player_move_tile:"+usr_id+","+direction);
+    this.current_turn_moves--;
+    console.log("this.current_turn_moves = "+this.current_turn_moves);
+    if (this.current_turn_moves <= 0) {
+      this.turning_player_index = (this.turning_player_index + 1) % this.players.length;
+      if (this.turning_player_index == 0) {
+        this.current_turn += 1;
+        broadcast("current_turn:"+this.current_turn);
+        if (this.current_turn == this.max_turns) {
+          broadcast("GAME_OVER");
+        }
+      }
+      broadcast("turning_player:"+this.turning_player_index);
+      console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
+    }
+  }
+
+  this.start_versus_event = function() {
+    return;
   }
 
   this.user_loaded = function(usr_id) {
     clients[usr_id].send("load_recieved");
     this.players[usr_id] = new board_game_player(this.tiles[0].x, this.tiles[0].y, 1);
+    this.players[usr_id].name = clients_info[usr_id].name;
     this.players[usr_id].x = this.tiles[0].x;
     this.players[usr_id].y = this.tiles[0].y;
     broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send("reset_tiles");
     clients[usr_id].send(this.make_everything());
     console.log("player_info:"+this.players[usr_id].make_data_raw());
   }
@@ -577,9 +670,12 @@ function board_game() {
     this.players.splice(usr_id, 1);
     if (this.turning_player_index > usr_id) {
       this.turning_player_index--;
+    } else if (this.turning_player_index == usr_id) {
+      this.turning_player_index %= this.players.length;
     }
     broadcast("turning_player:"+this.turning_player_index);
   }
+
 
   this.read_in_player_position = function(message) {
     p_vals = convert_data_string(message, [0, 6, 7], [1, 2, 3, 4], [5, 8]);

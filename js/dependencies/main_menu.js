@@ -13,17 +13,24 @@ function main_menu() {
 		this.buttons = {
 			"main" : [],
 			"server" : [],
-			"certify" : []
+			"certify" : [],
+			"info" : []
 		};
+
+		this.user_info = user_info;
+
 		console.log("WINDOW DIMS : "+width+", "+height);
 		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify", true);
 		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect", true);
 		this.buttons["main"][2] = new button(810, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server", true);
 		this.buttons["main"][3] = new button(1110, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game", true);
 		this.buttons["main"][4] = new button(810, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board\nGame\nTime", true);
+		this.buttons["main"][5] = new button(1110, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Info", true);
 		this.buttons["server"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
 		this.buttons["server"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
 		this.buttons["certify"][0] = new button(960, 620, 150, 100, [255, 78, 0], [10, 10, 10], "Back", true);
+		this.buttons["info"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
+		this.buttons["info"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
 		g_cam.reset();
 	}
 
@@ -33,6 +40,7 @@ function main_menu() {
 		if (this.current_menu == "main") { this.draw_menu_1(); }
 		else if (this.current_menu == "server") { this.draw_menu_2(); }
 		else if (this.current_menu == "certify") { this.draw_menu_3(); }
+		else if (this.current_menu == "info") { this.draw_menu_4(); }
 	}
 
 	this.draw_menu_1 = function() {
@@ -76,6 +84,18 @@ function main_menu() {
 		text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
 								width/2, height*440/1080);
 		for (let i in this.buttons["certify"]) { this.buttons["certify"][i].draw(); }
+	}
+
+	this.draw_menu_4 = function() {
+		//background(255, 78, 0);
+		strokeWeight(5);
+		fill(200, 200, 255);
+		rect(width*4/10, height*3/10, width*2/10, height*4/10);
+		text_make(0, 20, 0, 0);
+		fill(0, 0, 0);
+		textAlign(CENTER, CENTER);
+		text("Name", width/2, height*415/1080);
+		for (let i in this.buttons["info"]) { this.buttons["info"][i].draw(); }
 	}
 
 	this.window_resize = function() {
@@ -127,21 +147,43 @@ function main_menu() {
 	this.button_press = function(code) {
 		if (this.current_menu == "main") {
 			if (code == 0) { this.authorize_menu_enable(); }
-			else if (code == 1) { swap_current_state("load_screen"); }
+			else if (code == 1) { send_data("user_info:"+user_info["name"]); swap_current_state("load_screen"); }
 			else if (code == 2) { this.server_menu_enable(); }
 			else if (code == 3) { this.switch_test_game(); }
 			else if (code == 4) { this.switch_board_game(); }
+			else if (code == 5) { this.info_menu_enable(); }
 		} else if (this.current_menu == "server") {
 			if (code == 0) { this.update_server_address(); }
 			else if (code == 1) { this.server_menu_disable(); }
-		}
-		else if (this.current_menu == "certify") {
+		} else if (this.current_menu == "certify") {
 			if (code == 0) { this.authorize_menu_disable(); }
+		} else if (this.current_menu == "info") {
+			if (code == 0) { this.update_user_info(); }
+			else if (code == 1) { this.info_menu_disable(); }
 		}
 	}
 
 	this.read_network_data = function(flag, message) {
 		return;
+	}
+
+	this.info_menu_enable = function() {
+		this.user_name_input = createInput(this.user_info["name"]);
+		this.user_name_input.position(width/2 - 77, height*440/1080);
+		this.user_name_input.input(oninput_name); 
+		this.current_menu = "info";
+	}
+
+	this.info_menu_disable = function() {
+		this.user_name_input.remove();
+		this.current_menu = "main";
+		this.user_info = user_info;
+	}
+
+	this.update_user_info = function() {
+		this.user_name_input.remove();
+		this.current_menu = "main";
+		user_info = this.user_info;
 	}
 
 	this.server_menu_enable = function() {
@@ -194,4 +236,8 @@ function oninput_address() {
 
 function oninput_port() {
   current_state.temp_server_port = this.value();
+}
+
+function oninput_name() {
+	current_state.user_info["name"] = this.value();
 }
