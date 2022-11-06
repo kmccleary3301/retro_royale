@@ -151,7 +151,7 @@ class button {
 
   draw() {
     push();
-
+    
     if (this.proportion_definition) { this.reposition(); }
 
     fill(this.color[0], this.color[1], this.color[2]);
@@ -181,10 +181,116 @@ class button {
     this.execute();
   }
 }
-
+/*
 class text_box {
+  constructor(x_in, y_in, width_in, height_in, color, text_color, prompt, position_by_proportion) {
+    /
+    x_in, y_in is center position of button.
+    width_in, height_in is dimensions of button.
+    color is the color of the button.
+    text_color is the color of the text.
+    text is the actual string to display.
+    position_by_proportion is optional boolean,
+    if true the position will be defined in terms of window dimensions,
+    otherwise it will be positioned from the top left corner (0, 0)
+    example of position_by_proportion:
 
+      x_in = 1/3, y_in = 1/3 -> button will be centered at 33% down the width and height of window.
+    /
+
+    this.proportion_definition = 0;
+    if (position_by_proportion !== undefined) {
+      if (position_by_proportion) { this.proportion_definition = 1; }
+    }
+    if (this.proportion_definition && x_in >= 1 && y_in >= 1) {
+      //If dev wants proportion resizing but entered coordinates, this will convert them.
+      //Instead of using actual width, I used reference of 1920x1080 so it will adapt to ideal.
+      x_in = x_in / 1920, y_in = y_in / 1080;
+    }
+    if (this.proportion_definition && width_in >= 1 && height_in >= 1) {
+      //If user wants proportion resizing but entered coordinates, this will convert them.
+      width_in = width_in / 1920, height_in = height_in / 1080;
+    }
+
+    this.x_cen_in = x_in;
+    this.y_cen_in = y_in;
+    this.x_cen = x_in, this.y_cen = y_in;
+    this.box_width_in = width_in;
+    this.box_height_in = height_in;
+    this.box_width = width_in, this.box_height = height_in;
+    this.text_prompt = prompt;
+    this.color = color;
+    this.text_color = text_color;
+    this.pressed = 0;
+    this.type_active = 0;
+    this.radius = 5;
+    this.max_text_size;
+    this.text_input = "";
+    this.max_input_display = 10;
+    this.uppercase_on = 0;
+
+    
+    if (this.proportion_definition) { this.reposition(); }
+    else {
+      this.max_text_size = Math.min(1.8*this.box_width / (1 + this.text_prompt.length + this.max_input_display), 0.9*this.box_height);
+    }
+
+    this.text_size = this.max_text_size;
+  }
+
+  reposition() {
+    if (this.proportion_definition) {
+      this.x_cen = width*this.x_cen_in, this.y_cen = height*this.y_cen_in
+      this.box_width = width*this.box_width_in, this.box_height = height*this.box_height_in;
+      this.max_text_size = Math.min(1.8*this.box_width / (1 + this.text_prompt.length + this.max_input_display), 0.9*this.box_height);
+    }
+  }
+
+  draw() {
+    push();
+
+    if (this.proportion_definition) { this.reposition(); }
+
+    var text_display = this.text_prompt, input = this.text_input;
+    input.splice(0, Math.max(0, input.length-this.max_input_display));
+    text_display += input;
+    if (this.type_active && Date.now/100 % 10 < 5) { text_display += "|"; }
+    input.splice()
+
+    fill(this.color[0], this.color[1], this.color[2]);
+    stroke(10);
+    if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
+    rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height, this.radius);
+    strokeWeight(0);
+    textAlign(CENTER, CENTER);
+    text_make(0, this.text_size, 0, 0);
+    fill(this.text_color[0], this.text_color[1], this.text_color[2]);
+    text(text_display, this.x_cen, this.y_cen);
+    pop();
+  }
+
+  key_input(keycode) {
+    var uppercase = 0;
+    switch(keycode) {
+      case 8:
+        if (this.text_input.length > 0) { this.text_input.splice(this.text_input.length-1, 1); }
+        break;
+      case 16
+    }
+  }
+
+  check_press(x, y) {
+    if ((Math.abs(x - this.x_cen) < this.box_width/2) && 
+        (Math.abs(y - this.y_cen) < this.box_height/2)) {
+          this.pressed = 1;
+          if (this.type_active) { this.type_active = 0; }
+          else { this.type_active = 1; }
+          return true;
+    }
+    return false;
+  }
 }
+*/
 
 class sprite_animation_object {
   constructor(sprite, draw_size, tile_width, tile_height, row_dictionary) {
@@ -197,7 +303,13 @@ class sprite_animation_object {
     this.draw_size = draw_size;
     this.w_h_ratio = this.x_mod/this.y_mod;
     this.row_dictionary = row_dictionary;
+    for (let i in this.row_dictionary) {
+      if (this.row_dictionary[i]["first_tile"] === undefined) {
+        this.row_dictionary[i]["first_tile"] = 0;
+      }
+    }
     this.current_animation_row = 0;
+    this.current_first_tile = 0;
     this.current_row_length = 1;
     this.flip_image = 0;
     this.flip_image_ref = 1;
@@ -221,14 +333,16 @@ class sprite_animation_object {
         scale (this.flip_image_ref, 1);
         rotate(this.rotation*Math.PI/180);
         g_cam.image(this.sprite, null, null, this.draw_size*this.w_h_ratio, this.draw_size, 
-                    this.x_mod*this.sx, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
+                    this.x_mod*(this.sx+this.current_first_tile), this.y_mod*this.current_animation_row, 
+                    this.x_mod, this.y_mod);
       } else {
         translate(x, y);
         scale(this.flip_image_ref, 1);
         rotate(this.rotation*Math.PI/180);
         imageMode(CENTER);
         image(this.sprite, 0, 0, this.draw_size*this.w_h_ratio, this.draw_size, 
-              this.x_mod*this.sx, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
+              this.x_mod*(this.sx+this.current_first_tile), this.y_mod*this.current_animation_row, 
+              this.x_mod, this.y_mod);
       }
       if (frameCount % this.global_frames_per_anim_frame == 0) {
         this.sx = (this.sx + 1) % this.current_row_length;
@@ -239,14 +353,16 @@ class sprite_animation_object {
         scale (this.flip_image_ref, 1);
         rotate(this.rotation*Math.PI/180);
         g_cam.image(this.sprite, null, null, this.draw_size*this.w_h_ratio, this.draw_size, 
-                    0, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
+                    this.x_mod*this.current_first_tile, this.y_mod*this.current_animation_row, 
+                    this.x_mod, this.y_mod);
       } else {
         translate(x, y);
         scale(this.flip_image_ref, 1);
         rotate(this.rotation*Math.PI/180);
         imageMode(CENTER);
         image(this.sprite, 0, 0, this.draw_size*this.w_h_ratio, this.draw_size, 
-              0, this.y_mod*this.current_animation_row, this.x_mod, this.y_mod);
+              this.x_mod*this.current_first_tile, this.y_mod*this.current_animation_row, 
+              this.x_mod, this.y_mod);
       }
     }
     pop();
@@ -267,10 +383,12 @@ class sprite_animation_object {
       console.log("recieved animation as string");
       this.current_animation_row = this.row_dictionary[animation]["row"];
       this.current_row_length = this.row_dictionary[animation]["row_length"];
+      this.current_first_tile = this.row_dictionary[animation]["first_tile"];
     } else if (typeof animation === "number") {
       var key = Object.keys(this.row_dictionary)[animation];
       this.current_animation_row = this.row_dictionary[key]["row"];
       this.current_row_length = this.row_dictionary[key]["row_length"];
+      this.current_first_tile = this.row_dictionary[key]["first_tile"];
     }
     this.sx = 0;
   }
