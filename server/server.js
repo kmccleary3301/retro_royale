@@ -709,7 +709,39 @@ function fighting_game() {
     }else if (flag == "debug") {
       console.log("debug:"+message);
     }
+    else if (flag == "winner") {
+      broadcast_exclusive("winner:"+message);
+      
+    }
   }
+
+  //make a function that keeps an array of the dead players in order
+  //when a player dies, add them to the array to determine placement
+  this.leaderboard = function(){
+    var dead = [];
+    for (let i in this.players){
+      if (this.players[i].isDead){
+        dead.push(this.players[i]);
+      }
+    }}
+
+
+  //make a function to declare a winner
+  this.check_winner = function(){
+    var numAlive = 0;
+    for (let i in this.players){
+      if (this.players[i].isDead == 0){   //for each player, if they are not dead, add 1 to numAlive
+        numAlive = numAlive + 1;
+      }
+    } 
+    if (numAlive == 1){
+      for (let i in this.players){
+        if (this.players[i].isDead == 0){   //take the winning player's id and send it to the clients
+          broadcast("winner:"+i);     //send the winner to the clients
+          this.leaderboard();        //this is where the leaderboard function would be called to determine placement
+        }
+      }
+    }}
 
   this.tick_function = function() {
     for(let i in this.players) {

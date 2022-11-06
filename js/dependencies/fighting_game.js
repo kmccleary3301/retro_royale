@@ -1,166 +1,114 @@
 
 const gravity = .5;
 const floor = 600;
-
+var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
 class fighting_game_player  {
 	constructor(spriteSheet, x, y, face, color) {
 		this.spriteSheet = spriteSheet;
     this.spriteColor = color; //0 = red, 1 = blue, 2 = pink, 3 = green
-		this.sx = 0;          //Frame counter for when the player is moving.
-		this.x = x;           //Player's x position.
-		this.y = y;           //Position of the player.
-    this.dx = 0;          //Horizontal velocity
-    this.dy = 0;          //Vertical velocity
-		this.facing = face;   // 0 = left, 1 = right
-    this.health = 100;    //Player's health
-    this.isDucking = 0;   // 0 = not ducking, 1 = ducking
-    this.isAttacking = 0; // 0 = not attacking, 1 = attacking
+    this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64, {
+      "left_right_walking" : {
+        "row" : 1+10*this.spriteColor,
+        "row_length": 4
+      },
+      "standing" : {
+        "row" : 6+10*this.spriteColor,
+        "row_length": 1
+      },
+      "attacking" : {
+        "row" : 3+10*this.spriteColor,
+        "row_length": 4
+      },
+      "hit" : {
+        "row" : 4+10*this.spriteColor,
+        "row_length": 4
+      },
+      "dead" : {
+        "row" : 7+10*this.spriteColor,
+        "row_length": 1
+      }
+    });
+    this.current_animation = "standing";
+    this.moving = 0;
+		this.sx = 0;              //Frame counter for when the player is moving.
+		this.x = x;               //Player's x position.
+		this.y = y;               //Position of the player.
+    this.dx = 0;              //Horizontal velocity
+    this.dy = 0;              //Vertical velocity
+		this.facing = face;       // 0 = left, 1 = right
+    this.flip = 0;
+    this.health = 100;        // Player's health
+    this.isDucking = 0;       // 0 = not ducking, 1 = ducking
+    this.isAttacking = 0;     // 0 = not attacking, 1 = attacking
     this.bounds = [0+100, 1440-100, 0, 1440/2];
     this.is_hit = 0;
-    this.dead = 0;
+    this.isDead = 0;
     this.start_hit;
 	}
 
 	draw() {
-    //console.log("drawing_player:"+this.x+","+this.y);
 		push();
-		g_cam.translate(this.x, this.y);
-    //g_cam.image(this.spriteSheet, null, null, 100, 100, this.spriteColor*256+64*(this.sx), 64, 64, 64);
+    if (this.is_hit == 1 && (millis()/1000 - this.start_hit) < .5) {
+      this.update_anim("standing");
+    }
+    if (this.moving) {
+      this.x += this.dx;
+    }
 
+    this.x = Math.max(this.bounds[0], Math.min(this.x, this.bounds[1]));
+    this.sprite_anim.draw(this.x, this.y, true);
+    if (this.current_animation == "attacking" && this.sprite_anim.sx == 3) { 
+      if (this.moving == 0) {
+        this.update_anim("standing"); 
+      } else {
+        this.update_anim("left_right_walking");
+      }
+    }
     //gravity animation
     this.y += this.dy;
+    this.y = Math.min(this.y, floor);
+    this.y = Math.max(this.bounds[2], Math.min(this.y, this.bounds[3]));
 
     //draw rectangle respresenting health in top right corner
-    if (this.dead == 0) {
-    fill(255, 0, 0);
-    rect(-25, -80, 100/2, 10);
-    fill(0, 255, 0);
-    rect(-25, -80, this.health/2, 10);
+    if (this.isDead == 0) {
+      fill(255, 0, 0);
+      rect(-25, -80, 100/2, 10);
+      fill(0, 255, 0);
+      rect(-25, -80, this.health/2, 10);
     }
-
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
-      this.dead = 1;
+      //announce_death();
+      this.isDead = 1;
     }
-
-    if(this.y > floor) {
-        this.y = floor;
-        //this.dy = 0;
+    if(this.y < floor )  {         
+      this.dy += gravity; 
     }
-
-     if(this.y < floor )  {         
-        this.dy += gravity; 
-           
-        
-     }
-        
-     if(this.dead == 0) {
-    if(this.isDucking == 1) {
-      scale(1-this.facing*2, 1);  
-      g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 6*64+(640*this.spriteColor), 64, 64);
-    }
-    else {
-      if(this.isAttacking == 1) {
-        scale(1-this.facing*2, 1);  
-        g_cam.image(this.spriteSheet, null, null, 100, 100, 64*this.sx, 3*64+(640*this.spriteColor), 64, 64);
-      }
-      else {
-        if(this.y < floor) {
-          scale(1-this.facing*2, 1);  
-          g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 5*64+(640*this.spriteColor), 64, 64);
-        }
-        else {
-          if(this.dx != 0) {
-            scale(1-this.facing*2, 1);  
-            g_cam.image(this.spriteSheet, null, null, 100, 100, 64*(this.sx), 1*64+(640*this.spriteColor), 64, 64);
-             
-          }
-          else {
-            scale(1-this.facing*2, 1);  
-            g_cam.image(this.spriteSheet, null, null, 100, 100, 64, 64+(640*this.spriteColor), 64, 64);
-          }
-          
-        }
-        
-      }
-      this.x += this.dx * (1-this.facing*2); // //move the player
-
-      this.x = Math.min(this.bounds[1]-40, Math.max(this.bounds[0]+40, this.x));    //Prevents the player from leaving the game boundaries.
-		  this.y = Math.min(this.bounds[3]-40, Math.max(this.bounds[2]+40, this.y));  
-      
-    }
-  }
-  else {
-    scale(1-this.facing*2, 1);
-    g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 7*64+(640*this.spriteColor), 64, 64);
-  }
-
-    console.log('debug:facing value ='+this.facing+" dx value = "+this.dx);
-
-   
-
-		// if (this.dx != 0) { //if the player is moving
-		// 	if (this.isDucking == 0) {
-    //     console.log("Debug:Player is ducking?"+this.isDucking+"\n");
-    //     if(this.isAttacking == 0) {
-    //       scale(1-this.facing*2, 1);  
-    //      g_cam.image(this.spriteSheet, null, null, 100, 100, this.spriteColor*256+64*(this.sx), 64, 64, 64);           
-    //     }
-		// 		//this.x = this.dx * (1-this.facing*2); 
-		// 	} else {
-    //     scale(1-this.facing*2, 1);  
-    //     g_cam.image(this.spriteSheet, null, null, 100, 100, 256*this.spriteColor, 7*64, 64, 64);
-    //   }
-		// 	 
-		// } else {//not moving
-      
-    //     if(this.isAttacking == 0) {
-    //       scale(1-this.facing*2, 1);  
-    //       //g_cam.image(this.spriteSheet, null, null, 100, 100, 143+32*(this.sx+1), 0, 32, 49); link
-    //       g_cam.image(this.spriteSheet, null, null, 100, 100, 256*this.spriteColor+64, 64, 64, 64);
-    //     }
-    //    else {
-    //     scale(1-this.facing*2, 1);  
-    //     g_cam.image(this.spriteSheet, null, null, 100, 100, 256*this.spriteColor, 7*64, 64, 64);
-    //   }
-    // }
-    // if(this.isAttacking == 1) {
-    //   if(this.facing < 2) {        
-    //     this.x -= 10*(1-this.facing*2);
-    //   this.dy = -2;      
-    //     scale(1-this.facing*2, 1);  
-    //     g_cam.image(this.spriteSheet, null, null, 100, 100, (this.spriteColor*256)+64*(this.sx), (5*64), 64, 64);
-    //   }
-    //   if (this.sx == 3) {
-    //     this.sx = 0;
-    //     this.isAttacking = 0;
-    //   }
-    // }
-    // if (this.is_hit == 1) {
-    //   this.x = 10*(1-this.facing*2);
-    //   this.dy = -2;
-    //   scale(1-this.facing*2, 1);
-    //   g_cam.image(this.spriteSheet, null, null, 100, 100, (this.spriteColor*256)+64*(this.sx), (5*64), 64, 64);
-    //   if (millis()/1000 - this.start_hit > 1000) {
-    //     this.is_hit = 0;
-    //   }
-    // }
-    // /*
-    // if (frameCount % 6 == 0) {
-    //   this.s6x = (this.s6x+1) % 6;
-    // }
-    // */
-    if (frameCount % 4 == 0) {
-       this.sx = (this.sx + 1) % 4;
-    }
-
 		pop();
 	}
+
+  update_facing(facing) {
+		if (facing == this.facing) { return; }
+		this.facing = facing;
+		if (facing == 0 || facing == 1) {
+			if (facing == 1) { this.sprite_anim.flip(1); this.flip = 1;}
+			else { this.sprite_anim.flip(0); this.flip = 0; }
+    }
+	}
+
+  update_anim(animation) {
+    if (animation == "standing" || animation == "dead") { this.moving = 0; this.sprite_anim.stop(); }
+    else { this.moving = 1; this.sprite_anim.start(); }
+    this.sprite_anim.change_animation(animation);
+    this.current_animation = animation;
+  }
 
   hit() {
     this.is_hit = 0;
     this.start_hit = millis()/1000;
+    this.update_anim("hit");
   }
+
 
 	get_pos_string() {
 		var string_make = str(this.x)+","+str(this.y)+","+str(this.dx)+","+str(this.dy)+","+str(this.facing)+","+str(this.health)+","+str(this.isAttacking)+","+str(this.isDucking);
@@ -202,6 +150,12 @@ function fighting_game() {
     
     this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
     imageMode(CENTER);
+    this.background = loadImage(repo_address+"media/backgrounds/fighting_game_test.jpeg");
+    
+    //this.background.resize(0, height);
+    //this.background.resize(width, 0);
+    this.background.resize(width, height);
+  
     this.players[0] = new fighting_game_player(this.Sprite, 400, floor, 0, 0); //starting location, direction facing, color
     this.main_player_index = 0;
     //send_data("load_game");
@@ -210,52 +164,62 @@ function fighting_game() {
   
 
   this.key_pressed = function(keycode) {
-    if(this.players[this.main_player_index].dead == 0) {
-    for (i=0;i<2;i++)
-    {
+    if(this.players[this.main_player_index].isDead == 0) {
 
-      if (keycode == this.arrow_keys[i])
-      {
-        
-        this.players[this.main_player_index].facing = i;
-        this.players[this.main_player_index].dx = 10;
-        this.players[this.main_player_index].sx = 0;
-        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-        return;
-      }
-      if (keycode == 38)
-      {
-        if(this.players[this.main_player_index].y == floor){
-        this.players[this.main_player_index].dy = -15;}
-        this.players[this.main_player_index].sx = 0;
-        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-        return;
-      }
-      if(keycode == 40){
-        this.players[this.main_player_index].isDucking = 1;
-        //this.players[this.main_player_index].sx = 0;
-        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-        return;
-      }
-      if (keycode == this.space_key)
-      {
-        
-        if (this.players[this.main_player_index].isDucking == 0){
-          this.players[this.main_player_index].isAttacking = 1;
-          this.players[this.main_player_index].sx = 0;
-          send_data("my_pos:"+this.players[this.main_player_index].make_data_raw()+"\nattack");
-          send_data("attack"+this.players[this.main_player_index].make_data_raw());
-        }
-        return;
-      }
+    if (keycode == 39) { //right
+      this.players[this.main_player_index].update_anim("left_right_walking");
+      console.log("flipping: "+0);
+      this.players[this.main_player_index].update_facing(0);
+      this.players[this.main_player_index].dx = 10 * (1-this.players[this.main_player_index].flip*2);
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+      return;
     }
-  }
+    if (keycode == 37) //left
+    {
+      this.players[this.main_player_index].update_anim("left_right_walking");
+      console.log("flipping: "+1);
+      this.players[this.main_player_index].update_facing(1);
+      this.players[this.main_player_index].dx = 10 * (1-this.players[this.main_player_index].flip*2);
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+      return;
+    }
+    if (keycode == 38) //spacebar
+    {
+      if (this.players[this.main_player_index].y == floor) {
+      this.players[this.main_player_index].dy = -15;
+      //this.players[this.main_player_index].update_anim("left_right_walking");
+      //this.players[this.main_player_index].sprite_anim.stop();
+      //this.players[this.main_player_index].moving = 0;
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+      return;
+      }
+      
+    }
+    if(keycode == 40){
+      this.players[this.main_player_index].update_anim("standing");
+      //this.players[this.main_player_index].sx = 0;
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+      return;
+    }
+    if (keycode == this.space_key)
+    {
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw()+"\nattack");
+      send_data("attack"+this.players[this.main_player_index].make_data_raw());
+      this.players[this.main_player_index].update_anim("attacking");
+      return;
+    }
+    
+    }
   }
 
   this.key_released = function(keycode) {
     for (i=0;i<2;i++){
-      if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
-        this.players[this.main_player_index].dx = 0;
+      if(keycode == this.arrow_keys[i]) {
+        if (this.players[this.main_player_index].flip == i) {
+          this.players[this.main_player_index].dx = 0;
+          this.players[this.main_player_index].moving = 0;
+          this.players[this.main_player_index].update_anim("standing");
+        }
       }
       if(keycode == 38) {
         //if(this.players[this.main_player_index].dy < 0 ) {
@@ -265,11 +229,17 @@ function fighting_game() {
       }
       if(keycode == 40) {
         //this.players[this.main_player_index].dy = 0;
-        this.players[this.main_player_index].isDucking = 0;
       }
+      /*
       if(keycode == this.space_key) {
-        this.players[this.main_player_index].isAttacking = 0;
+        //this.players[this.main_player_index].isAttacking = 0;
+        if (this.players[this.main_player_index].moving == 0) {
+         this.players[this.main_player_index].update_anim("standing");
+        } else {
+          this.players[this.main_player_index].update_anim("left_right_walking");
+        }
       }
+      */
     }
     send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
   }
@@ -320,6 +290,12 @@ function fighting_game() {
     }
   }
 
+  this.announce_death = function() 
+  {
+    send_data("death:"+this.main_player_index);
+  }
+   
+
   this.read_in_player_position = function(data_string) 
   { //format packet as pos_player: id, x, y, dx, dy, facing, health, isAttacking, isDucking
     p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4]);
@@ -332,8 +308,7 @@ function fighting_game() {
   this.read_attack = function(data_string) 
   {
     p_vals = convert_data_string(data_string, [0]);
-    this.players[p_vals[0]].isAttacking = 1;
-    this.players[p_vals[0]].sx = 0;
+    this.players[p_vals[0]].current_animation = "attacking";
   }
 
   /*
@@ -346,6 +321,8 @@ function fighting_game() {
     this.players[p_vals[0]].health = p_vals[1];
     this.players[p_vals[0]].hit();
   }
+
+
 
 
 }
