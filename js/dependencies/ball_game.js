@@ -64,10 +64,8 @@ function ball_game() {
     this.main_player_index;
     this.arrow_keys = [39, 37, 38, 40];
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
-    this.deadSprite = loadImage(repo_address+"media/sprites/mario_1.png");
     imageMode(CENTER);
     this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
-    // this.deadplayers[i] = new game_1_player(this.deadSprite)
     this.main_player_index = 0;
   }
 
@@ -105,18 +103,9 @@ function ball_game() {
     for (let i in this.players) {
       this.players[i].draw();
     }
-    //var b = new game_2_ball();
     for (let i in this.balls) { this.balls[i].draw(); }
-    // to remove player bc of collision
-    for(let i in this.players){
-      if(this.read_in_ball_position == this.read_in_player_position){
-      //replace sprite w dead girl, make so location cant change
-        this.greenSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
-        textAlign(CENTER, CENTER);
-        text(this.players[i] + "is dead!");
-
-      } 
-    }
+    
+    
   }
 
   this.read_network_data = function(flag, message) {
@@ -155,7 +144,4 @@ function ball_game() {
     this.balls[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
   }
 
-  //function to kill player
-  //when collision, kill player
-  //
 }

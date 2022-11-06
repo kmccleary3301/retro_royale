@@ -41,12 +41,7 @@ class game_2_ball {
 		var factor = Math.sqrt(Math.pow(this.dx, 2)+Math.pow(this.dy, 2));
 		this.last_update = Date.now()/1000;
 		//console.log("updating ball:"+this.x+","+this.y);
-		for (let i in this.players) {
-			if(players[i].isDead = 1)
-			{
-				//change sprite to deadSprite
-			}
-		}
+		
 	}
 
 	make_data(id) {
@@ -71,18 +66,16 @@ class ball_game_player {
 
   make_data(player_index){
     var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+                      this.speed+","+this.facing;
     return string_make;
   }
 
-  update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+  update_data(sprite, x, y, move, speed, facing){
     if (x != null) { this.x = x; }
     if (y != null) { this.y = y; }
     if (move != null) { this.move = move; }
     if (speed != null) { this.speed = speed; }
     if (facing != null) { this.facing = facing; }
-    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
-    if (fruit_id != null) { this.fruit_held_id = fruit_id; }
   }
 }
 
