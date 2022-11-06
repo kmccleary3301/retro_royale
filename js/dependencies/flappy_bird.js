@@ -17,6 +17,32 @@ class flappy_bird_pipe {
 class flappy_bird_player {
 	constructor(spriteSheet, x, y, face) {
 		this.spriteSheet = spriteSheet;
+
+		this.temp_sprite_sheet = spriteSheet;
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 80, 80,
+			{
+				// "left_right": {
+				// 	"row": 0,
+				// 	"row_length": 6
+				// },
+				// "down": {
+				// 	"row": 1,
+				// 	"row_length": 6
+				// },
+				// "up": {
+				// 	"row": 2,
+				// 	"row_length": 6
+				// },
+				"jump": {
+					"row": 5,
+					"row_length": 1
+				},
+				"fall": {
+					"row": 5,
+					"row_length": 1
+				}
+			});
+		
 		this.sx = 0;        //Frame counter for when the player is moving.
 		this.x = x;
 		this.y = y;
