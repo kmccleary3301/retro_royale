@@ -5,6 +5,57 @@ function seed_random(seed) {
   return x - Math.floor(x);
 }
 
+class game_2_ball {
+  constructor() {
+      this.radius = 35;
+      this.x = 0;
+      this.y = 0;
+      this.dx = 1;
+      this.dy = 1;
+      this.speed = 300;
+      this.last_update = millis()/1000;
+    }
+
+    draw() {
+      //console.log("drawing ball");
+      fill(30, 0, 20);
+      stroke(255);
+      ellipse(this.x, this.y, this.radius);
+      //console.log("drawing - "+str(this.x)+","+str(this.y));
+      this.x += this.dx*this.speed*(millis()/1000 - this.last_update);
+      this.y += this.dy*this.speed*(millis()/1000 - this.last_update);
+      if (this.x < 0 || this.x >= 500) {
+        var adjust_factor = Math.max(0, Math.min(this.x, 500)) - this.x;
+        adjust_factor /= this.dx;
+        this.x += this.dx*adjust_factor;
+        this.y += this.dy*adjust_factor;
+        
+        this.dx *= -1;
+        this.dx -= 0.3*seed_random(seed_get+this.dx);
+      }
+      if (this.y < 0 || this.y >= 500) {
+        var adjust_factor = Math.max(0, Math.min(this.y, 500)) - this.y;
+        adjust_factor /= this.dy;
+        this.x += this.dx*adjust_factor;
+        this.y += this.dy*adjust_factor;
+        this.dy *= -1;
+        this.dy += 0.3*seed_random(seed_get+this.dy+0.1);
+      }
+      var factor = Math.sqrt(Math.pow(this.dx, 2) + Math.pow(this.dy, 2));
+      this.dy /= factor;
+      this.dx /= factor;
+      this.last_update = millis()/1000;
+    }
+
+    update_data(x, y, dx, dy, speed) {
+      this.x = x;
+      this.y = y;
+      this.dx = dx;
+      this.dy = dy;
+      this.speed = speed;
+    }
+
+}
 
 function ball_game() {
   this.setup = function() {
@@ -15,7 +66,7 @@ function ball_game() {
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     this.deadSprite = loadImage(repo_address+"media/sprites/mario_1.png");
     imageMode(CENTER);
-    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0);
+    this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
     // this.deadplayers[i] = new game_1_player(this.deadSprite)
     this.main_player_index = 0;
   }
@@ -50,6 +101,7 @@ function ball_game() {
 
     text_make(0, 200, 0, 2);
     textAlign(CENTER, CENTER);
+    text("balls", width/2, height/2);
     for (let i in this.players) {
       this.players[i].draw();
     }
@@ -70,14 +122,14 @@ function ball_game() {
   this.read_network_data = function(flag, message) {
     if (flag == "player_count") {
       for (j=this.players.length; j < parseInt(message); j++){
-        this.players[j] = new game_2_player(this.greenSprite, 300, 300, 1);
+        this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
       }
     } else if (flag == "assigned_id") {
       this.main_player_index = parseInt(message);
     } else if (flag == "pos_player") {
       this.read_in_player_position(message);
     } else if (flag == "new_player") {
-      this.players[parseInt(message)] = new game_2_player(this.greenSprite, 300, 300, 0);
+      this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
     } else if (flag == "rmv_player") {
       var player_index = parseInt(message);
       this.players.splice(player_index, 1);
