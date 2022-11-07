@@ -841,7 +841,7 @@ function fighting_game() {
 
   this.tick_function = function() {
     for(let i in this.players) {
-      console.log("Y position is: " + this.players[i].make_data(i));
+      //console.log("Y position is: " + this.players[i].make_data(i));
      // broadcast_exclusive(this.players[i].make_data(i),[i]);
     }
   }
