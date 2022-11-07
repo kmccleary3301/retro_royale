@@ -1,4 +1,4 @@
-
+let background1;
 const gravity = .5;
 const floor = 600;
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
@@ -12,8 +12,9 @@ class fighting_game_player  {
         "row_length": 4
       },
       "standing" : {
-        "row" : 6+10*this.spriteColor,
-        "row_length": 1
+        "row" : 1+10*this.spriteColor,
+        "row_length": 1,
+        "first_tile": 1
       },
       "attacking" : {
         "row" : 3+10*this.spriteColor,
@@ -26,7 +27,15 @@ class fighting_game_player  {
       "dead" : {
         "row" : 7+10*this.spriteColor,
         "row_length": 1
-      }
+      },
+      "ducking" : {
+        "row" : 6+10*this.spriteColor,
+        "row_length": 1
+      },
+      "jumping" : {
+        "row" : 5+10*this.spriteColor,
+        "row_length": 1
+    }
     });
     this.current_animation = "standing";
     this.moving = 0;
@@ -47,23 +56,56 @@ class fighting_game_player  {
 	}
 
 	draw() {
+    
 		push();
-    if (this.is_hit == 1 && (millis()/1000 - this.start_hit) < .5) {
-      this.update_anim("standing");
-    }
-    if (this.moving) {
+    
+    // if (this.is_hit == 1 && (millis()/1000 - this.start_hit) < .5) {
+    //   this.update_anim("standing");
+
+    // }
+    if (this.dx != 0 && this.isDucking == 0) { 
+      this.update_facing(this.facing);
       this.x += this.dx;
     }
+    
 
     this.x = Math.max(this.bounds[0], Math.min(this.x, this.bounds[1]));
     this.sprite_anim.draw(this.x, this.y, true);
-    if (this.current_animation == "attacking" && this.sprite_anim.sx == 3) { 
-      if (this.moving == 0) {
-        this.update_anim("standing"); 
-      } else {
-        this.update_anim("left_right_walking");
-      }
+    
+
+    // if (this.current_animation == "attacking" && this.sprite_anim.sx == 3) { 
+    //   if (this.moving == 0) {
+    //     this.update_anim("standing"); 
+    //   } else {
+    //     this.update_anim("standing");
+    //     //this.update_anim("left_right_walking");
+    //   }
+    // }
+
+    if (this.facing == 0) { this.sprite_anim.flip(0); this.flip = 0; }  else { this.sprite_anim.flip(1); this.flip = 1; }
+
+   
+    if(this.isDucking == 1){
+      this.update_facing(this.facing);
+      this.update_anim("ducking");
+    } else if (this.isAttacking == 1) {
+      this.update_facing(this.facing);
+      this.update_anim("attacking");
+    } else if (this.dy < 0) {
+      this.update_anim("jumping");
+    } else if (this.dx != 0) {
+      this.update_facing(this.facing);
+      this.update_anim("left_right_walking");
+      
+    } else {
+      this.update_facing(this.facing); 
+      this.update_anim("standing");
+       
     }
+  
+    // if (this.isDucking == 0 && this.dx == 0 && this.y == floor) {
+    //   this.update_anim("standing");
+    // }
     //gravity animation
     this.y += this.dy;
     this.y = Math.min(this.y, floor);
@@ -72,18 +114,21 @@ class fighting_game_player  {
     //draw rectangle respresenting health in top right corner
     if (this.isDead == 0) {
       fill(255, 0, 0);
-      rect(-25, -80, 100/2, 10);
+      rect(this.x-20, this.y-60, 50, 10);
       fill(0, 255, 0);
-      rect(-25, -80, this.health/2, 10);
+      rect(this.x-20, this.y-60, this.health/2, 10);
     }
+
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
       //announce_death();
       this.isDead = 1;
+      this.update_anim("dead");
     }
     if(this.y < floor )  {         
       this.dy += gravity; 
     }
+    
 		pop();
 	}
 
@@ -97,14 +142,15 @@ class fighting_game_player  {
 	}
 
   update_anim(animation) {
+    if (animation == this.current_animation) { return; }
     if (animation == "standing" || animation == "dead") { this.moving = 0; this.sprite_anim.stop(); }
-    else { this.moving = 1; this.sprite_anim.start(); }
+    else  { this.moving = 1; this.sprite_anim.start(); }
     this.sprite_anim.change_animation(animation);
     this.current_animation = animation;
   }
 
   hit() {
-    this.is_hit = 0;
+    this.is_hit = 1;
     this.start_hit = millis()/1000;
     this.update_anim("hit");
   }
@@ -142,7 +188,14 @@ class fighting_game_player  {
 
 
 function fighting_game() {
+  this.preload = function() {
+    
+  }
+
   this.setup = function() {
+    //drawImage(this.background1, 0, 0, width, height);
+    this.background1 = loadImage(repo_address+"media/backgrounds/pixel_background.png");
+    imageMode(CENTER);
     this.players = [];
     this.main_player_index;
     this.arrow_keys = [39, 37];
@@ -150,11 +203,11 @@ function fighting_game() {
     
     this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
     imageMode(CENTER);
-    this.background = loadImage(repo_address+"media/backgrounds/fighting_game_test.jpeg");
+    
     
     //this.background.resize(0, height);
     //this.background.resize(width, 0);
-    this.background.resize(width, height);
+    //this.background.resize(width, height);
   
     this.players[0] = new fighting_game_player(this.Sprite, 400, floor, 0, 0); //starting location, direction facing, color
     this.main_player_index = 0;
@@ -165,29 +218,29 @@ function fighting_game() {
 
   this.key_pressed = function(keycode) {
     if(this.players[this.main_player_index].isDead == 0) {
-
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
     if (keycode == 39) { //right
-      this.players[this.main_player_index].update_anim("left_right_walking");
-      console.log("flipping: "+0);
-      this.players[this.main_player_index].update_facing(0);
-      this.players[this.main_player_index].dx = 10 * (1-this.players[this.main_player_index].flip*2);
+      //this.players[this.main_player_index].update_anim("left_right_walking");
+     // console.log("flipping: "+0);
+      this.players[this.main_player_index].facing = 0;
+      this.players[this.main_player_index].dx = 10 * (1-this.players[this.main_player_index].facing*2);
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       return;
     }
     if (keycode == 37) //left
     {
-      this.players[this.main_player_index].update_anim("left_right_walking");
-      console.log("flipping: "+1);
-      this.players[this.main_player_index].update_facing(1);
-      this.players[this.main_player_index].dx = 10 * (1-this.players[this.main_player_index].flip*2);
+     // this.players[this.main_player_index].update_anim("left_right_walking");
+     // console.log("flipping: "+1);
+      this.players[this.main_player_index].facing = 1;
+      this.players[this.main_player_index].dx = 10 * (1-this.players[this.main_player_index].facing*2);
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       return;
     }
-    if (keycode == 38) //spacebar
+    if (keycode == 38) //jumping
     {
       if (this.players[this.main_player_index].y == floor) {
       this.players[this.main_player_index].dy = -15;
-      //this.players[this.main_player_index].update_anim("left_right_walking");
+      //this.players[this.main_player_index].update_anim("jumping");
       //this.players[this.main_player_index].sprite_anim.stop();
       //this.players[this.main_player_index].moving = 0;
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
@@ -195,9 +248,10 @@ function fighting_game() {
       }
       
     }
-    if(keycode == 40){
-      this.players[this.main_player_index].update_anim("standing");
+    if(keycode == 40){ //down
+      //this.players[this.main_player_index].update_anim("ducking");
       //this.players[this.main_player_index].sx = 0;
+      this.players[this.main_player_index].isDucking = 1;
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       return;
     }
@@ -205,41 +259,41 @@ function fighting_game() {
     {
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw()+"\nattack");
       send_data("attack"+this.players[this.main_player_index].make_data_raw());
-      this.players[this.main_player_index].update_anim("attacking");
+      //this.players[this.main_player_index].update_anim("attacking");
+      this.players[this.main_player_index].isAttacking = 1;
       return;
     }
-    
+    send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
     }
   }
 
   this.key_released = function(keycode) {
     for (i=0;i<2;i++){
       if(keycode == this.arrow_keys[i]) {
-        if (this.players[this.main_player_index].flip == i) {
+       // if (this.players[this.main_player_index].flip == i) { 
           this.players[this.main_player_index].dx = 0;
-          this.players[this.main_player_index].moving = 0;
-          this.players[this.main_player_index].update_anim("standing");
-        }
+          //this.players[this.main_player_index].moving = 0;
+          //this.players[this.main_player_index].update_anim("standing");
+       // }
       }
-      if(keycode == 38) {
+      if(keycode == 38) { //jumping
         //if(this.players[this.main_player_index].dy < 0 ) {
         //this.players[this.main_player_index].dy = 0;
         //this.players[this.main_player_index].dy = 0;
+        //this.players[this.main_player_index].update_anim("standing");
         
       }
-      if(keycode == 40) {
+      if(keycode == 40) { //down
+       // this.players[this.main_player_index].update_anim("standing");
+        this.players[this.main_player_index].isDucking = 0;
         //this.players[this.main_player_index].dy = 0;
       }
-      /*
+      
       if(keycode == this.space_key) {
-        //this.players[this.main_player_index].isAttacking = 0;
-        if (this.players[this.main_player_index].moving == 0) {
-         this.players[this.main_player_index].update_anim("standing");
-        } else {
-          this.players[this.main_player_index].update_anim("left_right_walking");
-        }
+        this.players[this.main_player_index].isAttacking = 0;
+       
       }
-      */
+      
     }
     send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
   }
@@ -248,14 +302,41 @@ function fighting_game() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
-    background(200, 200, 200);
-    fill(0, 0, 0);
+    
+    //background(background1);
+    // use background1 as a background for the game
+    
+    //image(background1, 0, 0, width, height);
+    
+    
+   
+    
+    //background(200, 250, 200);
+    image(this.background1, width/2, height/2, width, height);
+
+    //fill (243,199,82);
+    fill(3,94,232);
+    rect(0, floor+45, width, 500);
+
+    fill (151,0,204);
+    rect(0, floor+90, width, 500);
+
+    fill (229,53,100);
+    rect(0, floor+135, width, 500);
+
+    fill (45,226,230);
+    rect(0, floor+180, width, 500);
+
+    fill(0, 200, 0);
+    
     text_make(0, 200, 0, 2);
     textAlign(CENTER, CENTER);
     text("Jake", width/2, height/2);
+    
     for (let i in this.players) {
       this.players[i].draw();
     }
+    
   }
 
   this.read_network_data = function(flag, message) {
