@@ -147,7 +147,7 @@ function main_menu() {
 	this.button_press = function(code) {
 		if (this.current_menu == "main") {
 			if (code == 0) { this.authorize_menu_enable(); }
-			else if (code == 1) { send_data("user_info:"+user_info["name"]); swap_current_state("load_screen"); }
+			else if (code == 1) { send_data("user_info:"+user_info["name"]+"\ngame_connect"); swap_current_state("load_screen"); }
 			else if (code == 2) { this.server_menu_enable(); }
 			else if (code == 3) { this.switch_test_game(); }
 			else if (code == 4) { this.switch_board_game(); }
