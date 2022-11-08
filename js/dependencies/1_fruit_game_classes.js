@@ -187,7 +187,7 @@ class game_1_endzone {
 		fill(255, 204, 0);
 		g_cam.rect(this.x, this.y, this.width, this.height);
 		fill(0, 0, 0);
-		g_cam.text(str(this.score), this.width/2+this.x, this.height/2+this.y);
+		g_cam.text(str(this.score), this.x, this.y);
 		pop();
 	}
 
