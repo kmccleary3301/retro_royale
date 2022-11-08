@@ -5,10 +5,6 @@ var sessions = {
   "temp": undefined
 };
 
-console.log("sessions -> "+JSON.stringify(sessions));
-sessions["hi"] = 1;
-console.log("sessions -> "+JSON.stringify(sessions));
-
 let width = 600;
 let height = 600;
 
