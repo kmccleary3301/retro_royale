@@ -9,9 +9,9 @@ let width = 600;
 let height = 600;
 
 let global_port = 3128;
-let tick_interval = 35; //in milliseconds
+//let tick_interval = 35; //in milliseconds
 var random_seed = Math.floor(Math.random()*100000);
-var tick_function_ids = [];
+//var tick_function_ids = [];
 
 /*
 var express = require('express');	// include express.js
@@ -1080,6 +1080,9 @@ function flappy_bird() {
         this.players[i] = new flappy_bird_player(400-100*i, 500, 1);
       }
     }
+    var self = this;
+    var int_id = setInterval(function(){ self.tick_function(); }, 35);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.tick_function = function() { 
