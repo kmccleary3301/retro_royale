@@ -256,6 +256,7 @@ class game_session {
   swap_current_state(state_flag) {
     console.log("session ("+this.session_id+") swapping state to "+state_flag);
     this.clear_all_intervals();
+    this.broadcast("current_game:"+state_flag);
     if (state_flag == "fruit_game") { this.current_state = new fruitGame(); }
     else if (state_flag == "purgatory") { this.current_state = new purgatory(); }
     else if (state_flag == "load_room") { this.current_state = new load_room(); }
@@ -276,7 +277,6 @@ class game_session {
       this.current_state.setup(this.session_id);
     }
     this.current_state_flag = state_flag;
-    this.broadcast("current_game:"+state_flag);
   }
 
   broadcast(data) {  //Send a message to all connected clients
@@ -397,11 +397,19 @@ function fruitGame() {
     for (i = 0; i < poisson_points.length; i++) {
       this.fruits[i] = new game_1_fruit(poisson_points[i][0], poisson_points[i][1], 3+Math.random()*12);
     }
+
+    var self = this;
+    var int_id = setInterval(function(){ self.tick_function(); }, 100);
+    sessions[this.session_id].append_interval_id(int_id);
+    for (let i in sessions[this.session_id].clients) {
+      sessions[this.session_id].clients[i].send(this.make_everything());
+    }
   }
   
-  this.tick_function = function() { this.game_update(); }
+  this.tick_function = function() { console.log("fg tick called"); this.game_update(); }
 
   this.game_update = function() {
+    console.log("game update called");
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
