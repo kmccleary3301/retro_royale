@@ -67,6 +67,7 @@ class ball_game_player {
 		this.speed = 5;     // Player movement speed
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
 		this.sprite_row = 0;
+    this.spriteColor = color;
 		this.isDead = 0;
 		this.bounds = [0, 2000, 0, 1000];
     this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64, {
@@ -127,6 +128,14 @@ class ball_game_player {
 											this.speed+","+this.facing;
 		return string_make;
 	}
+
+  update_anim(animation) {
+    if(animation == this.current_animation) {return;}
+    if(animation == "dead") {this.move = 0; this.sprite_anim.stop(); }
+    else {this.move = 1; this.sprite_anim.start(); }
+    this.sprite_anim.change_animation(animation);
+    this.current_animation = animation;
+    }
 }
 
 function ball_game() {
