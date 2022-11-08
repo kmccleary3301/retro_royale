@@ -142,7 +142,7 @@ class dice_element {
 function select_random_element(entries, weights) {
 	var index_current = 0, target = Math.random(), sum = 0;
 	while (sum < target) {
-		console.log("selecting random: i_c:"+index_current+" sum:"+sum+" target:"+target);
+		//console.log("selecting random: i_c:"+index_current+" sum:"+sum+" target:"+target);
 		sum += weights[index_current];
 		index_current++;
 	}

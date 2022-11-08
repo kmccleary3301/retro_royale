@@ -2,6 +2,7 @@ function board_game() {
 	this.setup = function() {
 		pop();
 		test_reset_draw_settings();
+		send_data("loading_board_game");
 		//reset();
 		this.camera_scale = 1;
 		this.players = [];
