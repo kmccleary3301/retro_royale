@@ -3,6 +3,7 @@ function load_screen() {
 		this.start_time = millis()/1000;
 		this.current_time = 0;
 		this.attempts = 0;
+		this.sent_load_flag = false;
 		this.connect_attempted = true;
 		g_cam.reset();
 	}
@@ -12,7 +13,12 @@ function load_screen() {
 		var menu_text, cycle_time = 15 - this.current_time;
 		if (connected_to_server) {
 			menu_text = "Connection successful";
-			socket.send("load_game");
+			if (!this.sent_load_flag) {
+				send_data("load_game");
+				send_data("game_connect");
+				send_data("user_info:"+user_info["name"]);
+				this.sent_load_flag = true;
+			}
 		} else if (this.attempts == 0) {
 			menu_text = "Attempting to connect";
 			make_socket();
