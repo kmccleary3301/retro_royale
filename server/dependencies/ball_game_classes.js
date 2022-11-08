@@ -53,7 +53,7 @@ class game_2_ball {
 }
 
 class ball_game_player {
-  constructor(x, y, face) {
+  constructor(x, y, face, color, spriteSheet) {
     this.sx = 0;
     this.x = x;
     this.y = y;
