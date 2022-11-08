@@ -2,7 +2,7 @@ function seed_random(seed) {
 	var x = Math.sin(seed) * 10000;
 	return x - Math.floor(x);
 }
-
+var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D'];
 class game_2_ball {
 	constructor() {
 		this.radius = 50;
@@ -61,6 +61,20 @@ class ball_game_player {
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
     this.isDead = 0;
+	this.spriteColor = color;
+	this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64, {
+		"dead" : 
+		{
+			"row" : 7+10*this.spriteColor,
+        "row_length": 1
+		},
+
+		"walking" : 
+		{
+			"row" : 5+10*this.spriteColor,
+		"row_length" : 1
+		}
+	});
 
   }
 
@@ -76,6 +90,15 @@ class ball_game_player {
     if (move != null) { this.move = move; }
     if (speed != null) { this.speed = speed; }
     if (facing != null) { this.facing = facing; }
+
+
+  }
+  update_anim(animation) {
+	if(animation == this.current_animation) {return;}
+	if(animation == "dead") {this.move = 0; this.sprite_anim.stop(); }
+	else {this.move = 1; this.sprite_anim.start(); }
+	this.sprite_anim.change_animation(animation);
+	this.current_animation = animation;
   }
 }
 
