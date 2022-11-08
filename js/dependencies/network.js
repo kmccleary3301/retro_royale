@@ -26,7 +26,9 @@ function open_socket() {
 function socket_disconnected() {
   console.log("Websocket disconnected");
   connected_to_server = false;
-  if (current_state_flag != "main_menu") {
+  if (current_state_flag != "main_menu" &&
+      current_state_flag != "load_screen" &&
+      current_state_flag != "session_menu") {
     swap_current_state("main_menu");
   }
 }
@@ -34,7 +36,7 @@ function socket_disconnected() {
 function process_message(data) {          //Event function to process data recieved from the server through the websocket.
   var lines = data.split("\n");
   for (let i in lines) {
-    //console.log("line "+str(i)+": "+lines[i]);
+    console.log("line "+str(i)+": "+lines[i]);
     var line_split = lines[i].split(":");
     var flag = line_split[0],
         message = null;

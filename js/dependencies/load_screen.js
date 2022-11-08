@@ -14,7 +14,9 @@ function load_screen() {
 		if (connected_to_server) {
 			menu_text = "Connection successful";
 			if (!this.sent_load_flag) {
-				socket.send("load_game");
+				send_data("load_game");
+				send_data("game_connect");
+				send_data("user_info:"+user_info["name"]);
 				this.sent_load_flag = true;
 			}
 		} else if (this.attempts == 0) {

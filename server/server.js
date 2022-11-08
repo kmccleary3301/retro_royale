@@ -5,6 +5,9 @@ var sessions = {
   "temp": undefined
 };
 
+console.log("sessions -> "+JSON.stringify(sessions));
+sessions["hi"] = 1;
+console.log("sessions -> "+JSON.stringify(sessions));
 
 let width = 600;
 let height = 600;
@@ -101,14 +104,13 @@ server.on('connection', function connection(thisClient) {
       sessions[session_id].remove_client(thisClient);
     }
     clients.splice(position, 1);                //Removes client from global client array
-    clients_info.splice(position, 0);
+    clients_info.splice(position, 1);
     for (i = position; i < clients.length; i++) { clients[i].test_position--; }
     //current_state.user_disconnected(position);  //Triggers current_state's user disconnect function.
     console.log("connection closed, client: "+position);
   });
 
   thisClient.on('message', function incoming(data) { //Activates when a client sends data in.
-    console.log("msg -> "+data);
     var lines = data.split("\n");             //Packets may contain multiple commands, separated by newline
     var index = clients.indexOf(thisClient);  //grabs the index of the client that sent it in
     var session_id = clients_info[index].session_id;
@@ -123,15 +125,19 @@ server.on('connection', function connection(thisClient) {
         if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
         //else if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
         else if (flag == 'user_info') { clients_info[index].name = message; thisClient.send("request_session"); continue; }
+        else if (flag == 'game_connect') { thisClient.send("request_session"); continue; }
         else if (flag == 'create_session') {
           console.log("creating_session_called -> "+message);
-          if (sessions[message] === undefined) {
+          if (sessions[message] !== undefined || message.length == 0) {
+            thisClient.send("session_warning:Session already exists");
+          } else {
             clients_info[index].session_id = message;
+            console.log("sessions -> "+Object.keys(sessions));
             sessions[message] = new game_session(message);
+            sessions[message].setup();
+            console.log("sessions -> "+Object.keys(sessions));
             thisClient.send("session_created:"+message+"\nassigned_session:"+message);
             sessions[message].push_client(thisClient, clients_info[index]);
-          } else {
-            thisClient.send("session_warning:Session already exists");
           }
         } else if (flag == 'join_session') {
           if (sessions[message] === undefined) {
@@ -143,7 +149,12 @@ server.on('connection', function connection(thisClient) {
           }
         }
       } else if (sessions[session_id] !== undefined) {
-        sessions[session_id].read_network_data(flag, message, thisClient);
+        if (flag == 'leave_session') {
+          sessions[session_id].remove_client(thisClient);
+          clients_info[index].session_id = undefined;
+        } else {
+          sessions[session_id].read_network_data(flag, message, thisClient);
+        }
       }
       //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
       //current_state.read_network_data(flag, message, index);  //Passes the flag, message, and sender id to current_state's network trigger.
@@ -189,6 +200,7 @@ function convert_data_string(message, ints, floats, strings) {
 }
 
 function swap_current_state(state_flag) {
+  console.log("ERROR: THIS IS DEPRECATED");
   if (state_flag == "fruit_game") { current_state = new fruitGame(); }
   else if (state_flag == "purgatory") { current_state = new purgatory(); }
   else if (state_flag == "load_room") { current_state = new load_room(); }
@@ -212,28 +224,38 @@ function start_board_game(message) {
 
 class game_session {
   constructor(session_id) {
+    this.tick_function_ids = [];
     this.session_id = session_id;
     console.log("this.session_id -> "+this.session_id);
     this.clients = [];
     this.clients_info = [];
+    this.current_state;
+    this.current_state_flag;
+    this.board_game;
+    this.tick_function_ids[0] = setInterval(this.tick_function, 1000);
+  }
+
+  setup() {
     this.current_state = new dev_room();
+    this.current_state_flag = "dev_room";
     //this.current_state.set_session_id(this.session_id);
     this.current_state.setup(this.session_id);
-    this.current_state_flag = "dev_room";
-    this.board_game;
-    this.tick_function_ids = [];
-    this.tick_function_ids[0] = setInterval(this.tick_function, 100);
   }
 
   tick_function() { 
+    console.log("session_tick_function called");
     try {
-      this.current_state.tick_function();
+      if (this.current_state.tick_function !== undefined) {
+        this.current_state.tick_function();
+      }
     } catch (TypeError) {
       return;
     }
   }
 
   swap_current_state(state_flag) {
+    console.log("session ("+this.session_id+") swapping state to "+state_flag);
+    this.clear_all_intervals();
     if (state_flag == "fruit_game") { this.current_state = new fruitGame(); }
     else if (state_flag == "purgatory") { this.current_state = new purgatory(); }
     else if (state_flag == "load_room") { this.current_state = new load_room(); }
@@ -249,7 +271,7 @@ class game_session {
     else if (state_flag == "fighting_game") { this.current_state = new fighting_game(); }
     else if (state_flag == "flappy_bird") { this.current_state = new flappy_bird(); }
     else { return; } // failsafe for invalid flags
-    this.current_state.session_id = this.session_id;
+    //this.current_state.session_id = this.session_id;
     if (state_flag != "board_game") {
       this.current_state.setup(this.session_id);
     }
@@ -299,6 +321,17 @@ class game_session {
     this.clients_info.splice(index, 1);
     this.current_state.user_disconnected(index);
   }
+
+  append_interval_id(set_int_returned) {
+    this.tick_function_ids[this.tick_function_ids.length] = set_int_returned;
+  }
+
+  clear_all_intervals() {
+    for (let i in this.tick_function_ids) {
+      clearInterval(this.tick_function_ids[i]);
+    }
+    this.tick_function_ids = [];
+  }
 }
 
 class client_info {
@@ -319,9 +352,8 @@ class client_info {
 }
 
 function fruitGame() {
-  this.setup = function() {
-    this.session_id = "";
-    if (arguments.length >= 1) { this.session_id = arguments[0]; }
+  this.setup = function(session_id) {
+    this.session_id = session_id;
     this.fruits_count = 800;
     this.remove_percentage_of_fruits = 0.2;
     this.players = [];
@@ -332,8 +364,10 @@ function fruitGame() {
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
     this.game_dimensions = [2000, 1000];
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    if (sessions[this.session_id] !== undefined) {
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+      }
     }
     var p = new PoissonDiskSampling({
       shape: [this.game_dimensions[0], this.game_dimensions[1]],
@@ -380,7 +414,7 @@ function fruitGame() {
         this.game_length = 20;
         this.start_time = Date.now()/1000;
       }
-      broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
+      sessions[this.session_id].broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
     }
   }
 
@@ -391,28 +425,28 @@ function fruitGame() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "pos_fruit") {
       var fruit_id = this.read_in_fruit_position(message);
       //if (this.fruits[fruit_id].scored) { broadcast('pop_fruit:'+fruit_id); }
-      broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.fruits[usr_id].make_data(fruit_id), [usr_id]);
     } else if (flag == "upd_endzone") {
       var endzone_id = this.read_in_endzone_data(message);
-      broadcast_exclusive(this.endzones[endzone_id].make_data(endzone_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.endzones[endzone_id].make_data(endzone_id), [usr_id]);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
-    broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     if (!(this.players[usr_id])) { return; }
     if (this.players[usr_id].fruit_holding == 1) {
       this.fruits[this.players[usr_id].fruit_held_id].drop();
@@ -448,14 +482,19 @@ function fruitGame() {
 }
 
 function purgatory() {
-  this.setup = function() {
-    this.session_id = "";
-    if (arguments.length >= 1) { this.session_id = arguments[0]; }
+  this.setup = function(session_id) {
+    this.session_id = session_id;
+    console.log("purgatory session id ->"+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
-    for (i=0; i < sessions[this.session_id].clients.length; i++) {
-      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    if (sessions[this.session_id] !== undefined) {
+      console.log("purgatory setup - session identified");
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+      }
+    } else {
+      console.log("purgatory setup - session doesn't exist");
     }
   }
 
@@ -470,7 +509,7 @@ function purgatory() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     }
   }
 
@@ -478,12 +517,12 @@ function purgatory() {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    sessions[this.session_id].clients[usr_id].send("player_count:" + sessions[this.session_id].clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
   }
 
@@ -501,15 +540,16 @@ function purgatory() {
 }
 
 function load_room() {
-  this.setup = function() {
-    this.session_id = "";
-    if (arguments.length >= 1) { this.session_id = arguments[0]; }
+  this.setup = function(session_id) {
+    this.session_id = session_id;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.start_game = false;
     this.players = [];
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    if (sessions[this.session_id] !== undefined) {
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+      }
     }
     this.host_id = 0;
     this.start_message = "";
@@ -528,27 +568,27 @@ function load_room() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "start_game" && usr_id == this.host_id) {
       this.start_game = true;
       this.start_message = message;
       this.start_time = Date.now()/1000;
-      broadcast("host_started_game:"+0);
+      sessions[this.session_id].broadcast("host_started_game:"+0);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
-    if (this.start_game) { clients[usr_id].send("host_started_game:"+this.current_time); }
-    if (usr_id == this.host_id) { clients[usr_id].send("assigned_host"); }
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
+    if (this.start_game) { sessions[this.session_id].clients[usr_id].send("host_started_game:"+this.current_time); }
+    if (usr_id == this.host_id) { sessions[this.session_id].clients[usr_id].send("assigned_host"); }
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
   }
 
@@ -575,10 +615,18 @@ function dev_room() {
     this.players = [];
     console.log("this.session_id -> "+this.session_id);
     console.log("sessions -> "+sessions);
+    console.log("session keys ->"+Object.keys(sessions));
     this.host_id = 0;
+    var self = this;
+    var int_id = setInterval(function(){ self.tick_function(); }, 1000);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
-  this.tick_function = function() { return; }
+  this.tick_function = function() {
+    console.log("start time -> "+this.start_time);
+    //console.log("dev_room tick called"); 
+    return; 
+  }
 
   this.read_network_data = function(flag, message, usr_id) {
     console.log(flag+":"+message);
@@ -648,9 +696,10 @@ function board_game() {
 		this.turning_player_index = 0; 	//Player currently rolling dice
     this.current_turn_moves = 0;
     if (sessions[this.session_id] !== undefined) {
-      for (i=0; i < sessions[this.session_id].clients.length; i++) {
+      for (let i in sessions[this.session_id].clients) {
         this.players[i] = new board_game_player(0, 0, 1);
         this.players[i].name = sessions[this.session_id].clients_info[i].name;
+        console.log("sending assigned id 2");
         sessions[this.session_id].clients[i].send("assigned_id:"+i);
       }
     }
@@ -678,6 +727,7 @@ function board_game() {
 	}
 
   this.make_board_from_image = function(pixel_list) {
+    console.log("making board from image");
 		this.tiles = [];
 		for (let i in pixel_list) {
 			var type = 1 + Math.floor(Math.random()*4);
@@ -695,18 +745,17 @@ function board_game() {
 					this.pair_tiles(c_id, i, swap_new_direction(j));
 				}
 			}
-      for (let i in this.players) {
-        this.players[i].current_tile_index = 0;
-        this.players[i].y = this.tiles[0].y;
-        this.players[i].x = this.tiles[0].x;
-      }
-      sessions[this.session_id].broadcast("reset_tiles");
-      sessions[this.session_id].broadcast(this.make_everything());
-      for (let i in this.players) {
-        sessions[this.session_id].clients[i].send("assigned_id:"+i);
-      }
-		}
-
+    }
+    for (let i in this.players) {
+      this.players[i].current_tile_index = 0;
+      this.players[i].y = this.tiles[0].y;
+      this.players[i].x = this.tiles[0].x;
+    }
+    sessions[this.session_id].broadcast("reset_tiles");
+    sessions[this.session_id].broadcast(this.make_everything());
+    for (let i in this.players) {
+      sessions[this.session_id].clients[i].send("assigned_id:"+i);
+    }
 		
 	}
 
@@ -805,30 +854,37 @@ function board_game() {
 }
 
 function ball_game() {
-  this.setup = function() {
-    this.session_id = "";
-    if (arguments.length >= 1) { this.session_id = arguments[0]; }
-
+  this.setup = function(session_id) {
+    this.session_id = session_id;
+    console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.add_last_time = Date.now()/1000;
     this.players = [];
     this.balls = [];
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
-      //this.balls[i] = new game_2_ball();
+    if (sessions[this.session_id] !== undefined) {
+      console.log("session found, making players");
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+      }
     }
     this.random_seed = Math.floor(Math.random()*100000);
-    tick_function_ids[tick_function_ids.length] = setInterval(function() { current_state.tick_function_ball(); }, 20);
+    console.log("session current_state ->"+sessions[this.session_id].current_state);
+    var self = this;
+    var int_id = setInterval(function(){self.tick_function();}, 100);
+    sessions[this.session_id].append_interval_id(int_id);
+    int_id = setInterval(function(){self.tick_function_ball()}, 20);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.tick_function = function() { 
     this.current_time = Date.now()/1000 - this.start_time;
+    console.log("start time -> "+this.start_time);
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if (Date.now()/1000 - this.add_last_time > 10) {
       this.add_last_time = Date.now()/1000;
       this.balls[this.balls.length] = new game_2_ball();
-      broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
+      sessions[this.session_id].broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
       console.log("added ball "+this.balls);
       //broadcast(this.make_everything());
     }
@@ -840,7 +896,6 @@ function ball_game() {
   }
 
   this.tick_function_ball = function() {
-    //console.log("ball_tick_function 1");
     //console.log("players: "+this.players);
     for (let i in this.balls) { this.balls[i].update(seed_random, random_seed); }
     var str_make = "";
@@ -864,9 +919,7 @@ function ball_game() {
           }
       }
     }
-
-    //console.log("ball_tick_function 3");
-    broadcast(str_make);
+    sessions[this.session_id].broadcast(str_make);
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -875,20 +928,20 @@ function ball_game() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
   }
 
@@ -908,16 +961,16 @@ function ball_game() {
 }
 
 function fighting_game() {
-  this.setup = function() {
-    this.session_id = "";
-    if (arguments.length >= 1) { this.session_id = arguments[0]; }
-
+  this.setup = function(session_id) {
+    this.session_id = session_id;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.floor = 600;
     this.players = [];
-    for (i=0; i < clients.length; i++) {
-      this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+    if (sessions[this.session_id] !== undefined) {
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+      }
     }
   }
 
@@ -928,10 +981,10 @@ function fighting_game() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     }else if(flag == "attack"){
       this.attack(usr_id);
-      broadcast_exclusive("attack:"+usr_id+","+this.players[usr_id].make_data_raw(), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive("attack:"+usr_id+","+this.players[usr_id].make_data_raw(), [usr_id]);
     }else if (flag == "hit"){
       this.attack_end(usr_id);
     }else if (flag == "debug") {
@@ -942,20 +995,20 @@ function fighting_game() {
   this.tick_function = function() {
     for(let i in this.players) {
       console.log("Y position is: " + this.players[i].make_data(i));
-      broadcast_exclusive(this.players[i].make_data(i),[i]);
+      sessions[this.session_id].broadcast_exclusive(this.players[i].make_data(i),[i]);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new fighting_game_player(100+Math.random()*400, this.floor, 0, usr_id%4);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
   }
 
@@ -981,17 +1034,16 @@ function fighting_game() {
           y_dist = this.players[i].y - this.players[usr_id].y;
       if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
         this.players[i].health -= 10;
-        broadcast("hit:"+i+","+this.players[i].health);
+        sessions[this.session_id].broadcast("hit:"+i+","+this.players[i].health);
       }
     }
   }
 }
 
 function flappy_bird() {
-  this.setup = function() {
-    this.session_id = "";
-    if (arguments.length >= 1) { this.session_id = arguments[0]; }
-
+  console.log("constructor called");
+  this.setup = function(session_id) {
+    this.session_id = session_id;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
@@ -1001,8 +1053,10 @@ function flappy_bird() {
     //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
     //}
     this.timeLastPipeWasGenerated;
-    for (let i in clients) {
-      this.players[i] = new flappy_bird_player(400-100*i, 500, 1);
+    if (sessions[this.session_id] !== undefined) {
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new flappy_bird_player(400-100*i, 500, 1);
+      }
     }
   }
 
@@ -1017,7 +1071,7 @@ function flappy_bird() {
       console.log("new pipe added at "+this.pipesList[this.pipesList.length-1].x);
       this.pipesList.shift();
       if(this.pipesList.length > 0) {
-        broadcast(this.pipesList[this.pipesList.length-1].make_data());
+        sessions[this.session_id].broadcast(this.pipesList[this.pipesList.length-1].make_data());
         /*for(let c in clients) {
           clients[c].send(new game_2_pipe(this.pipesList[this.pipesList.length-1].x-400*(Date.now()-this.timeLastPipeWasGenerated)/1000),this.pipesList[this.pipesList.length-1].y,230);
           //^^^This corrects for offset a bit
@@ -1050,7 +1104,7 @@ function flappy_bird() {
         this.players[i].x = this.players[i-1].x - 90;
       }
       */
-      broadcast(this.players[i].make_data(i), [i]);
+      sessions[this.session_id].broadcast(this.players[i].make_data(i), [i]);
     }
 
     // //shows the user the pipeses
@@ -1067,28 +1121,28 @@ function flappy_bird() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "jump") {
       this.players[usr_id].jump();
       // for(let i in this.pipesList) {
       //   broadcast(this.pipesList[i].make_data());
       // }
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "debug") {
       console.log("client sent "+message);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     this.players[usr_id] = new flappy_bird_player(400-100*usr_id, 500, 1);
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
   }
 
