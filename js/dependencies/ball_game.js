@@ -57,6 +57,78 @@ class game_2_ball {
 
 }
 
+var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D'];
+class ball_game_player {
+	constructor(spriteSheet, x, y, face, color) {
+		this.sx = 0;        //Frame counter for when the player is moving.
+		this.x = x;
+		this.y = y;
+		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
+		this.speed = 5;     // Player movement speed
+		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
+		this.sprite_row = 0;
+		this.isDead = 0;
+		this.bounds = [0, 2000, 0, 1000];
+    this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64, {
+      "dead" : 
+      {
+        "row" : 7+10*this.spriteColor,
+          "row_length": 1
+      },
+  
+      "walking" : 
+      {
+        "row" : 5+10*this.spriteColor,
+      "row_length" : 1
+      }
+    });
+	}
+
+	draw() {
+		push();
+		
+
+		pop();
+	}
+
+	grab_fruit(fruit_id, size){
+		this.fruit_holding = 1;
+		this.fruit_held_id = fruit_id;
+		this.speed = 15/size;
+	}
+
+	drop_fruit(){
+		this.speed = 5;
+		this.fruit_holding = 0;
+	}
+
+	get_pos_string(){
+		var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
+		return string_make;
+	}
+	
+	update_data(sprite, x, y, move, speed, facing){
+		//if (sprite != null) {this.spriteSheet = }
+		if (x != null) { this.x = x; }
+		if (y != null) { this.y = y; }
+		if (move != null) { this.move = move; }
+		if (speed != null) { this.speed = speed; }
+		if (facing != null) { this.facing = facing; }
+
+	}
+
+	make_data_raw(){
+		return this.x+","+this.y+","+this.move+","+
+						this.speed+","+this.facing+";
+	}
+
+	make_data(player_index){
+		var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+											this.speed+","+this.facing;
+		return string_make;
+	}
+}
+
 function ball_game() {
   this.setup = function() {
     this.players = [];
@@ -65,7 +137,7 @@ function ball_game() {
     this.arrow_keys = [39, 37, 38, 40];
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     imageMode(CENTER);
-    this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
+    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0);
     this.main_player_index = 0;
   }
 
@@ -111,14 +183,14 @@ function ball_game() {
   this.read_network_data = function(flag, message) {
     if (flag == "player_count") {
       for (j=this.players.length; j < parseInt(message); j++){
-        this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
+        this.players[j] = new ball_game_player(this.greenSprite, 300, 300, 1);
       }
     } else if (flag == "assigned_id") {
       this.main_player_index = parseInt(message);
     } else if (flag == "pos_player") {
       this.read_in_player_position(message);
     } else if (flag == "new_player") {
-      this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+      this.players[parseInt(message)] = new ball_game_player(this.greenSprite, 300, 300, 0);
     } else if (flag == "rmv_player") {
       var player_index = parseInt(message);
       this.players.splice(player_index, 1);
@@ -134,7 +206,7 @@ function ball_game() {
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
-    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new game_1_player(this.greenSprite, 300, 200, 0); }
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, 0); }
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
 
