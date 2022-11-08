@@ -58,84 +58,108 @@ class game_2_ball {
 }
 
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D'];
-class ball_game_player {
-	constructor(spriteSheet, x, y, face, color) {
-		this.sx = 0;        //Frame counter for when the player is moving.
+
+class ball_game_player { 
+	constructor(spriteSheet, x, y, face) {
+		this.temp_sprite_sheet = spriteSheet;
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 80, 80,
+			{
+				"left_right": {
+					"row": 0,
+					"row_length": 6
+				},
+				"down": {
+					"row": 1,
+					"row_length": 6
+				},
+				"up": {
+					"row": 2,
+					"row_length": 6
+				}
+			});
 		this.x = x;
 		this.y = y;
-		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
-		this.speed = 5;     // Player movement speed
-		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
-		this.sprite_row = 0;
-    this.spriteColor = color;
-		this.isDead = 0;
-		this.bounds = [0, 2000, 0, 1000];
-    this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64, {
-      "dead" : 
-      {
-        "row" : 7+10*this.spriteColor,
-          "row_length": 1
-      },
-  
-      "walking" : 
-      {
-        "row" : 5+10*this.spriteColor,
-      "row_length" : 1
-      }
-    });
-	}
-
-	draw() {
-		push();
-		
-
-		pop();
-	}
-
-	grab_fruit(fruit_id, size){
-		this.fruit_holding = 1;
-		this.fruit_held_id = fruit_id;
-		this.speed = 15/size;
-	}
-
-	drop_fruit(){
+		this.move = 0;
 		this.speed = 5;
-		this.fruit_holding = 0;
-	}
-
-	get_pos_string(){
-		var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
-		return string_make;
+		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+		this.current_tile_index = 0;
+		this.previous_tile_index = 0;
+		this.last_update = millis()/1000;
+		this.name = "temp name";
 	}
 	
-	update_data(sprite, x, y, move, speed, facing){
-		//if (sprite != null) {this.spriteSheet = }
-		if (x != null) { this.x = x; }
-		if (y != null) { this.y = y; }
-		if (move != null) { this.move = move; }
-		if (speed != null) { this.speed = speed; }
-		if (facing != null) { this.facing = facing; }
+	draw() {
+		push();
 
+
+		//if (this.move == 0) { this.sprite_anim.stop(); }
+		if (this.move) {
+			if (this.facing == "left") { this.x -= this.speed * (millis()/1000 - this.last_update); }
+			else if (this.facing == "right") { this.x += this.speed * (millis()/1000 - this.last_update); }
+			else if (this.facing == "up") { this.y -= this.speed * (millis()/1000 - this.last_update); }
+			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
+			this.last_update = millis()/1000;
+		}
+		text_make(0, 20, 0, 1);
+		fill(0, 0, 255);
+		g_cam.text(this.name, this.x, this.y+60);
+		this.sprite_anim.draw(this.x, this.y, true);
+		pop();
+	}
+  
+	get_pos_string(){
+	  var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
+	  return string_make;
+	}
+	
+	update_facing(facing) {
+		if (facing == this.facing) { return; }
+		this.facing = facing;
+		if (facing == "left" || facing == "right") {
+			this.sprite_anim.change_animation("left_right");
+			if (facing == "left") { this.sprite_anim.flip(1); }
+			else { this.sprite_anim.flip(0); }
+		} else if (facing == "up") {
+			this.sprite_anim.flip(0);
+			this.sprite_anim.change_animation("up");
+		} else if (facing == "down") {
+			this.sprite_anim.flip(0);
+			this.sprite_anim.change_animation("down");
+		}
 	}
 
+	update_moving(value) {
+		if (value == this.move) { return; }
+		if (value) {
+			this.move = 1;
+			this.last_update = millis()/1000;
+			this.sprite_anim.start();
+		} else {
+			this.move = 0;
+			this.sprite_anim.stop();
+		}
+	}
+
+	update_data(sprite, x, y, move, speed, facing, current_tile_index, previous_tile_index, name){
+	  //if (sprite != null) {this.spriteSheet = }
+	  if (x != null) { this.x = x; }
+	  if (y != null) { this.y = y; }
+	  if (move != null) { this.move = move; }
+	  if (speed != null) { this.speed = speed; }
+	  if (facing != null) { this.update_facing(facing); }
+	  if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
+	  if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
+		if (name != null) { this.name = name; }
+	}
+  
 	make_data_raw(){
-		return this.x+","+this.y+","+this.move+","+
-						this.speed+","+this.facing+";
+	  return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
+						this.previous_tile_index+","+this.name;
 	}
-
+  
 	make_data(player_index){
-		var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-											this.speed+","+this.facing;
-		return string_make;
+	  return "pos_player:"+player_index+","+this.make_data_raw();
 	}
-
-  update_anim(animation) {
-    if(animation == this.current_animation) {return;}
-    if(animation == "dead") {this.move = 0; this.sprite_anim.stop(); }
-    else {this.move = 1; this.sprite_anim.start(); }
-    this.sprite_anim.change_animation(animation);
-    this.current_animation = animation;
-    }
 }
 
 function ball_game() {
@@ -143,7 +167,12 @@ function ball_game() {
     this.players = [];
     this.balls = [];
     this.main_player_index;
-    this.arrow_keys = [39, 37, 38, 40];
+    this.arrow_keys = {
+			"left" : 37,
+			"right" : 39,
+			"up" : 38,
+			"down" : 40
+		};
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     imageMode(CENTER);
     this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0);
@@ -151,11 +180,11 @@ function ball_game() {
   }
 
   this.key_pressed = function(keycode) {
-    for (i=0;i<4;i++){
+    for (let i in this.arrow_keys){
       if (keycode == this.arrow_keys[i]){
-        this.players[this.main_player_index].facing = i;
+        this.players[this.main_player_index].update_facing(i);
+		  this.players[this.main_player_index].update_moving(true);
         this.players[this.main_player_index].move = 1;
-        this.players[this.main_player_index].sx = 0;
         send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
         return;
       }
