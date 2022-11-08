@@ -4,33 +4,13 @@ function seed_random(seed) {
 }
 
 class game_2_ball {
-	constructor(spriteSheet, x, y, face) {
-		this.temp_sprite_sheet = spriteSheet;
-		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 80, 80,
-			{
-				"left_right": {
-					"row": 0,
-					"row_length": 6
-				},
-				"down": {
-					"row": 1,
-					"row_length": 6
-				},
-				"up": {
-					"row": 2,
-					"row_length": 6
-				}
-			});
+	constructor() {
 		this.radius = 50;
 		this.x = 0;
 		this.y = 0;
-		this.move = 0;
 		this.dx = 1;
 		this.dy = 1;
 		this.speed = 300;
-		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
-		this.current_tile_index = 0;
-		this.previous_tile_index = 0;
 		this.last_update = Date.now()/1000;
 	}
 
@@ -64,31 +44,13 @@ class game_2_ball {
 		
 	}
 
-
 	make_data(id) {
 		var str_make = "ball_pos:";
 		str_make += id + "," + this.x + "," + this.y + "," + this.dx + ","
 							+ this.dy + "," + this.speed;
 		return str_make;
 	}
-
-draw() {
-	//if (this.move == 0) { this.sprite_anim.stop(); }
-	if (this.move) {
-		if (this.facing == "left") { this.x -= this.speed * (millis()/1000 - this.last_update); }
-		else if (this.facing == "right") { this.x += this.speed * (millis()/1000 - this.last_update); }
-		else if (this.facing == "up") { this.y -= this.speed * (millis()/1000 - this.last_update); }
-		else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
-		this.last_update = millis()/1000;
-	}
-	text_make(0, 20, 0, 1);
-	fill(0, 0, 255);
-	g_cam.text(this.name, this.x, this.y+60);
-	this.sprite_anim.draw(this.x, this.y, true);
-	pop();
- }
 }
-
 
 class ball_game_player {
   constructor(x, y, face) {
@@ -102,60 +64,19 @@ class ball_game_player {
 
   }
 
-  get_pos_string(){
-	var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
-	return string_make;
-  }
-  
-  update_facing(facing) {
-	  if (facing == this.facing) { return; }
-	  this.facing = facing;
-	  if (facing == "left" || facing == "right") {
-		  this.sprite_anim.change_animation("left_right");
-		  if (facing == "left") { this.sprite_anim.flip(1); }
-		  else { this.sprite_anim.flip(0); }
-	  } else if (facing == "up") {
-		  this.sprite_anim.flip(0);
-		  this.sprite_anim.change_animation("up");
-	  } else if (facing == "down") {
-		  this.sprite_anim.flip(0);
-		  this.sprite_anim.change_animation("down");
-	  }
-  }
-
-  update_moving(value) {
-	  if (value == this.move) { return; }
-	  if (value) {
-		  this.move = 1;
-		  this.last_update = millis()/1000;
-		  this.sprite_anim.start();
-	  } else {
-		  this.move = 0;
-		  this.sprite_anim.stop();
-	  }
-  }
-
-  update_data(sprite, x, y, move, speed, facing, current_tile_index, previous_tile_index, name){
-	//if (sprite != null) {this.spriteSheet = }
-	if (x != null) { this.x = x; }
-	if (y != null) { this.y = y; }
-	if (move != null) { this.move = move; }
-	if (speed != null) { this.speed = speed; }
-	if (facing != null) { this.update_facing(facing); }
-	if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
-	if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
-	  if (name != null) { this.name = name; }
-  }
-
-  make_data_raw(){
-	return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
-					  this.previous_tile_index+","+this.name;
-  }
-
   make_data(player_index){
-	return "pos_player:"+player_index+","+this.make_data_raw();
+    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+                      this.speed+","+this.facing;
+    return string_make;
+  }
+
+  update_data(sprite, x, y, move, speed, facing){
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (facing != null) { this.facing = facing; }
   }
 }
-
 
 module.exports = {game_2_ball, ball_game_player};
