@@ -331,14 +331,14 @@ class sprite_animation_object {
       if (use_g_cam) {
         g_cam.translate(x, y);
         scale (this.flip_image_ref, 1);
-        rotate(this.rotation*Math.PI/180);
+        rotate(this.rotation_angle*Math.PI/180);
         g_cam.image(this.sprite, null, null, this.draw_size*this.w_h_ratio, this.draw_size, 
                     this.x_mod*(this.sx+this.current_first_tile), this.y_mod*this.current_animation_row, 
                     this.x_mod, this.y_mod);
       } else {
         translate(x, y);
         scale(this.flip_image_ref, 1);
-        rotate(this.rotation*Math.PI/180);
+        rotate(this.rotation_angle*Math.PI/180);
         imageMode(CENTER);
         image(this.sprite, 0, 0, this.draw_size*this.w_h_ratio, this.draw_size, 
               this.x_mod*(this.sx+this.current_first_tile), this.y_mod*this.current_animation_row, 
@@ -351,14 +351,14 @@ class sprite_animation_object {
       if (use_g_cam) {
         g_cam.translate(x, y);
         scale (this.flip_image_ref, 1);
-        rotate(this.rotation*Math.PI/180);
+        rotate(this.rotation_angle*Math.PI/180);
         g_cam.image(this.sprite, null, null, this.draw_size*this.w_h_ratio, this.draw_size, 
                     this.x_mod*this.current_first_tile, this.y_mod*this.current_animation_row, 
                     this.x_mod, this.y_mod);
       } else {
         translate(x, y);
         scale(this.flip_image_ref, 1);
-        rotate(this.rotation*Math.PI/180);
+        rotate(this.rotation_angle*Math.PI/180);
         imageMode(CENTER);
         image(this.sprite, 0, 0, this.draw_size*this.w_h_ratio, this.draw_size, 
               this.x_mod*this.current_first_tile, this.y_mod*this.current_animation_row, 
