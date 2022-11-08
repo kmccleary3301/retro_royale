@@ -19,7 +19,7 @@ class flappy_bird_player {
 		this.spriteSheet = spriteSheet;
 
 		this.temp_sprite_sheet = spriteSheet;
-		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 80, 80,
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64,
 			{
 				// "left_right": {
 				// 	"row": 0,
@@ -37,8 +37,8 @@ class flappy_bird_player {
 					"row": 5,
 					"row_length": 1
 				},
-				"fall": {
-					"row": 5,
+				"die": {
+					"row": 7,
 					"row_length": 1
 				}
 			});
@@ -47,7 +47,7 @@ class flappy_bird_player {
 		this.x = x;
 		this.y = y;
 		this.velocity = 0;
-		this.acceleration = -50; //pixels per second per second
+		this.acceleration = 0; //pixels per second per second
 		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
 		this.speed = 5;     // Player movement speed
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
@@ -58,44 +58,65 @@ class flappy_bird_player {
 		this.playerIsInPipe = false;
 		this.isDead = false;
 		this.pipesPassed = 0;
+
+		this.update_anim("jump");
 	}
 
 	draw() {
 		push();
-		g_cam.translate(this.x, this.y);
-		if (this.move == 1){
-			if (this.facing < 2){
-				scale(1-this.facing*2, 1);  
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx+1), 0, 80, 80);
-				this.x = this.x + this.speed * (1-this.facing*2);
-			} else if (this.facing == 2) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx), 400, 80, 80);
-				this.y = this.y - this.speed;
-			} else if (this.facing == 3) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 480 + 80*(this.sx), 400, 80, 80);
-				this.y = this.y + this.speed;
-			}
+		// g_cam.translate(this.x, this.y);
+		// if (this.move == 1){
+		// 	if (this.facing < 2){
+		// 		scale(1-this.facing*2, 1);  
+		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx+1), 0, 80, 80);
+		// 		this.x = this.x + this.speed * (1-this.facing*2);
+		// 	} else if (this.facing == 2) {
+		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx), 400, 80, 80);
+		// 		this.y = this.y - this.speed;
+		// 	} else if (this.facing == 3) {
+		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 480 + 80*(this.sx), 400, 80, 80);
+		// 		this.y = this.y + this.speed;
+		// 	}
 
-			this.x = Math.min(this.bounds[1]-40, Math.max(this.bounds[0]+40, this.x));    //Prevents the player from leaving the game boundaries.
-			this.y = Math.min(this.bounds[3]-40, Math.max(this.bounds[2]+40, this.y));   
+		// 	this.x = Math.min(this.bounds[1]-40, Math.max(this.bounds[0]+40, this.x));    //Prevents the player from leaving the game boundaries.
+		// 	this.y = Math.min(this.bounds[3]-40, Math.max(this.bounds[2]+40, this.y));   
 
-		}
-		else {
-			if (this.facing < 2){
-				scale(1-this.facing*2, 1);  
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 0, 80, 80);
-			} else if (this.facing == 2) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 400, 80, 80);
-			} else if (this.facing == 3) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 480, 400, 80, 80);
-			}
-		}
+		// }
+		// else {
+		// 	if (this.facing < 2){
+		// 		scale(1-this.facing*2, 1);  
+		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 0, 80, 80);
+		// 	} else if (this.facing == 2) {
+		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 400, 80, 80);
+		// 	} else if (this.facing == 3) {
+		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 480, 400, 80, 80);
+		// 	}
+		// }
 		
-		if (frameCount % 6 == 0) {
-			this.sx = (this.sx + 1) % 6;
-		}
+		// if (frameCount % 6 == 0) {
+		// 	this.sx = (this.sx + 1) % 6;
+		// }
+		//send_data_debug("debug:velocity is "+this.velocity);
+		
+		//this.velocity += 0.1*this.acceleration;
+		//this.y += this.velocity;
+		console.log("velocity -> "+this.velocity);
+		this.update_rotation(this.velocity);
+
+		this.sprite_anim.draw(this.x, this.y, true);
 
 		pop();
+	}
+
+	update_anim(animation) {
+		if (animation == this.current_animation) { return; }
+		//if (animation == "standing" || animation == "dead") { this.moving = 0; this.sprite_anim.stop(); }
+		else  { this.moving = 1; this.sprite_anim.start(); }
+		this.sprite_anim.change_animation(animation);
+		this.current_animation = animation;
+	}
+	update_rotation(velocity) {
+		this.sprite_anim.rotation_angle = -1*velocity;
 	}
 
 	//jump() {
@@ -118,7 +139,7 @@ class flappy_bird_player {
 		return string_make;
 	}
 	
-	update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+	update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id, velocity){
 		//if (sprite != null) {this.spriteSheet = }
 		if (x != null) { this.x = x; }
 		if (y != null) { this.y = y; }
@@ -127,6 +148,7 @@ class flappy_bird_player {
 		if (facing != null) { this.facing = facing; }
 		if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
 		if (fruit_id != null) { this.fruit_held_id = fruit_id; }
+		if (velocity != null) {this.velocity = velocity; }
 	}
 
 	make_data_raw(){
@@ -148,9 +170,11 @@ function flappy_bird() {
       this.main_player_index;
       this.arrow_keys = [39, 37, 38, 40]; //EWNS
       this.space_bar = 32; //space bar
-      this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+      //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
+	  this.backGround = loadImage(repo_address+"media/background/thumbnail_Image 11-8-22 at 2.18 PM")
       imageMode(CENTER);
-      this.players[0] = new flappy_bird_player(this.greenSprite, 200, 200, 0);
+      this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 0);
       this.main_player_index = 0;
 	  //this.playerIsInPipe = false;
     }
@@ -170,6 +194,7 @@ function flappy_bird() {
         //this.players[this.main_player_index].jump();
 		send_data("jump");
 		send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+		this.players[this.main_player_index].velocity = 990;
       }
     }
   
@@ -189,6 +214,7 @@ function flappy_bird() {
     //   g_cam.x = this.players[this.main_player_index].x;
     //   g_cam.scale = 0.8;
       background(200, 200, 200);
+
       fill(0, 0, 0);
       text_make(0, 200, 0, 2);
       textAlign(CENTER, CENTER);
@@ -216,10 +242,12 @@ function flappy_bird() {
 			if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
 				this.players[this.main_player_index].isDead = true;
 				this.players[this.main_player_index].playerIsInPipe = true;
+				this.players[this.main_player_index].update_anim("die");
 			}
 			else if(this.players[this.main_player_index].y > this.pipesList[p].y+(this.pipesList[p].pipeWidth/2)-40) {
 				this.players[this.main_player_index].isDead = true;
 				this.players[this.main_player_index].playerIsInPipe = true;
+				this.players[this.main_player_index].update_anim("die");
 			}
 		}
 		else if(this.pipesList[p].hasBeenPassed == false && this.players[this.main_player_index].x > this.pipesList[p].x) {
@@ -285,9 +313,9 @@ function flappy_bird() {
 	  }
     }
   
-    this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-      p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
-      this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id,velocity
+      p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7, 8], [1, 2, 4]);
+      this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
       //send_data("debug:"+p_vals[1]);
     //   for(let i in this.pipesList) { //this activates on every tick
     //     this.pipesList[i].x -= 400*0.035; //speed times tick interval

@@ -42,9 +42,10 @@ var {parse_board_from_image, swap_new_direction, pixel, linked_pixel} =
 
 Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
   if (err) throw err;
-  console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
+  /*console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
   
   console.log("pixel -> "+JSON.stringify(Jimp.intToRGBA(img.getPixelColor(0, 0))));
+  */
 
   var list_make = parse_board_from_image(img);
 });
@@ -514,8 +515,10 @@ function board_game() {
 	this.setup = function() {
     Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
       if (err) throw err;
+      /*
       console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
       console.log("pixel -> "+JSON.stringify(Jimp.intToRGBA(img.getPixelColor(0, 0))));
+      */
       var list_make = parse_board_from_image(img);
       this.make_board_from_image(list_make);
     });
