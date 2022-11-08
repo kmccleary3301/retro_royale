@@ -15,8 +15,8 @@ class game_2_ball {
       this.speed = 300;
       this.last_update = millis()/1000;
     }
-  }
-    this.setup = function() {
+  
+    setup() {
       pop();
       test_reset_draw_settings();
       //reset();
@@ -61,9 +61,9 @@ class game_2_ball {
   
       //image_process("media/board_templates/test_template_1.png", parse_board_from_image);
       this.make_board_layout_preset_1();
-    
+    }
   
-    draw();{
+    draw() {
       //console.log("drawing ball");
       fill(30, 0, 20);
       stroke(255);
@@ -93,10 +93,10 @@ class game_2_ball {
       this.dx /= factor;
       this.last_update = millis()/1000;
     }
-  }
-  
+    
 
-    update_data(x, y, dx, dy, speed); {
+
+    update_data(x, y, dx, dy, speed) {
       this.x = x;
       this.y = y;
       this.dx = dx;
@@ -105,7 +105,7 @@ class game_2_ball {
     }
   
 
-
+  }
 
 function ball_game() {
   this.setup = function() {
