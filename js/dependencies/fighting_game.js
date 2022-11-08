@@ -57,21 +57,30 @@ class fighting_game_player  {
 
 	draw() {
     
+    
+
 		push();
     
+    
+
     // if (this.is_hit == 1 && (millis()/1000 - this.start_hit) < .5) {
     //   this.update_anim("standing");
 
     // }
-    if (this.dx != 0 && this.isDucking == 0) { 
-      this.update_facing(this.facing);
-      this.x += this.dx;
-    }
+   
     
 
     this.x = Math.max(this.bounds[0], Math.min(this.x, this.bounds[1]));
     this.sprite_anim.draw(this.x, this.y, true);
-    
+    if (this.isDead == 1) {
+      this.update_anim("dead"); 
+      return;
+     }
+
+     if (this.dx != 0 && this.isDucking == 0) { 
+      this.update_facing(this.facing);
+      this.x += this.dx;
+    }
 
     // if (this.current_animation == "attacking" && this.sprite_anim.sx == 3) { 
     //   if (this.moving == 0) {
@@ -112,18 +121,20 @@ class fighting_game_player  {
     this.y = Math.max(this.bounds[2], Math.min(this.y, this.bounds[3]));
 
     //draw rectangle respresenting health in top right corner
-    if (this.isDead == 0) {
+    
       fill(255, 0, 0);
       rect(this.x-20, this.y-60, 50, 10);
       fill(0, 255, 0);
       rect(this.x-20, this.y-60, this.health/2, 10);
-    }
+    
+
+    
 
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
-      //announce_death();
+     // this.announce_death();
       this.isDead = 1;
-      this.update_anim("dead");
+     // this.update_anim("dead");
     }
     if(this.y < floor )  {         
       this.dy += gravity; 
@@ -150,6 +161,7 @@ class fighting_game_player  {
   }
 
   hit() {
+    if(this.isDead == 1) { return; }
     this.is_hit = 1;
     this.start_hit = millis()/1000;
     this.update_anim("hit");
@@ -216,10 +228,10 @@ function fighting_game() {
 
   
 
-  this.key_pressed = function(keycode) {
+  this.key_pressed = function(code) {
     if(this.players[this.main_player_index].isDead == 0) {
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-    if (keycode == 39) { //right
+    if (code == 39) { //right
       //this.players[this.main_player_index].update_anim("left_right_walking");
      // console.log("flipping: "+0);
       this.players[this.main_player_index].facing = 0;
@@ -227,7 +239,7 @@ function fighting_game() {
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       return;
     }
-    if (keycode == 37) //left
+    if (code == 37) //left
     {
      // this.players[this.main_player_index].update_anim("left_right_walking");
      // console.log("flipping: "+1);
@@ -236,7 +248,7 @@ function fighting_game() {
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       return;
     }
-    if (keycode == 38) //jumping
+    if (code == 38) //jumping
     {
       if (this.players[this.main_player_index].y == floor) {
       this.players[this.main_player_index].dy = -15;
@@ -248,14 +260,14 @@ function fighting_game() {
       }
       
     }
-    if(keycode == 40){ //down
+    if(code == 40){ //down
       //this.players[this.main_player_index].update_anim("ducking");
       //this.players[this.main_player_index].sx = 0;
       this.players[this.main_player_index].isDucking = 1;
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
       return;
     }
-    if (keycode == this.space_key)
+    if (code == this.space_key)
     {
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw()+"\nattack");
       send_data("attack"+this.players[this.main_player_index].make_data_raw());
@@ -267,29 +279,29 @@ function fighting_game() {
     }
   }
 
-  this.key_released = function(keycode) {
+  this.key_released = function(code) {
     for (i=0;i<2;i++){
-      if(keycode == this.arrow_keys[i]) {
+      if(code == this.arrow_keys[i]) {
        // if (this.players[this.main_player_index].flip == i) { 
           this.players[this.main_player_index].dx = 0;
           //this.players[this.main_player_index].moving = 0;
           //this.players[this.main_player_index].update_anim("standing");
        // }
       }
-      if(keycode == 38) { //jumping
+      if(code == 38) { //jumping
         //if(this.players[this.main_player_index].dy < 0 ) {
         //this.players[this.main_player_index].dy = 0;
         //this.players[this.main_player_index].dy = 0;
         //this.players[this.main_player_index].update_anim("standing");
         
       }
-      if(keycode == 40) { //down
+      if(code == 40) { //down
        // this.players[this.main_player_index].update_anim("standing");
         this.players[this.main_player_index].isDucking = 0;
         //this.players[this.main_player_index].dy = 0;
       }
       
-      if(keycode == this.space_key) {
+      if(code == this.space_key) {
         this.players[this.main_player_index].isAttacking = 0;
        
       }
@@ -368,12 +380,15 @@ function fighting_game() {
       this.hit_parse(message);
     } else if (flag == "attack") {
       this.read_attack(message);
+    } else if (flag == "death") {
+     // this.players[parseInt(message)].isDead = 1;
     }
   }
 
   this.announce_death = function() 
   {
     send_data("death:"+this.main_player_index);
+    this.players[this.main_player_index].isDead = 1;
   }
    
 
@@ -419,3 +434,22 @@ function collisionDetection(player, enemy) {
   return false;
 }
 
+kd.run(function () {
+  kd.tick();
+});
+
+
+document.addEventListener("keydown", (e) => {
+  if (e.code == 68) {
+    xPos -= 10;
+  }
+  if (e.code == 65) {
+    xPos += 10;
+  }
+  if (e.code == 87) {
+    yPos += 10;
+  }
+  if (e.code == 83) {
+    yPos -= 10;
+  }
+});

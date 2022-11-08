@@ -809,6 +809,11 @@ function fighting_game() {
       broadcast_exclusive("winner:"+message);
       
     }
+    else if (flag == 'death') {
+     // this.players[usr_id].isDead = 1;
+      broadcast("death:"+usr_id);
+     // this.check_winner();
+    }
   }
 
   //make a function that keeps an array of the dead players in order
