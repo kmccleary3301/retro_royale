@@ -1,6 +1,10 @@
-let background1;
+//let background1;
+//let disco_ball_string;
+var video_game_font;
+let bounds = [0+100, 1440-100, 0, 1440/2];
 const gravity = .5;
-const floor = 600;
+const floor = 570;
+let countdown_time = 60;
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
 class fighting_game_player  {
 	constructor(spriteSheet, x, y, face, color) {
@@ -49,10 +53,12 @@ class fighting_game_player  {
     this.health = 100;        // Player's health
     this.isDucking = 0;       // 0 = not ducking, 1 = ducking
     this.isAttacking = 0;     // 0 = not attacking, 1 = attacking
-    this.bounds = [0+100, 1440-100, 0, 1440/2];
+    //this.bounds = [0+100, 1440-100, 0, 1440/2];
     this.is_hit = 0;
     this.isDead = 0;
     this.start_hit;
+    this.duckTimer = 0;
+    this.duckTimeout = 0;
 	}
 
 	draw() {
@@ -61,6 +67,7 @@ class fighting_game_player  {
 
 		push();
     
+
     
 
     // if (this.is_hit == 1 && (millis()/1000 - this.start_hit) < .5) {
@@ -68,9 +75,10 @@ class fighting_game_player  {
 
     // }
    
-    
+    //three_dimensional_disco_ball();
 
-    this.x = Math.max(this.bounds[0], Math.min(this.x, this.bounds[1]));
+    this.x = Math.max(bounds[0], Math.min(this.x, bounds[1]));
+    
     this.sprite_anim.draw(this.x, this.y, true);
     if (this.isDead == 1) {
       this.update_anim("dead"); 
@@ -93,6 +101,27 @@ class fighting_game_player  {
 
     if (this.facing == 0) { this.sprite_anim.flip(0); this.flip = 0; }  else { this.sprite_anim.flip(1); this.flip = 1; }
 
+    
+
+    if(this.isDucking == 1 && this.duckTimer < 1) {
+      this.duckTimer += 1/120;
+      this.update_facing(this.facing);
+      this.update_anim("ducking");
+
+      //this.y = floor - 32;
+      //this.sprite_anim.draw(this.x, this.y, true);
+      
+    } else if (this.isDucking == 1 && this.duckTimer >= 1) {
+      this.duckTimer = 0;
+      this.isDucking = 0;
+      this.duckTimeout = 1;
+      this.update_facing(this.facing);
+      this.update_anim("standing");
+    }
+
+    if (this.duckTimeout == 1) {
+      setTimeout(() => {this.duckTimeout = 0;}, 3000);
+    }
    
     if(this.isDucking == 1){
       this.update_facing(this.facing);
@@ -118,7 +147,7 @@ class fighting_game_player  {
     //gravity animation
     this.y += this.dy;
     this.y = Math.min(this.y, floor);
-    this.y = Math.max(this.bounds[2], Math.min(this.y, this.bounds[3]));
+    this.y = Math.max(bounds[2], Math.min(this.y, bounds[3]));
 
     //draw rectangle respresenting health in top right corner
     
@@ -201,19 +230,22 @@ class fighting_game_player  {
 
 function fighting_game() {
   this.preload = function() {
-    
+
+    this.video_game_font = loadFont(repo_address+"media/fonts/video_game_font.ttf");
+   
   }
 
   this.setup = function() {
-    //drawImage(this.background1, 0, 0, width, height);
-    this.background1 = loadImage(repo_address+"media/backgrounds/sunset_background.png");
+    
+    this.background1 = loadImage(repo_address+"media/backgrounds/melee_sunset_background.png");
+    this.disco_ball_string = loadImage(repo_address+"media/misc/disco_ball_string.png");
     imageMode(CENTER);
     this.players = [];
     this.main_player_index;
     this.arrow_keys = [39, 37];
     this.space_key = 32;
     
-    this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
+    this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
     imageMode(CENTER);
     
     
@@ -224,6 +256,7 @@ function fighting_game() {
     this.players[0] = new fighting_game_player(this.Sprite, 400, floor, 0, 0); //starting location, direction facing, color
     this.main_player_index = 0;
     //send_data("load_game");
+    
   }
 
   
@@ -263,8 +296,9 @@ function fighting_game() {
     if(code == 40){ //down
       //this.players[this.main_player_index].update_anim("ducking");
       //this.players[this.main_player_index].sx = 0;
+      if (this.players[this.main_player_index].duckTimeout == 0) {
       this.players[this.main_player_index].isDucking = 1;
-      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());}
       return;
     }
     if (code == this.space_key)
@@ -278,6 +312,8 @@ function fighting_game() {
     send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
     }
   }
+
+  
 
   this.key_released = function(code) {
     for (i=0;i<2;i++){
@@ -324,7 +360,13 @@ function fighting_game() {
    
     
     //background(200, 250, 200);
+
+
     image(this.background1, width/2, height/2, width, height);
+
+    image(this.disco_ball_string, width/2, 50, 50, 150);
+
+    /*
 
     //fill (243,199,82);
     fill(3,94,232);
@@ -338,12 +380,32 @@ function fighting_game() {
 
     fill (45,226,230);
     rect(0, floor+180, width, 500);
+    */
 
+    
+/*
     fill(0, 200, 0);
     
     text_make(0, 200, 0, 2);
     textAlign(CENTER, CENTER);
     text("Jake", width/2, height/2);
+
+    */
+
+    if (countdown_time > 0) {
+    countdown_time -= 1/60;
+     
+     fill(0, 200, 0);
+    // text_make(0, 200, 0, 2);
+     textAlign(CENTER, CENTER);
+     //textFont(video_game_font);
+     text(round(countdown_time), width/2, height/2);
+    }else if (countdown_time == 0) {
+      //shrink the boundaries by half
+     bounds = [0+100, 1440-100, 0, 1440/4];
+      countdown_time = 60;
+   }
+    
     
     for (let i in this.players) {
       this.players[i].draw();
@@ -418,9 +480,6 @@ function fighting_game() {
     this.players[p_vals[0]].hit();
   }
 
-
-
-
 }
 
 //create a collision detection function
@@ -433,6 +492,26 @@ function collisionDetection(player, enemy) {
   }
   return false;
 }
+
+/*
+function three_dimensional_disco_ball() {
+  box(70, 70, 70);
+  rotateX(frameCount * 0.01);
+  rotateY(frameCount * 0.01);
+  box(70, 70, 70);
+  //construct a 3d disco ball made of boxes
+  //do it with a for loop
+  //rotate the boxes
+  //make the boxes smaller
+  for (var i = 0; i < 100; i++) {
+    rotateX(frameCount * 0.01);
+    rotateY(frameCount * 0.01);
+    box(70, 70, 70);
+  }
+    
+  }
+
+*/
 
 kd.run(function () {
   kd.tick();

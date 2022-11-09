@@ -969,7 +969,7 @@ function fighting_game() {
     this.session_id = session_id;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.floor = 600;
+    this.floor = 570;
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
@@ -1072,6 +1072,9 @@ function fighting_game() {
     var hit_radius = 100;
     for (let i in this.players) {
       if (i != usr_id) {
+        if(this.players[i].isDucking == 1){
+          return;
+        }
       var x_dist = this.players[i].x - this.players[usr_id].x,
           y_dist = this.players[i].y - this.players[usr_id].y;
       if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
