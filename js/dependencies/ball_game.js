@@ -1,4 +1,5 @@
 var seed_get = 1;
+let background1;
 
 function seed_random(seed) {
   var x = Math.sin(seed) * 10000;
@@ -81,7 +82,11 @@ class ball_game_player {
 				"up": {
 					"row": 2+10*this.spriteColor,
 					"row_length": 4
-				}
+				},
+        "dead": {
+          "row": 7+10*this.spriteColor,
+          "row_length": 1
+        }
 			});
   
 		this.x = x;
@@ -129,12 +134,15 @@ class ball_game_player {
 			if (facing == "left") { this.sprite_anim.flip(1); }
 			else { this.sprite_anim.flip(0); }
 		} else if (facing == "up") {
-			this.sprite_anim.flip(0);
+			this.sprite_anim.flip(3);
 			this.sprite_anim.change_animation("up");
 		} else if (facing == "down") {
-			this.sprite_anim.flip(0);
+			this.sprite_anim.flip(4);
 			this.sprite_anim.change_animation("down");
-		}
+		} else if (facing == "dead") {
+      this.sprite_anim.flip(0);
+      this.sprite_anim.change_animation("dead");
+    }
 	}
 
 	update_moving(value) {
@@ -173,9 +181,11 @@ class ball_game_player {
 
 var font;
 var countdown;
-var timelimit = 15; //10 seconds
+var timelimit = 20; //10 seconds
 function ball_game() {
   this.setup = function() {
+    this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
+
     this.players = [];
     this.balls = [];
     this.main_player_index;
@@ -218,7 +228,7 @@ function ball_game() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
-    background(200, 200, 200);
+    image(this.background1, width/2, height/2, width, height);
     fill(0, 0, 0);
     let current_time = int(millis() / 1000);
     countdown = timelimit - current_time;
@@ -227,9 +237,11 @@ function ball_game() {
     textFont(this.font);
     
     if(countdown > 0){
+      fill(colors[4]);
       text("Time until start: " + countdown, width/2, height/2);
     }
     else {
+      fill(colors[4]);
       text("DISCO BLITZ", width/2, height/2);
     }
     for (let i in this.players) {
