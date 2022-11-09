@@ -172,7 +172,8 @@ class ball_game_player {
 }
 
 var font;
-
+var countdown;
+var timelimit = 15; //10 seconds
 function ball_game() {
   this.setup = function() {
     this.players = [];
@@ -219,12 +220,18 @@ function ball_game() {
   this.draw = function() {
     background(200, 200, 200);
     fill(0, 0, 0);
+    let current_time = int(millis() / 1000);
+    countdown = timelimit - current_time;
 
     text_make(0, 200, 0, 2);
     textFont(this.font);
     textAlign(CENTER, CENTER);
-
-    text("DISCO BLITZ", width/2, height/2);
+    if(countdown > 0){
+      text("Time until start: " + countdown, width/2, height/2);
+    }
+    else {
+      text("DISCO BLITZ", width/2, height/2);
+    }
     for (let i in this.players) {
       this.players[i].draw();
     }
