@@ -157,7 +157,9 @@ class fighting_game_player  {
       rect(this.x-20, this.y-60, this.health/2, 10);
     
 
-    
+      fill(255, 255, 255);
+      textFont("Arial");
+      text("Player " + (this.spriteColor+1), this.x-20, this.y-70);
 
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
@@ -230,13 +232,17 @@ class fighting_game_player  {
 
 function fighting_game() {
   this.preload = function() {
-
-    this.video_game_font = loadFont(repo_address+"media/fonts/video_game_font.ttf");
-   
+  // 
+   //load video game font from google fonts
+    
+    //loadFont("https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap");
+    
+    //video_game_font = "Arial";
   }
 
   this.setup = function() {
     
+    this.video_game_font = loadFont('media/fonts/videogame.ttf');
     this.background1 = loadImage(repo_address+"media/backgrounds/melee_sunset_background.png");
     this.disco_ball_string = loadImage(repo_address+"media/misc/disco_ball_string.png");
     imageMode(CENTER);
@@ -398,7 +404,8 @@ function fighting_game() {
      fill(0, 200, 0);
     // text_make(0, 200, 0, 2);
      textAlign(CENTER, CENTER);
-     //textFont(video_game_font);
+     textFont(this.video_game_font);     //WHY THE FUCK WONT THIS WORK
+
      text(round(countdown_time), width/2, height/2);
     }else if (countdown_time == 0) {
       //shrink the boundaries by half
