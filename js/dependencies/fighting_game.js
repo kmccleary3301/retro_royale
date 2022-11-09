@@ -206,7 +206,7 @@ function fighting_game() {
 
   this.setup = function() {
     //drawImage(this.background1, 0, 0, width, height);
-    this.background1 = loadImage(repo_address+"media/backgrounds/pixel_background.png");
+    this.background1 = loadImage(repo_address+"media/backgrounds/sunset_background.png");
     imageMode(CENTER);
     this.players = [];
     this.main_player_index;
