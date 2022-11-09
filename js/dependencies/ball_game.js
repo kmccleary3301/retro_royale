@@ -87,7 +87,7 @@ class ball_game_player {
 		this.x = x;
 		this.y = y;
 		this.move = 0;
-		this.speed = 5;
+		this.speed = 150;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
     
@@ -171,6 +171,8 @@ class ball_game_player {
 	}
 }
 
+var font;
+
 function ball_game() {
   this.setup = function() {
     this.players = [];
@@ -183,6 +185,7 @@ function ball_game() {
 			"down" : 40
 		};
     this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
+    this.font = loadFont('media/fonts/Alpharush.ttf');
     imageMode(CENTER);
     this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0,);
     this.main_player_index = 0;
@@ -218,7 +221,9 @@ function ball_game() {
     fill(0, 0, 0);
 
     text_make(0, 200, 0, 2);
+    textFont(this.font);
     textAlign(CENTER, CENTER);
+
     text("DISCO BLITZ", width/2, height/2);
     for (let i in this.players) {
       this.players[i].draw();

@@ -627,7 +627,7 @@ function dev_room() {
   }
 
   this.tick_function = function() {
-    console.log("start time -> "+this.start_time);
+    //console.log("start time -> "+this.start_time);
     //console.log("dev_room tick called"); 
     return; 
   }
@@ -893,7 +893,7 @@ function ball_game() {
       //broadcast(this.make_everything());
     }
     for (let i in this.balls) { 
-      console.log("updating ball "+i);
+      //console.log("updating ball "+i);
       this.balls[i].update(seed_random, random_seed); 
     }
     //broadcast(this.make_everything());

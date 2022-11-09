@@ -58,7 +58,7 @@ class ball_game_player {
     this.x = x;
     this.y = y;
 	this.move = 0;
-	this.speed = 5;
+	this.speed = 300;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
     this.isDead = 0;
 	this.spriteColor = color;
