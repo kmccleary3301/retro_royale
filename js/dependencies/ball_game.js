@@ -225,7 +225,7 @@ function ball_game() {
 
     text_make(0, 200, 0, 2);
     textFont(this.font);
-    textAlign(CENTER, CENTER);
+    
     if(countdown > 0){
       text("Time until start: " + countdown, width/2, height/2);
     }
