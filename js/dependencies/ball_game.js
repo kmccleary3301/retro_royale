@@ -60,29 +60,37 @@ class game_2_ball {
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D'];
 
 class ball_game_player { 
-	constructor(spriteSheet, x, y, face) {
+	constructor(spriteSheet, x, y, face, color) {
 		this.temp_sprite_sheet = spriteSheet;
-		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 80, 80,
+    this.spriteColor = color;
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64,
 			{
 				"left_right": {
-					"row": 0,
-					"row_length": 6
+					"row": 0+10*this.spriteColor,
+					"row_length": 4
 				},
 				"down": {
-					"row": 1,
-					"row_length": 6
+					"row": 1+10*this.spriteColor,
+					"row_length": 4
 				},
+        "standing" : {
+          "row" : 1+10*this.spriteColor,
+          "row_length": 1,
+          "first_tile": 1
+        },
 				"up": {
-					"row": 2,
-					"row_length": 6
+					"row": 2+10*this.spriteColor,
+					"row_length": 4
 				}
 			});
+  
 		this.x = x;
 		this.y = y;
 		this.move = 0;
 		this.speed = 5;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
+    
 		this.previous_tile_index = 0;
 		this.last_update = millis()/1000;
 		this.name = "temp name";
@@ -99,7 +107,8 @@ class ball_game_player {
 			else if (this.facing == "up") { this.y -= this.speed * (millis()/1000 - this.last_update); }
 			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
 			this.last_update = millis()/1000;
-		}
+		} 
+    //else {this.update_anim("standing");}
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
@@ -173,9 +182,9 @@ function ball_game() {
 			"up" : 38,
 			"down" : 40
 		};
-    this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
     imageMode(CENTER);
-    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0);
+    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0,);
     this.main_player_index = 0;
   }
 
@@ -183,7 +192,7 @@ function ball_game() {
     for (let i in this.arrow_keys){
       if (keycode == this.arrow_keys[i]){
         this.players[this.main_player_index].update_facing(i);
-		  this.players[this.main_player_index].update_moving(true);
+        this.players[this.main_player_index].update_moving(true);
         this.players[this.main_player_index].move = 1;
         send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
         return;
@@ -194,7 +203,8 @@ function ball_game() {
   this.key_released = function(keycode) {
     for (i=0;i<4;i++){
       if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
-        this.players[this.main_player_index].move = 0;
+        this.players[this.main_player_index].dx = 0;
+
       }
     }
     send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
@@ -209,12 +219,11 @@ function ball_game() {
 
     text_make(0, 200, 0, 2);
     textAlign(CENTER, CENTER);
-    text("balls", width/2, height/2);
+    text("DISCO BLITZ", width/2, height/2);
     for (let i in this.players) {
       this.players[i].draw();
     }
     for (let i in this.balls) { this.balls[i].draw(); }
-    
     
   }
 

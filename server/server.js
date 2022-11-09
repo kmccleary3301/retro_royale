@@ -869,7 +869,7 @@ function ball_game() {
     if (sessions[this.session_id] !== undefined) {
       console.log("session found, making players");
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1, i);
       }
     }
     this.random_seed = Math.floor(Math.random()*100000);

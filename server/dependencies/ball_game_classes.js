@@ -52,12 +52,13 @@ class game_2_ball {
 }
 
 class ball_game_player {
-  constructor(x, y, face, color, spriteSheet) {
-    this.sx = 0;
+  constructor(x, y, face, color,spriteSheet) {
+    this.spriteColor = color;
+	this.sx = 0;
     this.x = x;
     this.y = y;
-    this.move = 0;
-    this.speed = 5;
+	this.move = 0;
+	this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
     this.isDead = 0;
 	this.spriteColor = color;
@@ -82,7 +83,7 @@ class ball_game_player {
   }
   update_anim(animation) {
 	if(animation == this.current_animation) {return;}
-	if(animation == "dead") {this.move = 0; this.sprite_anim.stop(); }
+	if(animation == "dead" || animation == "standing")  {this.move = 0; this.sprite_anim.stop(); }
 	else {this.move = 1; this.sprite_anim.start(); }
 	this.sprite_anim.change_animation(animation);
 	this.current_animation = animation;
