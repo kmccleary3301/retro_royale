@@ -1,4 +1,5 @@
 var seed_get = 1;
+let background1;
 
 function seed_random(seed) {
   var x = Math.sin(seed) * 10000;
@@ -81,13 +82,17 @@ class ball_game_player {
 				"up": {
 					"row": 2+10*this.spriteColor,
 					"row_length": 4
-				}
+				},
+        "dead": {
+          "row": 7+10*this.spriteColor,
+          "row_length": 1
+        }
 			});
   
 		this.x = x;
 		this.y = y;
 		this.move = 0;
-		this.speed = 5;
+		this.speed = 150;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
     
@@ -129,12 +134,15 @@ class ball_game_player {
 			if (facing == "left") { this.sprite_anim.flip(1); }
 			else { this.sprite_anim.flip(0); }
 		} else if (facing == "up") {
-			this.sprite_anim.flip(0);
+			this.sprite_anim.flip(3);
 			this.sprite_anim.change_animation("up");
 		} else if (facing == "down") {
-			this.sprite_anim.flip(0);
+			this.sprite_anim.flip(4);
 			this.sprite_anim.change_animation("down");
-		}
+		} else if (facing == "dead") {
+      this.sprite_anim.flip(0);
+      this.sprite_anim.change_animation("dead");
+    }
 	}
 
 	update_moving(value) {
@@ -171,8 +179,13 @@ class ball_game_player {
 	}
 }
 
+var font;
+var countdown;
+var timelimit = 20; //10 seconds
 function ball_game() {
   this.setup = function() {
+    this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
+
     this.players = [];
     this.balls = [];
     this.main_player_index;
@@ -183,6 +196,7 @@ function ball_game() {
 			"down" : 40
 		};
     this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
+    this.font = loadFont('media/fonts/Alpharush.ttf');
     imageMode(CENTER);
     this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0,);
     this.main_player_index = 0;
@@ -214,12 +228,22 @@ function ball_game() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
-    background(200, 200, 200);
+    image(this.background1, width/2, height/2, width, height);
     fill(0, 0, 0);
+    let current_time = int(millis() / 1000);
+    countdown = timelimit - current_time;
 
     text_make(0, 200, 0, 2);
-    textAlign(CENTER, CENTER);
-    text("DISCO BLITZ", width/2, height/2);
+    textFont(this.font);
+    
+    if(countdown > 0){
+      fill(colors[4]);
+      text("Time until start: " + countdown, width/2, height/2);
+    }
+    else {
+      fill(colors[4]);
+      text("DISCO BLITZ", width/2, height/2);
+    }
     for (let i in this.players) {
       this.players[i].draw();
     }
