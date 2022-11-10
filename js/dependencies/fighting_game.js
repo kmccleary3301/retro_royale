@@ -1,7 +1,14 @@
 //let background1;
 //let disco_ball_string;
+
+//const { text } = require("stream/consumers");
+
+
+
+var round = 1;
+var boundary_offset = 100*round;
 var video_game_font;
-let bounds = [0+100, 1440-100, 0, 1440/2];
+let bounds = [0+boundary_offset, 1440-boundary_offset, 0, 1440/2];
 const gravity = .5;
 const floor = 570;
 let countdown_time = 60;
@@ -152,14 +159,15 @@ class fighting_game_player  {
     //draw rectangle respresenting health in top right corner
     
       fill(255, 0, 0);
-      rect(this.x-20, this.y-60, 50, 10);
+      rect(this.x-25, this.y-60, 50, 10);
       fill(0, 255, 0);
-      rect(this.x-20, this.y-60, this.health/2, 10);
+      rect(this.x-25, this.y-60, this.health/2, 10);
     
-
-      fill(255, 255, 255);
-      textFont("Arial");
-      text("Player " + (this.spriteColor+1), this.x-20, this.y-70);
+    /*
+      fill(colors[4]);
+      //textFont(this.video_game_font);
+      text("player " + (this.spriteColor+1), this.x, this.y+70);
+      */
 
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
@@ -240,20 +248,23 @@ function fighting_game() {
     //video_game_font = "Arial";
   }
 
-  this.setup = function() {
-    
+  this.setup = function() {   
     this.video_game_font = loadFont('media/fonts/videogame.ttf');
     this.background1 = loadImage(repo_address+"media/backgrounds/melee_sunset_background.png");
+    this.background2 = loadImage(repo_address+"media/backgrounds/melee_sunset_background2.png");
+    this.background3 = loadImage(repo_address+"media/backgrounds/melee_sunset_background3.png");
+    this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
     this.disco_ball_string = loadImage(repo_address+"media/misc/disco_ball_string.png");
     imageMode(CENTER);
+    
     this.players = [];
     this.main_player_index;
     this.arrow_keys = [39, 37];
     this.space_key = 32;
+    this.rando = [-20, 25, 6]
     
     this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
     imageMode(CENTER);
-    
     
     //this.background.resize(0, height);
     //this.background.resize(width, 0);
@@ -367,10 +378,38 @@ function fighting_game() {
     
     //background(200, 250, 200);
 
+    
+   
+    if (this.round == 1) 
+    {
+      image(this.background1, width/2, height/2, width, height);
+    }
+      else if (this.round == 2) 
+    {
+      image(this.background2, width/2, height/2, width, height);
+    }
+      else if (this.round == 3) 
+    {
+      image(this.background3, width/2, height/2, width, height);
+    }
+    
 
-    image(this.background1, width/2, height/2, width, height);
+    //DISCO DISCO HEAVEN
+    image(this.disco_ball_string, width/2, 50, 50*2, 175*2);
 
-    image(this.disco_ball_string, width/2, 50, 50, 150);
+    //create a for loop that generate random sparkles over the disco ball
+   // for (var ij = 0; ij < 100; ij++) {
+      var sparkleN = random(0, 1);
+      if (sparkleN > 0.5) {
+        //image(this.sparkle, random(0, width), random(0, height), 10, 10);
+      }
+
+    
+   image(this.sparkle, width/2+this.rando[2], 150+this.rando[0], sin(frameCount/30)*10, sin(frameCount/30)*30);
+   image(this.sparkle, width/2+this.rando[0], 150+this.rando[1], sin(frameCount/25)*20, sin(frameCount/25)*40);
+   image(this.sparkle, width/2+this.rando[1], 150+this.rando[2], sin(frameCount/20)*40, sin(frameCount/20)*50);
+    
+   
 
     /*
 
@@ -396,22 +435,31 @@ function fighting_game() {
     textAlign(CENTER, CENTER);
     text("Jake", width/2, height/2);
 
-    */
+    
 
-    if (countdown_time > 0) {
-    countdown_time -= 1/60;
-     
-     fill(0, 200, 0);
+*/
+
+    if (this.countdown_time > 0) {
+    this.countdown_time -= 1/60;
+     fill(colors[4]);
     // text_make(0, 200, 0, 2);
      textAlign(CENTER, CENTER);
-     textFont(this.video_game_font);     //WHY THE FUCK WONT THIS WORK
-
-     text(round(countdown_time), width/2, height/2);
-    }else if (countdown_time == 0) {
+     textFont(this.video_game_font, 100);     
+     text(round(this.countdown_time), width/2, height-60);
+    }else if (this.countdown_time == 0) {
       //shrink the boundaries by half
-     bounds = [0+100, 1440-100, 0, 1440/4];
-      countdown_time = 60;
+      //image(this.background1, width/2, height/2, width, height);
+
+      
+      this.round++;
+      if (this.round == 4) {
+        this.game_over();
+      }
+      this.countdown_time = 60;
    }
+
+
+
     
     
     for (let i in this.players) {
@@ -485,6 +533,12 @@ function fighting_game() {
     p_vals = convert_data_string(data_string, [0, 1]);
     this.players[p_vals[0]].health = p_vals[1];
     this.players[p_vals[0]].hit();
+  }
+
+  this.game_over = function() {
+    //display text saying game over
+    text("GAME OVER", width/2, height/2);
+
   }
 
 }
