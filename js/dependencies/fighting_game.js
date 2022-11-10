@@ -1,8 +1,3 @@
-//let background1;
-//let disco_ball_string;
-
-//const { text } = require("stream/consumers");
-
 
 
 var video_game_font; //font for the game
