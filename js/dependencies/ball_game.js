@@ -19,7 +19,7 @@ class game_2_ball {
 
     draw() {
       //console.log("drawing ball");
-      fill(30, 0, 20);
+      fill(colors[4]);
       stroke(255);
       ellipse(this.x, this.y, this.radius);
       //console.log("drawing - "+str(this.x)+","+str(this.y));
@@ -93,6 +93,7 @@ class ball_game_player {
 		this.y = y;
 		this.move = 0;
 		this.speed = 150;
+    this.isDead = 0;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
     
@@ -163,6 +164,7 @@ class ball_game_player {
 	  if (y != null) { this.y = y; }
 	  if (move != null) { this.move = move; }
 	  if (speed != null) { this.speed = speed; }
+    if (isDead != null) {this.isDead = this.isDead; }
 	  if (facing != null) { this.update_facing(facing); }
 	  if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
 	  if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
@@ -171,7 +173,7 @@ class ball_game_player {
   
 	make_data_raw(){
 	  return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
-						this.previous_tile_index+","+this.name;
+						this.previous_tile_index+","+this.name+","+this.isDead;
 	}
   
 	make_data(player_index){
@@ -181,7 +183,8 @@ class ball_game_player {
 
 var font;
 var countdown;
-var timelimit = 20; //10 seconds
+var ballcount = 0;
+var timelimit = 20; //20 seconds
 function ball_game() {
   this.setup = function() {
     this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
@@ -215,9 +218,12 @@ function ball_game() {
   }
 
   this.key_released = function(keycode) {
-    for (i=0;i<4;i++){
+    for (let i in this.arrow_keys){
       if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
         this.players[this.main_player_index].dx = 0;
+        this.players[this.main_player_index].update_moving(false);
+        this.players[this.main_player_index].move = 0;
+        send_data("my_pos:" + this.players[this.main_player_index].make_data_raw());
 
       }
     }
@@ -247,8 +253,11 @@ function ball_game() {
     for (let i in this.players) {
       this.players[i].draw();
     }
-    for (let i in this.balls) { this.balls[i].draw(); }
-    
+
+    for (let i in this.balls) 
+    { 
+      this.balls[i].draw(); 
+    }
   }
 
   this.read_network_data = function(flag, message) {
@@ -283,7 +292,9 @@ function ball_game() {
 
   this.read_in_ball_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     p_vals = convert_data_string(data_string, [0], [1, 2, 3, 4, 5]);
-    if (p_vals[0] >= this.balls.length) { this.balls[p_vals[0]] = new game_2_ball(); }
+    
+      if (p_vals[0] >= this.balls.length && this.balls.length < 10) { this.balls[p_vals[0]] = new game_2_ball(); }
+    
     this.balls[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
   }
 
