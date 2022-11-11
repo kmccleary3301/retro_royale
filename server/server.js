@@ -1078,7 +1078,7 @@ function fighting_game() {
       var x_dist = this.players[i].x - this.players[usr_id].x,
           y_dist = this.players[i].y - this.players[usr_id].y;
       if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
-        this.players[i].health -= 10;
+        this.players[i].health -= 5;
         sessions[this.session_id].broadcast("hit:"+i+","+this.players[i].health);
       }
     }
