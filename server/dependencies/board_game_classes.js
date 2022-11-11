@@ -118,10 +118,10 @@ class board_game_tile {
 class dice_element {
 	constructor(elements, element_weights) {
 		var sum = 0;
-		for (let i in element_weights) {sum += element_weights[i]};
-		for (let i in element_weights) {element_weights[i] /= sum};
+		for (let i in element_weights) { sum += element_weights[i]; }
+		for (let i in element_weights) {element_weights[i] /= sum; }
 		this.display_list = [];
-		for (i = 0; i < 10; i++) {
+		for (i=0; i < 10; i++) {
 			this.display_list[i] = select_random_element(elements, element_weights);
 		}
 		this.chosen_value = this.display_list[Math.round(this.display_list.length/4 + 1)];
@@ -129,7 +129,7 @@ class dice_element {
 
 	make_data() {
 		str_make = "";
-		for (i=0; i < this.display_list.length-1; i++) {
+		for (i = 0; i < this.display_list.length-1; i++) {
 			str_make += this.display_list[i]+",";
 		}
 		str_make += this.display_list[this.display_list.length-1];
