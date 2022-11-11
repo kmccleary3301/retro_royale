@@ -1,8 +1,9 @@
+//const { text } = require("stream/consumers");
 
-
+var GOtimer = 5;
 var video_game_font; //font for the game
 let gameOver = 0; //game over variable
-let game_round = 1; //game round variable
+let game_round = 3; //game round variable
 let round_bound = [100, 310, 460]; //round boundary increments
 const gravity = .5;
 const floor = 570;
@@ -42,7 +43,11 @@ class fighting_game_player  {
       "jumping" : {
         "row" : 5+10*this.spriteColor,
         "row_length": 1
-    }
+    },
+    "victory_stance" : {
+      "row" : 8+10*this.spriteColor,
+      "row_length": 1
+  }
     });
     this.current_animation = "standing";
     this.moving = 0;
@@ -424,24 +429,27 @@ function fighting_game() {
 
 */
 
+if (game_round == 4) {
+  gameOver = 1;      
+}
 
 
 
     if (countdown_time > 0) {
+
      countdown_time -= 1/60;
       fill(colors[4]);
     // // text_make(0, 200, 0, 2);
      textAlign(CENTER, CENTER);
      textFont(this.video_game_font, 100);     
      text(round(countdown_time), width/2, height-60);
+     
+
      }else  
     {
       //shrink the boundaries by half
       //image(this.background1, width/2, height/2, width, height);
       
-      if (game_round == 4) {
-        gameOver = 1;
-      }
       game_round++;
       countdown_time = 30;
     }
@@ -456,8 +464,19 @@ function fighting_game() {
     
   }else{
     //this.game_over();
+    //game over screen
+    fill(colors[0]);
+    rect(0, 0, width, height);
+    fill(colors[4]);
     textFont(this.video_game_font, 100);
     text("game over", width/2, height/2);
+
+    //display timer that counts down from 5
+    text(round(GOtimer), width/2, height/2+100);
+    GOtimer -= 1/60;
+    
+
+    
   }
 
   this.read_network_data = function(flag, message) {
@@ -491,6 +510,9 @@ function fighting_game() {
       this.read_attack(message);
     } else if (flag == "death") {
      // this.players[parseInt(message)].isDead = 1;
+    } else if (flag == "winner") {
+      this.winner = parseInt(message);
+      this.players[this.winner].update_anim("victory_stance");
     }
   }
 
@@ -530,6 +552,7 @@ function fighting_game() {
   this.game_over = function() {
     //display text saying game over
     text("GAME OVER", width/2, height/2);
+
 
   }
 

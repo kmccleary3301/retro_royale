@@ -1001,7 +1001,7 @@ function fighting_game() {
     else if (flag == 'death') {
      // this.players[usr_id].isDead = 1;
       broadcast("death:"+usr_id);
-     // this.check_winner();
+      this.check_winner();
     }
   }
 
