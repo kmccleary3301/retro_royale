@@ -81,6 +81,8 @@ class fighting_game_player  {
     
     this.sprite_anim.draw(this.x, this.y, true);
     if (this.isDead == 1) {
+      this.y += this.dy; //add gravity to y position
+      this.y = Math.min(this.y, floor); //if y position is greater than floor, then set y position to floor
       this.update_anim("dead"); 
       return;
      }
@@ -165,8 +167,10 @@ class fighting_game_player  {
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
      // this.announce_death();
+
       this.isDead = 1;
      // this.update_anim("dead");
+     
     }
     if(this.y < floor )  {         
       this.dy += gravity; 
