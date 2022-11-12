@@ -422,3 +422,51 @@ class sprite_animation_object {
     this.flip_image_ref = (1-2*this.flip_image);
   }
 }
+
+
+class scroll_image {
+  constructor(image, draw_dimensions, scroll_rate, scroll_direction) {
+    if (scroll_direction === undefined) { scroll_direction = "left"; }
+    this.image = image;
+    this.last_update = Date.now()/1000;
+    this.scroll_rate = scroll_rate;
+    this.x_position = 0;
+    this.scroll_direction = scroll_direction;
+    this.draw_dimensions = draw_dimensions;
+
+    this.stretch_to_top = true;
+
+  }
+
+  draw() {
+    if (this.scroll_direction == "left") {
+      this.x_position -= (Date.now()/1000 - this.last_update) * this.scroll_rate;
+    } else {
+      this.x_position += (Date.now()/1000 - this.last_update) * this.scroll_rate;
+    }
+    this.last_update = Date.now()/1000;
+    var draw_positions = [this.x_position];
+    var increment = this.image.width*height/this.image.height
+    var x_make = this.x_position - increment;
+    while (x_make >= -increment) {
+      draw_positions[draw_positions.length] = x_make;
+      x_make -= increment;
+    }
+    //x_make = this.x_position + this.image.width;
+    x_make = this.x_position + increment;
+    while (x_make <= width+increment) {
+      draw_positions[draw_positions.length] = x_make;
+      x_make += increment;
+    }
+
+    for (let i in draw_positions) {
+      push();
+      translate(draw_positions[i], 0);
+      imageMode(CORNERS);
+      image(this.image, 0, 0, this.image.width*height/this.image.height, height);
+      //console.log(" drawing params -> "+draw_positions[i]+","+this.image.width*height/this.image.height+","+height);
+      pop();
+    }
+    this.x_position %= this.draw_dimensions[0]*Math.floor(1920/this.draw_dimensions[0]);
+  }
+}
