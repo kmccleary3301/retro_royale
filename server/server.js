@@ -918,8 +918,13 @@ function ball_game() {
         var distance = Math.sqrt(dx*dx + dy*dy);
         console.log("distance: "+distance);
           if (distance <= this.balls[j].radius){
-            console.log("Player "+i+" is dead");
-            this.players[i].isDead = 1; 
+          console.log("Player "+i+" is dead");
+          this.players[i].isDead = true;
+          //this.players[i].update_anim("dead")
+            //this.players[i].isDead = 1; 
+            //send player dead message
+            //sessions[this.session_id].clients[i].send("player_dead:"+i);
+            sessions[this.session_id].broadcast("player_dead:"+i, [i]);
           }
       }
     }
@@ -933,6 +938,11 @@ function ball_game() {
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }
+    // make a flag for when a player dies
+    else if (flag == "player_dead") {
+      this.players[usr_id].isDead = 1;
+      sessions[this.session_id].broadcast("player_dead:"+usr_id);
     }
   }
 
