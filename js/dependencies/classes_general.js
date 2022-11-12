@@ -85,7 +85,7 @@ class g_camera {
 }
 
 class button {
-  constructor(x_in, y_in, width_in, height_in, color, text_color, text, position_by_proportion) {
+  constructor(x_in, y_in, width_in, height_in, color, text_color, text, position_by_proportion, auto_adjust_text) {
     /*
     x_in, y_in is center position of button.
     width_in, height_in is dimensions of button.
@@ -103,6 +103,10 @@ class button {
     this.proportion_definition = 0;
     if (position_by_proportion !== undefined) {
       if (position_by_proportion) { this.proportion_definition = 1; }
+    }
+    this.adjust_text_size = 0;
+    if (auto_adjust_text !== undefined) {
+      if (auto_adjust_text) { this.adjust_text_size = 1; }
     }
     if (this.proportion_definition && x_in >= 1 && y_in >= 1) {
       //If dev wants proportion resizing but entered coordinates, this will convert them.
@@ -141,11 +145,22 @@ class button {
     this.execute = function() {return;}
   }
 
+  calculate_max_text_size() {
+    if (this.proportion_definition) { this.reposition(); }
+    return Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+  }
+
+  update_text_size(text_size_in) {
+    this.text_size = text_size_in;
+  }
+
   reposition() {
     if (this.proportion_definition) {
       this.x_cen = width*this.x_cen_in, this.y_cen = height*this.y_cen_in
       this.box_width = width*this.box_width_in, this.box_height = height*this.box_height_in;
-      this.text_size = Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+      if (this.adjust_text_size) {
+        this.text_size = Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+      }
     }
   }
 
@@ -405,53 +420,5 @@ class sprite_animation_object {
       }
     }
     this.flip_image_ref = (1-2*this.flip_image);
-  }
-}
-
-
-class scroll_image {
-  constructor(image, draw_dimensions, scroll_rate, scroll_direction) {
-    if (scroll_direction === undefined) { scroll_direction = "left"; }
-    this.image = image;
-    this.last_update = Date.now()/1000;
-    this.scroll_rate = scroll_rate;
-    this.x_position = 0;
-    this.scroll_direction = scroll_direction;
-    this.draw_dimensions = draw_dimensions;
-
-    this.stretch_to_top = true;
-
-  }
-
-  draw() {
-    if (this.scroll_direction == "left") {
-      this.x_position -= (Date.now()/1000 - this.last_update) * this.scroll_rate;
-    } else {
-      this.x_position += (Date.now()/1000 - this.last_update) * this.scroll_rate;
-    }
-    this.last_update = Date.now()/1000;
-    var draw_positions = [this.x_position];
-    var increment = this.image.width*height/this.image.height
-    var x_make = this.x_position - increment;
-    while (x_make >= -increment) {
-      draw_positions[draw_positions.length] = x_make;
-      x_make -= increment;
-    }
-    //x_make = this.x_position + this.image.width;
-    x_make = this.x_position + increment;
-    while (x_make <= width+increment) {
-      draw_positions[draw_positions.length] = x_make;
-      x_make += increment;
-    }
-
-    for (let i in draw_positions) {
-      push();
-      translate(draw_positions[i], 0);
-      imageMode(CORNERS);
-      image(this.image, 0, 0, this.image.width*height/this.image.height, height);
-      //console.log(" drawing params -> "+draw_positions[i]+","+this.image.width*height/this.image.height+","+height);
-      pop();
-    }
-    this.x_position %= this.draw_dimensions[0]*Math.floor(1920/this.draw_dimensions[0]);
   }
 }
