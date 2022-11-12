@@ -94,7 +94,6 @@ class ball_game_player {
 		this.move = 0;
 		this.speed = 150;
     this.isDead = 0;
-    this.health = 100;        
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
     
@@ -105,15 +104,7 @@ class ball_game_player {
 	
 	draw() {
 		push();
-    this.x = Math.max(bounds[0], Math.min(this.x, bounds[1]));
-    
-    this.sprite_anim.draw(this.x, this.y, true);
-    if (this.isDead == 1) {
-      //this.y += this.dy; //add gravity to y position
-      //this.y = Math.min(this.y, floor); //if y position is greater than floor, then set y position to floor
-      //this.update_anim("dead"); 
-      return;
-     }
+
 
 		//if (this.move == 0) { this.sprite_anim.stop(); }
 		if (this.move) {
@@ -124,29 +115,12 @@ class ball_game_player {
 			this.last_update = millis()/1000;
 		} 
     //else {this.update_anim("standing");}
-    fill(255, 0, 0);
-  rect(this.x-25, this.y-60, 50, 10);
-  fill(0, 255, 0);
-  rect(this.x-25, this.y-60, this.health/2, 10);
-
-  /*
-  if (this.health <= 0) {
-    this.isDead = 1;
-  */
-  
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, true);
 		pop();
 	}
-  update_anim(animation) {
-    if(animation == this.current_animation) {return;}
-    //if(animation == "dead" || animation == "standing")  {this.move = 0; /*this.sprite_anim.stop()*/; }
-    else {this.move = 1; this.sprite_anim.start(); }
-    this.sprite_anim.change_animation(animation);
-    this.current_animation = animation;
-    }
   
 	get_pos_string(){
 	  var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
@@ -211,8 +185,6 @@ var font;
 var countdown;
 var ballcount = 0;
 var timelimit = 20; //20 seconds
-
-
 function ball_game() {
   this.setup = function() {
     this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
@@ -280,9 +252,6 @@ function ball_game() {
     }
     for (let i in this.players) {
       this.players[i].draw();
-      if(this.players[i].isDead == 1){
-        this.players[i].update_anim("dead");
-      }
     }
 
     for (let i in this.balls) 
@@ -313,12 +282,6 @@ function ball_game() {
     } else if (flag == "random_seed") {
       seed_get = parseInt(message);
     }
-    //make a flag for a dead player
-    else if (flag == "player_dead") {
-      this.players[parseInt(message)].isDead = 1;
-      this.players[parseInt(message)].update_anim("dead");
-    }
-
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id

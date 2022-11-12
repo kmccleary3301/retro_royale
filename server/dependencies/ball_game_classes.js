@@ -72,23 +72,22 @@ class ball_game_player {
     return string_make;
   }
 
-  update_data(sprite, x, y, move, speed, facing, health){
+  update_data(sprite, x, y, move, speed, facing){
     if (x != null) { this.x = x; }
     if (y != null) { this.y = y; }
     if (move != null) { this.move = move; }
     if (speed != null) { this.speed = speed; }
     if (facing != null) { this.facing = facing; }
-	if (health != null) { this.health = health; }
 
 
   }
-//   update_anim(animation) {
-// 	if(animation == this.current_animation) {return;}
-// 	if(animation == "dead" || animation == "standing")  {this.move = 0; /*this.sprite_anim.stop()*/; }
-// 	else {this.move = 1; this.sprite_anim.start(); }
-// 	this.sprite_anim.change_animation(animation);
-// 	this.current_animation = animation;
-//   }
+  update_anim(animation) {
+	if(animation == this.current_animation) {return;}
+	if(animation == "dead" || animation == "standing")  {this.move = 0; this.sprite_anim.stop(); }
+	else {this.move = 1; this.sprite_anim.start(); }
+	this.sprite_anim.change_animation(animation);
+	this.current_animation = animation;
+  }
 }
 
 module.exports = {game_2_ball, ball_game_player};
