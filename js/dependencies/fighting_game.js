@@ -1,11 +1,15 @@
-//let background1;
-//let disco_ball_string;
-var video_game_font;
-let bounds = [0+100, 1440-100, 0, 1440/2];
+//const { text } = require("stream/consumers");
+
+var GOtimer = 5;
+var video_game_font; //font for the game
+let gameOver = 0; //game over variable
+let game_round = 3; //game round variable
+let round_bound = [100, 310, 460]; //round boundary increments
 const gravity = .5;
 const floor = 570;
-let countdown_time = 60;
+var countdown_time = 30;
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
+
 class fighting_game_player  {
 	constructor(spriteSheet, x, y, face, color) {
 		this.spriteSheet = spriteSheet;
@@ -39,7 +43,11 @@ class fighting_game_player  {
       "jumping" : {
         "row" : 5+10*this.spriteColor,
         "row_length": 1
-    }
+    },
+    "victory_stance" : {
+      "row" : 8+10*this.spriteColor,
+      "row_length": 1
+  }
     });
     this.current_animation = "standing";
     this.moving = 0;
@@ -53,34 +61,28 @@ class fighting_game_player  {
     this.health = 100;        // Player's health
     this.isDucking = 0;       // 0 = not ducking, 1 = ducking
     this.isAttacking = 0;     // 0 = not attacking, 1 = attacking
-    //this.bounds = [0+100, 1440-100, 0, 1440/2];
-    this.is_hit = 0;
-    this.isDead = 0;
-    this.start_hit;
-    this.duckTimer = 0;
-    this.duckTimeout = 0;
+    this.is_hit = 0;          // 0 = not hit, 1 = hit
+    this.isDead = 0;          // 0 = not dead, 1 = dead
+    this.start_hit;           // Time when the player was hit
+    this.duckTimer = 0;       // Timer for ducking
+    this.duckTimeout = 0;     // Timeout for ducking
+    
 	}
 
 	draw() {
     
     
-
 		push();
     
 
     
 
-    // if (this.is_hit == 1 && (millis()/1000 - this.start_hit) < .5) {
-    //   this.update_anim("standing");
-
-    // }
-   
-    //three_dimensional_disco_ball();
-
     this.x = Math.max(bounds[0], Math.min(this.x, bounds[1]));
     
     this.sprite_anim.draw(this.x, this.y, true);
     if (this.isDead == 1) {
+      this.y += this.dy; //add gravity to y position
+      this.y = Math.min(this.y, floor); //if y position is greater than floor, then set y position to floor
       this.update_anim("dead"); 
       return;
      }
@@ -103,7 +105,7 @@ class fighting_game_player  {
 
     
 
-    if(this.isDucking == 1 && this.duckTimer < 1) {
+    if(this.isDucking == 1 && this.duckTimer < 1) { //if ducking and duck timer is less than 1, then update animation to ducking  
       this.duckTimer += 1/120;
       this.update_facing(this.facing);
       this.update_anim("ducking");
@@ -111,7 +113,7 @@ class fighting_game_player  {
       //this.y = floor - 32;
       //this.sprite_anim.draw(this.x, this.y, true);
       
-    } else if (this.isDucking == 1 && this.duckTimer >= 1) {
+    } else if (this.isDucking == 1 && this.duckTimer >= 1) { //if ducking and duck timer is greater than 1, then update animation to standing
       this.duckTimer = 0;
       this.isDucking = 0;
       this.duckTimeout = 1;
@@ -119,23 +121,23 @@ class fighting_game_player  {
       this.update_anim("standing");
     }
 
-    if (this.duckTimeout == 1) {
+    if (this.duckTimeout == 1) { //if duck timeout is 1, then update animation to standing
       setTimeout(() => {this.duckTimeout = 0;}, 3000);
     }
    
-    if(this.isDucking == 1){
+    if(this.isDucking == 1){ //if ducking, then update animation to ducking
       this.update_facing(this.facing);
       this.update_anim("ducking");
-    } else if (this.isAttacking == 1) {
+    } else if (this.isAttacking == 1) { //if attacking, then update animation to attacking
       this.update_facing(this.facing);
       this.update_anim("attacking");
-    } else if (this.dy < 0) {
+    } else if (this.dy < 0) { //if jumping, then update animation to jumping
       this.update_anim("jumping");
-    } else if (this.dx != 0) {
+    } else if (this.dx != 0) { //if moving, then update animation to left_right_walking
       this.update_facing(this.facing);
       this.update_anim("left_right_walking");
       
-    } else {
+    } else { //if not moving, then update animation to standing
       this.update_facing(this.facing); 
       this.update_anim("standing");
        
@@ -145,27 +147,30 @@ class fighting_game_player  {
     //   this.update_anim("standing");
     // }
     //gravity animation
-    this.y += this.dy;
-    this.y = Math.min(this.y, floor);
-    this.y = Math.max(bounds[2], Math.min(this.y, bounds[3]));
+    this.y += this.dy; //add gravity to y position
+    this.y = Math.min(this.y, floor); //if y position is greater than floor, then set y position to floor
+    this.y = Math.max(bounds[2], Math.min(this.y, bounds[3])); //if y position is less than bounds[2], then set y position to bounds[2]
 
     //draw rectangle respresenting health in top right corner
     
       fill(255, 0, 0);
-      rect(this.x-20, this.y-60, 50, 10);
+      rect(this.x-25, this.y-60, 50, 10);
       fill(0, 255, 0);
-      rect(this.x-20, this.y-60, this.health/2, 10);
+      rect(this.x-25, this.y-60, this.health/2, 10);
     
-
-      fill(255, 255, 255);
-      textFont("Arial");
-      text("Player " + (this.spriteColor+1), this.x-20, this.y-70);
+    /*
+      fill(colors[4]);
+      //textFont(this.video_game_font);
+      text("player " + (this.spriteColor+1), this.x, this.y+70);
+      */
 
     //make an if statement to make the player dead once health is 0
     if (this.health <= 0) {
      // this.announce_death();
+
       this.isDead = 1;
      // this.update_anim("dead");
+     
     }
     if(this.y < floor )  {         
       this.dy += gravity; 
@@ -238,22 +243,30 @@ function fighting_game() {
     //loadFont("https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap");
     
     //video_game_font = "Arial";
+    
   }
 
-  this.setup = function() {
+  this.setup = function() {   
+
+    //this.boundary_offset = 100*this.game_round;
+    //this.bounds = [0+this.boundary_offset, 1440-boundary_offset, 0, 1440/2];
     
     this.video_game_font = loadFont('media/fonts/videogame.ttf');
     this.background1 = loadImage(repo_address+"media/backgrounds/melee_sunset_background.png");
+    this.background2 = loadImage(repo_address+"media/backgrounds/melee_sunset_background2.png");
+    this.background3 = loadImage(repo_address+"media/backgrounds/melee_sunset_background3.png");
+    this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
     this.disco_ball_string = loadImage(repo_address+"media/misc/disco_ball_string.png");
     imageMode(CENTER);
+    
     this.players = [];
     this.main_player_index;
     this.arrow_keys = [39, 37];
     this.space_key = 32;
+    this.rando = [-20, 25, 6]
     
     this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
     imageMode(CENTER);
-    
     
     //this.background.resize(0, height);
     //this.background.resize(width, 0);
@@ -357,20 +370,40 @@ function fighting_game() {
 
   this.draw = function() {
     
-    //background(background1);
-    // use background1 as a background for the game
+    if(gameOver == 0) {
+
+    boundary_offset = round_bound[game_round-1];
     
-    //image(background1, 0, 0, width, height);
-    
+    bounds = [0+boundary_offset, 1440-boundary_offset, 0, 1440/2];
     
    
+    if (game_round == 1) 
+    {
+      image(this.background1, width/2, height/2, width, height);
+    }
+      else if (game_round == 2) 
+    {
+      image(this.background2, width/2, height/2, width, height);
+    }
+      else if (game_round == 3) 
+    {
+      image(this.background3, width/2, height/2, width, height);
+    }
     
-    //background(200, 250, 200);
+    //image(this.background1, width/2, height/2, width, height);
 
 
-    image(this.background1, width/2, height/2, width, height);
+    //DISCO DISCO HEAVEN
+    image(this.disco_ball_string, width/2, 50, 50*2, 175*2);
 
-    image(this.disco_ball_string, width/2, 50, 50, 150);
+    textFont(this.video_game_font, 40);
+    text("round "+game_round, width/2, height-120);
+
+   image(this.sparkle, width/2+this.rando[2], 150+this.rando[0], sin(frameCount/30)*10, sin(frameCount/30)*30);
+   image(this.sparkle, width/2+this.rando[0], 150+this.rando[1], sin(frameCount/25)*20, sin(frameCount/25)*40);
+   image(this.sparkle, width/2+this.rando[1], 150+this.rando[2], sin(frameCount/20)*40, sin(frameCount/20)*50);
+    
+   
 
     /*
 
@@ -396,27 +429,57 @@ function fighting_game() {
     textAlign(CENTER, CENTER);
     text("Jake", width/2, height/2);
 
-    */
+    
+
+*/
+
+if (game_round == 4) {
+  gameOver = 1;      
+}
+
+
 
     if (countdown_time > 0) {
-    countdown_time -= 1/60;
-     
-     fill(0, 200, 0);
-    // text_make(0, 200, 0, 2);
-     textAlign(CENTER, CENTER);
-     textFont(this.video_game_font);     //WHY THE FUCK WONT THIS WORK
 
-     text(round(countdown_time), width/2, height/2);
-    }else if (countdown_time == 0) {
+     countdown_time -= 1/60;
+      fill(colors[4]);
+    // // text_make(0, 200, 0, 2);
+     textAlign(CENTER, CENTER);
+     textFont(this.video_game_font, 100);     
+     text(round(countdown_time), width/2, height-60);
+     
+
+     }else  
+    {
       //shrink the boundaries by half
-     bounds = [0+100, 1440-100, 0, 1440/4];
-      countdown_time = 60;
-   }
+      //image(this.background1, width/2, height/2, width, height);
+      
+      game_round++;
+      countdown_time = 30;
+    }
+
+
+
     
     
     for (let i in this.players) {
       this.players[i].draw();
     }
+    
+  }else{
+    //this.game_over();
+    //game over screen
+    fill(colors[0]);
+    rect(0, 0, width, height);
+    fill(colors[4]);
+    textFont(this.video_game_font, 100);
+    text("game over", width/2, height/2);
+
+    //display timer that counts down from 5
+    text(round(GOtimer), width/2, height/2+100);
+    GOtimer -= 1/60;
+    
+
     
   }
 
@@ -451,6 +514,9 @@ function fighting_game() {
       this.read_attack(message);
     } else if (flag == "death") {
      // this.players[parseInt(message)].isDead = 1;
+    } else if (flag == "winner") {
+      this.winner = parseInt(message);
+      this.players[this.winner].update_anim("victory_stance");
     }
   }
 
@@ -486,6 +552,16 @@ function fighting_game() {
     this.players[p_vals[0]].health = p_vals[1];
     this.players[p_vals[0]].hit();
   }
+
+  this.game_over = function() {
+    //display text saying game over
+    text("GAME OVER", width/2, height/2);
+
+
+  }
+
+}
+
 
 }
 
