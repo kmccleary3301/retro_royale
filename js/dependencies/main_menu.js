@@ -10,6 +10,9 @@ function main_menu() {
 		this.current_menu = "main";
 		this.button_funcs = [];
 
+		this.background_image = loadImage("media/backgrounds/test_background_1.png");
+		this.scroll_background = new scroll_image(this.background_image, [1920, 1080], 200, "right");
+
 		this.buttons = {
 			"main" : [],
 			"server" : [],
@@ -35,6 +38,7 @@ function main_menu() {
 	}
 
 	this.draw = function() {
+		this.scroll_background.draw();
 		this.current_time = millis()/1000 - this.start_time;
 		if (this.current_time < 3) { this.draw_startup_animation(); return; }
 		if (this.current_menu == "main") { this.draw_menu_1(); }
