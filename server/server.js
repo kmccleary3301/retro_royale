@@ -215,6 +215,7 @@ function swap_current_state(state_flag) {
   else if (state_flag == "dev_room") { current_state = new dev_room(); }
   else if (state_flag == "fighting_game") { current_state = new fighting_game(); }
   else if (state_flag == "flappy_bird") { current_state = new flappy_bird(); }
+  else if (state_flag == "game_end_screen") {current_state = new game_end_screen(); }
   else { return; } // failsafe for invalid flags
 
   for(let i in this.tick_function_ids) {
@@ -283,6 +284,7 @@ class game_session {
     else if (state_flag == "dev_room") { this.current_state = new dev_room(); }
     else if (state_flag == "fighting_game") { this.current_state = new fighting_game(); }
     else if (state_flag == "flappy_bird") { this.current_state = new flappy_bird(); }
+    else if (state_flag == "game_end_screen") { this.current_state = new game_end_screen(); }
     else { return; } // failsafe for invalid flags
     //this.current_state.session_id = this.session_id;
     if (state_flag != "board_game") {
@@ -353,6 +355,10 @@ class client_info {
     this.latency;
     this.name;
     if (arguments.length >= 1) { this.update_info(arguments); } 
+
+    //temporary variable to store the 1st, 2nd, 3rd, 4th place of a player
+    //by default, it has the flag variable -1
+    this.placeInGame = -1;
   }
 
   update_info() {
@@ -605,6 +611,69 @@ function load_room() {
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
     if (this.start_game) { sessions[this.session_id].clients[usr_id].send("host_started_game:"+this.current_time); }
     if (usr_id == this.host_id) { sessions[this.session_id].clients[usr_id].send("assigned_host"); }
+  }
+
+  this.user_disconnected = function(usr_id) {
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
+  }
+}
+
+function game_end_screen() {
+  this.setup = function(session_id) {
+    this.session_id = session_id;
+    console.log("purgatory session id ->"+this.session_id);
+    this.start_time = Date.now()/1000;
+    this.current_time = 0;
+    this.players = [];
+    if (sessions[this.session_id] !== undefined) {
+      console.log("purgatory setup - session identified");
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+      }
+    } else {
+      console.log("purgatory setup - session doesn't exist");
+    }
+  }
+
+  this.tick_function = function() { 
+    this.current_time = Date.now()/1000 - this.start_time;
+    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "get_places") {
+      for(let i in clients) {
+        broadcast("player_place:"+i+","+clients_info[i].placeInGame);
+        //broadcast("player_place:"+i+",1");
+      }
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
   }
 
   this.user_disconnected = function(usr_id) {
@@ -1063,12 +1132,15 @@ function fighting_game() {
 }
 
 function flappy_bird() {
-  console.log("constructor called");
+  //console.log("constructor called");
   this.setup = function(session_id) {
     this.session_id = session_id;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
+
+    this.numberOfPlayersDead = 0;
+
     this.pipesList = [];
     this.pipesList.push(new flappy_bird_pipe(2500,300,230));
     //for (i=0; i < clients.length; i++) {
@@ -1133,6 +1205,7 @@ function flappy_bird() {
     }
 
     broadcast("move_pipes");
+    console.log("Moving pipes "+Date.now());
 
     // //shows the user the pipeses
     // if(this.pipesList != null) {
@@ -1155,8 +1228,15 @@ function flappy_bird() {
       //   broadcast(this.pipesList[i].make_data());
       // }
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "death") {
+      sessions[this.session_id].broadcast("death:"[usr_id]);
+      this.numberOfPlayersDead++;
+      //this.clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
+      sessions[this.session_id].clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
     } else if (flag == "debug") {
       console.log("client sent "+message);
+    } else if (flag == "swap_current_state") {
+      sessions[this.session_id].swap_current_state(message);
     }
   }
 

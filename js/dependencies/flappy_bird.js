@@ -116,7 +116,7 @@ class flappy_bird_player {
 		this.current_animation = animation;
 	}
 	update_rotation(velocity) {
-		this.sprite_anim.rotation_angle = -1*velocity;
+		this.sprite_anim.rotation_angle = -1*180*Math.atan(velocity/(2000));
 	}
 
 	//jump() {
@@ -172,7 +172,19 @@ function flappy_bird() {
       this.space_bar = 32; //space bar
       //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
 	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
-	  this.backGround = loadImage(repo_address+"media/background/thumbnail_Image 11-8-22 at 2.18 PM")
+	  this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
+
+	  //1280x330 height/330
+	  this.backGroundOriginalHeight = 330;
+	  this.backGroundOriginalWidth = 1280;
+
+	  this.backGroundHeight = height;
+	  this.backGroundWidth = height/this.backGroundOriginalHeight*width;
+	  this.backGround1XPosition = width/2;
+	  this.backGround1YPosition = height/2;
+	  this.backGround2XPosition = width/2+this.backGroundWidth-20;
+	  this.backGround2YPosition = height/2;
+
       imageMode(CENTER);
       this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 0);
       this.main_player_index = 0;
@@ -215,6 +227,15 @@ function flappy_bird() {
     //   g_cam.scale = 0.8;
       background(200, 200, 200);
 
+	  //image(this.backGround,width/2,height/2,width,height);
+	  //drawing the first loop of the background
+	  image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
+			this.backGroundWidth,this.backGroundHeight);
+	  //drawing the second loop of the background
+	  image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
+			this.backGroundWidth, this.backGroundHeight);
+	  
+
       fill(0, 0, 0);
       text_make(0, 200, 0, 2);
       textAlign(CENTER, CENTER);
@@ -230,9 +251,19 @@ function flappy_bird() {
         }
       }
 
+	  this.everyPlayerIsDead = true;
+
 	  //draws the players
+
       for (let i in this.players) {
 		this.players[i].draw();
+		if(this.players[i].isDead == false)
+			this.everyPlayerIsDead = false;
+	  }
+
+	  if(this.everyPlayerIsDead) {
+		send_data("swap_current_state:game_end_screen");
+		swap_current_state("game_end_screen");
 	  }
 
 	  this.players[this.main_player_index].playerIsInPipe = false;
@@ -241,16 +272,20 @@ function flappy_bird() {
 		if(this.players[this.main_player_index].x > this.pipesList[p].x - 100-40 && this.players[this.main_player_index].x < this.pipesList[p].x+100+40) { 
 			if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
 				this.players[this.main_player_index].isDead = true;
+				send_data("death");
 				this.players[this.main_player_index].playerIsInPipe = true;
 				this.players[this.main_player_index].update_anim("die");
 			}
 			else if(this.players[this.main_player_index].y > this.pipesList[p].y+(this.pipesList[p].pipeWidth/2)-40) {
 				this.players[this.main_player_index].isDead = true;
+				send_data("death");
 				this.players[this.main_player_index].playerIsInPipe = true;
 				this.players[this.main_player_index].update_anim("die");
 			}
 		}
-		else if(this.pipesList[p].hasBeenPassed == false && this.players[this.main_player_index].x > this.pipesList[p].x) {
+		else if(this.pipesList[p].hasBeenPassed == false && 
+				this.players[this.main_player_index].x > this.pipesList[p].x && 
+				this.players[this.main_player_index].isDead == false) {
 			//if the player hasn't passed the pipe and is ahead of it
 			this.players[this.main_player_index].pipesPassed++;
 			this.pipesList[p].hasBeenPassed = true;
@@ -310,6 +345,8 @@ function flappy_bird() {
         this.read_in_pipe_position(message);
       } else if (flag == "move_pipes") {
 		this.move_pipes();
+	  } else if (flag == "death") {
+		this.players[message].isDead = true;
 	  }
     }
   
@@ -329,8 +366,19 @@ function flappy_bird() {
     }
 
 	this.move_pipes = function() {
+		this.numberOfPlayers = 0;
+		for(let i in this.players) {
+			this.numberOfPlayers++;
+		}
 		for(let i in this.pipesList) {
-			this.pipesList[i].x -= 400*0.035;
+			this.pipesList[i].x -= 400 * 0.035;
+		}
+		this.backGround1XPosition -= 400 * 0.035;
+		this.backGround2XPosition -= 400 * 0.035;
+		if(this.backGround1XPosition+(this.backGroundWidth)/2 <= 0) {
+			this.backGround1XPosition = this.backGround2XPosition;
+			//this.backGround1XPosition = width/2;
+			this.backGround2XPosition = this.backGround1XPosition + this.backGroundWidth-20;
 		}
 	}
   }
