@@ -85,7 +85,7 @@ class g_camera {
 }
 
 class button {
-  constructor(x_in, y_in, width_in, height_in, color, text_color, text, position_by_proportion) {
+  constructor(x_in, y_in, width_in, height_in, color, text_color, text, position_by_proportion, auto_adjust_text) {
     /*
     x_in, y_in is center position of button.
     width_in, height_in is dimensions of button.
@@ -103,6 +103,10 @@ class button {
     this.proportion_definition = 0;
     if (position_by_proportion !== undefined) {
       if (position_by_proportion) { this.proportion_definition = 1; }
+    }
+    this.adjust_text_size = 0;
+    if (auto_adjust_text !== undefined) {
+      if (auto_adjust_text) { this.adjust_text_size = 1; }
     }
     if (this.proportion_definition && x_in >= 1 && y_in >= 1) {
       //If dev wants proportion resizing but entered coordinates, this will convert them.
@@ -141,11 +145,22 @@ class button {
     this.execute = function() {return;}
   }
 
+  calculate_max_text_size() {
+    if (this.proportion_definition) { this.reposition(); }
+    return Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+  }
+
+  update_text_size(text_size_in) {
+    this.text_size = text_size_in;
+  }
+
   reposition() {
     if (this.proportion_definition) {
       this.x_cen = width*this.x_cen_in, this.y_cen = height*this.y_cen_in
       this.box_width = width*this.box_width_in, this.box_height = height*this.box_height_in;
-      this.text_size = Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+      if (this.adjust_text_size) {
+        this.text_size = Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+      }
     }
   }
 
@@ -154,14 +169,14 @@ class button {
     
     if (this.proportion_definition) { this.reposition(); }
 
-    fill(this.color[0], this.color[1], this.color[2]);
+    fill(this.color);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
     rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height, this.radius);
     strokeWeight(0);
     textAlign(CENTER, CENTER);
     text_make(0, this.text_size, 0, 0);
-    fill(this.text_color[0], this.text_color[1], this.text_color[2]);
+    fill(this.text_color);
     for (let i in this.text) {
       text(this.text[i], this.x_cen, this.y_cen+this.text_size*(i - 0.5*(this.text.length-1)));
     }
@@ -405,5 +420,50 @@ class sprite_animation_object {
       }
     }
     this.flip_image_ref = (1-2*this.flip_image);
+  }
+}
+
+
+class scroll_image {
+  constructor(image, draw_dimensions, scroll_rate) {
+    this.image = image;
+    this.last_update = Date.now()/1000;
+    this.scroll_rate = scroll_rate;
+    this.x_position = 0;
+    this.draw_dimensions = draw_dimensions;
+    this.display_height = displayHeight;
+    this.stretch_to_top = true;
+
+  }
+
+  draw() {
+    if (height > this.display_height) { this.display_height = height; }
+    this.x_position += (Date.now()/1000 - this.last_update) * this.scroll_rate;
+    this.last_update = Date.now()/1000;
+    var draw_positions = [this.x_position];
+    var increment = this.image.width*this.display_height/this.image.height
+    var x_make = this.x_position - increment;
+    while (x_make >= -increment) {
+      draw_positions[draw_positions.length] = x_make;
+      x_make -= increment;
+    }
+    draw_positions[draw_positions.length] = x_make;
+    //x_make = this.x_position + this.image.width;
+    x_make = this.x_position + increment;
+    while (x_make <= displayWidth+increment) {
+      draw_positions[draw_positions.length] = x_make;
+      x_make += increment;
+    }
+    draw_positions[draw_positions.length] = x_make;
+
+    for (let i in draw_positions) {
+      push();
+      translate(draw_positions[i], 0);
+      imageMode(CORNERS);
+      image(this.image, 0, 0, increment, this.display_height);
+      //console.log(" drawing params -> "+draw_positions[i]+","+this.image.width*height/this.image.height+","+height);
+      pop();
+    }
+    this.x_position = (this.x_position) % (displayWidth*2 - (displayWidth*2 % increment));
   }
 }

@@ -15,16 +15,28 @@ function session_menu() {
 		this.user_info = user_info;
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Create\nSession", true);
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Join\nSession", true);
-		this.buttons["create_session"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Start", true);
-		this.buttons["create_session"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
-		this.buttons["join_session"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Join", true);
-		this.buttons["join_session"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
+		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Create\nSession", true, false);
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Join\nSession", true, false);
+		this.buttons["create_session"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Start", true, false);
+		this.buttons["create_session"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
+		this.buttons["join_session"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Join", true, false);
+		this.buttons["join_session"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
 		g_cam.reset();
 	}
 
+	this.adjust_current_menu = function() {
+		var max_text_size = this.buttons[this.current_menu][0].calculate_max_text_size();
+		for (let i in this.buttons[this.current_menu]) {
+			var new_size = this.buttons[this.current_menu][i].calculate_max_text_size();
+			if (new_size < max_text_size) { max_text_size = new_size; }
+		}
+		for (let i in this.buttons[this.current_menu]) {
+			this.buttons[this.current_menu][i].text_size = max_text_size;
+		}
+	}
+
 	this.draw = function() {
+		this.adjust_current_menu();
 		if (this.current_menu == "main") { this.draw_menu_1(); }
 		else if (this.current_menu == "create_session") { this.draw_menu_2(); }
 		else if (this.current_menu == "join_session") { this.draw_menu_3(); }

@@ -34,7 +34,7 @@ var certificate = fs.readFileSync('sslcert/cert.pem', 'utf8');
 
 var {game_1_player, game_1_fruit, game_1_endzone} = 
         require("./dependencies/fruit_game_classes");
-var {board_game_player, board_game_tile, dice_element} = 
+var {board_game_player, board_game_tile, dice_element, select_random_element} = 
         require("./dependencies/board_game_classes");
 var {game_2_ball, ball_game_player} =
         require("./dependencies/ball_game_classes");
@@ -402,10 +402,9 @@ function fruitGame() {
     }
   }
   
-  this.tick_function = function() { console.log("fg tick called"); this.game_update(); }
+  this.tick_function = function() { this.game_update(); }
 
   this.game_update = function() {
-    console.log("game update called");
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
@@ -654,7 +653,7 @@ function dev_room() {
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
   }
 
@@ -707,6 +706,10 @@ function board_game() {
         sessions[this.session_id].clients[i].send("assigned_id:"+i);
       }
     }
+    var self = this;
+    var int_id = setInterval(function(){self.tick_function();}, 100);
+    sessions[this.session_id].append_interval_id(int_id);
+    sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
     //this.make_board_layout_preset_1();
 	}
 
@@ -734,11 +737,11 @@ function board_game() {
     console.log("making board from image");
 		this.tiles = [];
 		for (let i in pixel_list) {
-			var type = 1 + Math.floor(Math.random()*4);
-			if (pixel_list[i].compare_rgb(0, 0, 255)) { type = 0; }
-			else if (pixel_list[i].compare_rgb(255, 255, 0)) { type = 5; }
-			else if (pixel_list[i].compare_rgb(255, 0, 255)) { type = 3; }
-			else if (pixel_list[i].compare_rgb(255, 0, 0)) { type = 4; }
+			var type = select_random_element(["empty", "lose_coins", "gain_coins", "trap", "versus"], [1, 1, 1, 1, 1]);
+			if (pixel_list[i].compare_rgb(0, 0, 255)) { type = "empty"; }
+			else if (pixel_list[i].compare_rgb(255, 255, 0)) { type = "star"; }
+			else if (pixel_list[i].compare_rgb(255, 0, 255)) { type = "versus"; }
+			else if (pixel_list[i].compare_rgb(255, 0, 0)) { type = "trap"; }
 			this.tiles[i] = new board_game_tile(pixel_list[i].x, pixel_list[i].y, type, [1]);
 		}
 		for (let i in pixel_list) {
@@ -764,6 +767,7 @@ function board_game() {
 	}
 
   this.tick_function = function() {
+    //console.log("boardgame tick function called");
     if (isNaN(this.turning_player_index)) { this.turning_player_index = 0; }
     return;
   }
@@ -790,15 +794,37 @@ function board_game() {
       this.move_player_to_tile(usr_id, message);
     } else if (flag == "begin_dice" && usr_id == this.turning_player_index) {
       var dice_make = new dice_element([1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]);
-      broadcast("dice_roll_turn:"+dice_make.make_data());
+      sessions[this.session_id].broadcast("dice_roll_turn:ints,"+dice_make.make_data());
       this.current_turn_moves = dice_make.chosen_value;
-      broadcast("current_turn_moves:"+this.current_turn_moves);
+      sessions[this.session_id].broadcast("current_turn_moves:"+this.current_turn_moves);
+    } else if (flag == "begin_tile_event" && usr_id == this.turning_player_index) {
+      this.tile_event_action(this.tiles[this.players[this.turning_player_index].current_tile_index].type);
+    } else if (flag == "end_turn" && usr_id == this.turning_player_index) {
+      console.log("end_turn:"+usr_id);
+      this.end_turn(message);
     }
+  }
+
+  this.end_turn = function(message) {
+    this.turning_player_index = (this.turning_player_index + 1) % this.players.length;
+    if (this.turning_player_index == 0) {
+      this.current_turn += 1;
+      sessions[this.session_id].broadcast("current_turn:"+this.current_turn);
+      if (this.current_turn == this.max_turns) {
+        sessions[this.session_id].broadcast("GAME_OVER");
+      }
+    }
+    sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
+    console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
+    sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
   }
 
   this.move_player_to_tile = function(usr_id, direction) {
     if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
 		{ console.log("child failed"); return; }
+    if (this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"] == this.players[usr_id].previous_tile_index) {
+      return;
+    }
     sessions[this.session_id].broadcast(this.players[usr_id].make_data(usr_id));
     this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
     this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
@@ -806,19 +832,32 @@ function board_game() {
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
     sessions[this.session_id].broadcast("player_move_tile:"+usr_id+","+direction);
     this.current_turn_moves--;
-    console.log("this.current_turn_moves = "+this.current_turn_moves);
-    if (this.current_turn_moves <= 0) {
-      this.turning_player_index = (this.turning_player_index + 1) % this.players.length;
-      if (this.turning_player_index == 0) {
-        this.current_turn += 1;
-        sessions[this.session_id].broadcast("current_turn:"+this.current_turn);
-        if (this.current_turn == this.max_turns) {
-          sessions[this.session_id].broadcast("GAME_OVER");
-        }
-      }
-      sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
-      console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
+  }
+
+  this.tile_event_action = function(tile_type) {
+    sessions[this.session_id].broadcast("tile_event_trigger:"+tile_type);
+    switch(tile_type) {
+      case 'empty':
+				break;
+			case 'lose_coins':
+				this.players[this.turning_player_index].coins = Math.max(this.players[this.turning_player_index].coins-3, 0);
+				break;
+			case 'gain_coins':
+				this.players[this.turning_player_index].coins += 3;
+				break;
+			case 'versus':
+				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 1]);
+        sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
+				break;
+			case 'unlucky':
+				break;
+			case 'star':
+				this.players[this.turning_player_index].stars++;
+        this.players[this.turning_player_index].current_tile_index = 0;
+        this.players[this.turning_player_index].previous_tile_index = 0;
+				break;
     }
+    sessions[this.session_id].broadcast(this.players[this.turning_player_index].make_data(this.turning_player_index))
   }
 
   this.start_versus_event = function() {
@@ -836,6 +875,9 @@ function board_game() {
     sessions[this.session_id].clients[usr_id].send("reset_tiles");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
     console.log("player_info:"+this.players[usr_id].make_data_raw());
+    if (this.turning_player_index == usr_id) {
+      sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
+    }
   }
 
   this.user_disconnected = function(usr_id) {
@@ -849,11 +891,10 @@ function board_game() {
     sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
   }
 
-
   this.read_in_player_position = function(message) {
-    p_vals = convert_data_string(message, [0, 6, 7], [1, 2, 3, 4], [5, 8]);
+    p_vals = convert_data_string(message, [0, 6, 7, 9, 10], [1, 2, 3, 4], [5, 8]);
     if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new board_game_player(0, 0, 1); }
-    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8], p_vals[9], p_vals[10]);
   }
 }
 
