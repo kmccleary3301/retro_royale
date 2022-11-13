@@ -594,12 +594,12 @@ function three_dimensional_disco_ball() {
     
   }
 
-*/
+
 
 kd.run(function () {
   kd.tick();
 });
-
+*/
 
 document.addEventListener("keydown", (e) => {
   if (e.code == 68) {
