@@ -9,6 +9,15 @@ function main_menu() {
 		this.current_time = 0.000;
 		this.current_menu = "main";
 		this.button_funcs = [];
+		this.color_arrray = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+		//this.color_array = [this.red, this.cyan, this.purple, this.blue, this.yellow, this.pink];
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
 
 		this.test_background_1 = loadImage("media/backgrounds/test_background_2.png");
 		this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], 10);
@@ -31,17 +40,18 @@ function main_menu() {
 		this.user_info = user_info;
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify", true, false);
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect", true, false);
-		this.buttons["main"][2] = new button(810, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server", true, false);
-		this.buttons["main"][3] = new button(1110, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game", true, false);
-		this.buttons["main"][4] = new button(810, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board\nGame\nTime", true, false);
-		this.buttons["main"][5] = new button(1110, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Info", true, false);
-		this.buttons["server"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true, false);
-		this.buttons["server"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
-		this.buttons["certify"][0] = new button(960, 620, 150, 100, [255, 78, 0], [10, 10, 10], "Back", true, false);
-		this.buttons["info"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true, false);
-		this.buttons["info"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
+		
+		this.buttons["main"][0] = new button(810, 200, 150, 100, this.color_arrray[3], [10, 10, 10], "Certify", true, false);
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, this.color_arrray[3], [10, 10, 10], "Connect", true, false);
+		this.buttons["main"][2] = new button(810, 350, 150, 100, this.color_arrray[3], [10, 10, 10], "Server", true, false);
+		this.buttons["main"][3] = new button(1110, 350, 150, 100, this.color_arrray[3], [10, 10, 10], "Test Game", true, false);
+		this.buttons["main"][4] = new button(810, 500, 150, 100, this.color_arrray[3], [10, 10, 10], "Board\nGame\nTime", true, false);
+		this.buttons["main"][5] = new button(1110, 500, 150, 100, this.color_arrray[3], [10, 10, 10], "Info", true, false);
+		this.buttons["server"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "Submit", true, false);
+		this.buttons["server"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "Cancel", true, false);
+		this.buttons["certify"][0] = new button(960, 620, 150, 100, this.color_arrray[3], [10, 10, 10], "Back", true, false);
+		this.buttons["info"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "Submit", true, false);
+		this.buttons["info"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "Cancel", true, false);
 		g_cam.reset();
 	}
 
@@ -100,6 +110,7 @@ function main_menu() {
 		text_make(0, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
+		textFont(this.vid_font);
 		text("Server address", width/2, height*415/1080);
 		text("Server port", width/2, height*525/1080);
 		for (let i in this.buttons["server"]) { this.buttons["server"][i].draw(); }
@@ -112,6 +123,7 @@ function main_menu() {
 		text_make(0, Math.min(25*width/1920, 30*height/1080), 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
+		textFont(this.vid_font);
 		text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
 								width/2, height*440/1080);
 		for (let i in this.buttons["certify"]) { this.buttons["certify"][i].draw(); }
@@ -125,6 +137,7 @@ function main_menu() {
 		text_make(0, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
+		textFont(this.vid_font);
 		text("Name", width/2, height*415/1080);
 		for (let i in this.buttons["info"]) { this.buttons["info"][i].draw(); }
 	}
@@ -148,6 +161,7 @@ function main_menu() {
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
+		textFont(this.vid_font);
 		text("RETRO ROYALE", text_position_x, height/2);
 	}
 
