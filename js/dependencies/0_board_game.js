@@ -1,3 +1,5 @@
+const { Socket } = require("dgram");
+
 function board_game() {
 	this.setup = function() {
 		pop();
@@ -42,8 +44,9 @@ function board_game() {
 			"overlay" : []
 		};
 		this.current_button_menu = "overlay";
-		this.buttons["overlay"][0] = new button(50, 50, 50, 50, [255, 78, 0], [10, 10, 10], "Center");
-		this.buttons["overlay"][1] = new button(50, 125, 50, 50, [255, 78, 0], [10, 10, 10], "Menu");
+		this.buttons["overlay"][0] = new button(75, 50, 100, 50, [255, 78, 0], [10, 10, 10], "Center", true);
+		this.buttons["overlay"][1] = new button(75, 125, 100, 50, [255, 78, 0], [10, 10, 10], "Scores", true);
+		this.buttons["overlay"][2] = new button(75, 200, 100, 50, [255, 78, 0], [10, 10, 10], "Home", true);
 
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
@@ -138,8 +141,8 @@ function board_game() {
 
 		if (this.animation_queue[0] !== undefined) { 
 			//this.buttons["overlay"][2] = undefined;
-			if (this.buttons["overlay"][2] !== undefined) {
-				this.buttons["overlay"].splice(2, 1);
+			if (this.buttons["overlay"][3] !== undefined) {
+				this.buttons["overlay"].splice(3, 1);
 			}
 			this.animation_queue[0].draw(); 
 			if (this.animation_queue[0].expired) {
@@ -155,8 +158,8 @@ function board_game() {
 				}
 			}
 		} else { 
-			if (this.user_roll && this.buttons["overlay"][2] === undefined) {
-				this.buttons["overlay"][2] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "Roll", true);
+			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
+				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "Roll", true);
 			}
 			if (!this.user_roll && this.current_turn_moves <= 0 && this.turn_done) {
 				send_data("end_turn");
@@ -165,6 +168,15 @@ function board_game() {
 		}
 
 		for (let i in this.buttons[this.current_button_menu]) { this.buttons[this.current_button_menu][i].draw(); }
+		pop();
+	}
+
+	this.draw_leaderboard = function() {
+		push();
+		fill(255, 78, 0);
+		stroke(5);
+		rectmode(CENTER);
+		rect(width/2, height/2, width*0.7, height*0.7);
 		pop();
 	}
 
@@ -272,18 +284,6 @@ function board_game() {
 		return connected_tile_ids;
 	}
 
-	/*
-	this.key_pressed = function(keycode) {
-		console.log("KEY PRESSED: "+keycode);
-		for (let i in this.arrow_keys){
-			if (keycode == this.arrow_keys[i]){
-				if (this.animation_info[0]) { return; }
-				this.start_tile_animate(this.turning_player_index, i);
-			}
-		}
-	}
-	*/
-
 	this.key_pressed = function(keycode) {
 		console.log("KEY PRESSED: "+keycode);
 		console.log("User_player_index: "+this.user_player_index);
@@ -335,17 +335,27 @@ function board_game() {
 
 	this.button_press = function(code) {
 		if (this.current_button_menu == "overlay") {
-			console.log("overlay detected");
-			if (code == 0) {
-				console.log("button_pressed"); 
-				this.toggle_camera_center_on_player(); 
-			} else if (code == 1) {
-				console.log("button_press 1");
-			} else if (code == 2) {
-				console.log("Roll called");
-				this.user_roll = false;
-				send_data("begin_dice");
-				this.buttons["overlay"].splice(2, 1);
+			console.log("code ->"+code);
+			switch(int(code)) {
+				case 0:
+					console.log("button_pressed"); 
+					this.toggle_camera_center_on_player(); 
+					break;
+				case 1:
+					console.log("button_press 1");
+					break;
+				case 2:
+					socket.close();
+					swap_current_state("main_menu");
+					break;
+				case 3:
+					console.log("Roll called");
+					this.user_roll = false;
+					send_data("begin_dice");
+					this.buttons["overlay"].splice(3, 1);
+					break;
+				default:
+					break;
 			}
 		}
 	}
@@ -396,7 +406,8 @@ function board_game() {
 	this.update_turn = function(turn) {
 		if (turn != this.current_turn || this.current_turn == 1) {
 			console.log("New turn, adding animation element");
-			this.animation_queue.push(new message_display_element("Turn "+turn, 3));
+			//var turns_remaining = this.max_turns
+			//this.animation_queue.push(new message_display_element("Turn "+turn, 3));
 		}
 		this.current_turn = turn;
 	}
@@ -406,25 +417,7 @@ function board_game() {
 		this.animation_queue[this.animation_queue.length] = new message_display_element(this.players[player_id].name+"'s turn", 3);
 		this.next_turning_player_index = player_id;
 	}
-	/*
-	this.append_animation_element = function(anim_element, root_element) {
-		var root_flag = 0;
-		if (root_element === undefined) {
-			root_element = this.animation_element;
-			root_flag = 1;
-		}
-		if (root_element) {
-			root_element.next_display_element = this.append_animation_element(anim_element, root_element.next_display_element);
-		} else {
-			root_element = anim_element;
-		}
-		if (root_flag) {
-			this.animation_element = root_element;
-		} else {
-			return root_element;
-		}
-	}
-	*/
+
 	this.read_in_tile_movement = function(data) {
 		this.pause_check = false;
 		p_vals = convert_data_string(data, [0], [], [1]);
@@ -452,7 +445,7 @@ function board_game() {
 		else if (p_vals[0] == 'strings') {
 			p_vals = convert_data_string(data, [], [], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 		}
-		this.animation_queue.splice(0, 0, new dice_display_element(20, [1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]));
+		this.animation_queue.splice(0, 0, new dice_display_element(15, [1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]));
 		this.animation_queue[0].update_elements(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], 
 												p_vals[6], p_vals[7], p_vals[8], p_vals[9], p_vals[10]);
 	}

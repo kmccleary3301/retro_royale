@@ -402,10 +402,9 @@ function fruitGame() {
     }
   }
   
-  this.tick_function = function() { console.log("fg tick called"); this.game_update(); }
+  this.tick_function = function() { this.game_update(); }
 
   this.game_update = function() {
-    console.log("game update called");
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
@@ -823,6 +822,9 @@ function board_game() {
   this.move_player_to_tile = function(usr_id, direction) {
     if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
 		{ console.log("child failed"); return; }
+    if (this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"] == this.players[usr_id].previous_tile_index) {
+      return;
+    }
     sessions[this.session_id].broadcast(this.players[usr_id].make_data(usr_id));
     this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
     this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
