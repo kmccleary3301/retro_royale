@@ -169,14 +169,14 @@ class button {
     
     if (this.proportion_definition) { this.reposition(); }
 
-    fill(this.color[0], this.color[1], this.color[2]);
+    fill(this.color);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
     rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height, this.radius);
     strokeWeight(0);
     textAlign(CENTER, CENTER);
     text_make(0, this.text_size, 0, 0);
-    fill(this.text_color[0], this.text_color[1], this.text_color[2]);
+    fill(this.text_color);
     for (let i in this.text) {
       text(this.text[i], this.x_cen, this.y_cen+this.text_size*(i - 0.5*(this.text.length-1)));
     }
@@ -425,48 +425,45 @@ class sprite_animation_object {
 
 
 class scroll_image {
-  constructor(image, draw_dimensions, scroll_rate, scroll_direction) {
-    if (scroll_direction === undefined) { scroll_direction = "left"; }
+  constructor(image, draw_dimensions, scroll_rate) {
     this.image = image;
     this.last_update = Date.now()/1000;
     this.scroll_rate = scroll_rate;
     this.x_position = 0;
-    this.scroll_direction = scroll_direction;
     this.draw_dimensions = draw_dimensions;
-
+    this.display_height = displayHeight;
     this.stretch_to_top = true;
 
   }
 
   draw() {
-    if (this.scroll_direction == "left") {
-      this.x_position -= (Date.now()/1000 - this.last_update) * this.scroll_rate;
-    } else {
-      this.x_position += (Date.now()/1000 - this.last_update) * this.scroll_rate;
-    }
+    if (height > this.display_height) { this.display_height = height; }
+    this.x_position += (Date.now()/1000 - this.last_update) * this.scroll_rate;
     this.last_update = Date.now()/1000;
     var draw_positions = [this.x_position];
-    var increment = this.image.width*height/this.image.height
+    var increment = this.image.width*this.display_height/this.image.height
     var x_make = this.x_position - increment;
     while (x_make >= -increment) {
       draw_positions[draw_positions.length] = x_make;
       x_make -= increment;
     }
+    draw_positions[draw_positions.length] = x_make;
     //x_make = this.x_position + this.image.width;
     x_make = this.x_position + increment;
-    while (x_make <= width+increment) {
+    while (x_make <= displayWidth+increment) {
       draw_positions[draw_positions.length] = x_make;
       x_make += increment;
     }
+    draw_positions[draw_positions.length] = x_make;
 
     for (let i in draw_positions) {
       push();
       translate(draw_positions[i], 0);
       imageMode(CORNERS);
-      image(this.image, 0, 0, this.image.width*height/this.image.height, height);
+      image(this.image, 0, 0, increment, this.display_height);
       //console.log(" drawing params -> "+draw_positions[i]+","+this.image.width*height/this.image.height+","+height);
       pop();
     }
-    this.x_position %= this.draw_dimensions[0]*Math.floor(1920/this.draw_dimensions[0]);
+    this.x_position = (this.x_position) % (displayWidth*2 - (displayWidth*2 % increment));
   }
 }

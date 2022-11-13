@@ -10,6 +10,17 @@ function main_menu() {
 		this.current_menu = "main";
 		this.button_funcs = [];
 
+		this.test_background_1 = loadImage("media/backgrounds/test_background_2.png");
+		this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], 10);
+		this.test_background_2 = loadImage("media/backgrounds/test_background_3.png");
+		this.scroll_background_2 = new scroll_image(this.test_background_2, [1920, 1080], 80);
+		
+		this.sounds = new Tone.Players({
+			"Hum" : 'media/sounds/synth_2.wav'
+		});
+		this.sounds.toDestination();
+
+
 		this.buttons = {
 			"main" : [],
 			"server" : [],
@@ -34,6 +45,10 @@ function main_menu() {
 		g_cam.reset();
 	}
 
+	this.playSound = function(whichSound='Fail') {
+		this.sounds.player(whichSound).start();
+	}
+
 	this.adjust_current_menu = function() {
 		var max_text_size = this.buttons[this.current_menu][0].calculate_max_text_size();
 		for (let i in this.buttons[this.current_menu]) {
@@ -46,6 +61,8 @@ function main_menu() {
 	}
 
 	this.draw = function() {
+		this.scroll_background_1.draw();
+		this.scroll_background_2.draw();
 		this.adjust_current_menu();
 		this.current_time = millis()/1000 - this.start_time;
 		if (this.current_time < 3) { this.draw_startup_animation(); return; }
@@ -151,6 +168,7 @@ function main_menu() {
 			if (this.buttons[this.current_menu][i].pressed) { 
 				this.buttons[this.current_menu][i].pressed = 0;
 				this.button_press(i);
+				this.playSound('Hum');
 				return;
 			}
 		}

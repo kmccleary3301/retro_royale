@@ -1,5 +1,3 @@
-const { Socket } = require("dgram");
-
 function board_game() {
 	this.setup = function() {
 		pop();
