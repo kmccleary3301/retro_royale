@@ -9,7 +9,9 @@ function main_menu() {
 		this.current_time = 0.000;
 		this.current_menu = "main";
 		this.button_funcs = [];
-
+		this.color_arrray = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
+		this.blue = this.color_arrray[3];
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
 		this.buttons = {
 			"main" : [],
 			"server" : [],
@@ -20,17 +22,17 @@ function main_menu() {
 		this.user_info = user_info;
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify", true);
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect", true);
-		this.buttons["main"][2] = new button(810, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server", true);
-		this.buttons["main"][3] = new button(1110, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game", true);
-		this.buttons["main"][4] = new button(810, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board\nGame\nTime", true);
-		this.buttons["main"][5] = new button(1110, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Info", true);
-		this.buttons["server"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
-		this.buttons["server"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
-		this.buttons["certify"][0] = new button(960, 620, 150, 100, [255, 78, 0], [10, 10, 10], "Back", true);
-		this.buttons["info"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
-		this.buttons["info"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
+		this.buttons["main"][0] = new button(810, 200, 150, 100, this.blue, [10, 10, 10], "Certify", true);
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, this.blue, [10, 10, 10], "Connect", true);
+		this.buttons["main"][2] = new button(810, 350, 150, 100, this.blue, [10, 10, 10], "Server", true);
+		this.buttons["main"][3] = new button(1110, 350, 150, 100, this.blue, [10, 10, 10], "Test Game", true);
+		this.buttons["main"][4] = new button(810, 500, 150, 100, this.blue, [10, 10, 10], "Board\nGame\nTime", true);
+		this.buttons["main"][5] = new button(1110, 500, 150, 100, this.blue, [10, 10, 10], "Info", true);
+		this.buttons["server"][0] = new button(860, 680, 150, 100, this.blue, [10, 10, 10], "Submit", true);
+		this.buttons["server"][1] = new button(1060, 680, 150, 100, this.blue, [10, 10, 10], "Cancel", true);
+		this.buttons["certify"][0] = new button(960, 620, 150, 100, this.blue, [10, 10, 10], "Back", true);
+		this.buttons["info"][0] = new button(860, 680, 150, 100, this.blue, [10, 10, 10], "Submit", true);
+		this.buttons["info"][1] = new button(1060, 680, 150, 100, this.blue, [10, 10, 10], "Cancel", true);
 		g_cam.reset();
 	}
 
@@ -48,7 +50,9 @@ function main_menu() {
 		textAlign(CENTER, CENTER);
 		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
 		fill(r_color[0], r_color[1], r_color[2]);
-		text("RETRO ROYALE", width/2, height/20);
+		textFont(this.vid_font);
+		text("retro royale", width/2, height/20);
+		text("retro royale", width/2+2, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
 		stroke(11);
