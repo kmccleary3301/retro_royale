@@ -883,7 +883,7 @@ function ball_game() {
 
   this.tick_function = function() { 
     this.current_time = Date.now()/1000 - this.start_time;
-    console.log("start time -> "+this.start_time);
+    //console.log("start time -> "+this.start_time);
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if (Date.now()/1000 - this.add_last_time > 10) {
       this.add_last_time = Date.now()/1000;

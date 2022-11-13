@@ -96,7 +96,6 @@ class ball_game_player {
     this.isDead = 0;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.current_tile_index = 0;
-    
 		this.previous_tile_index = 0;
 		this.last_update = millis()/1000;
 		this.name = "temp name";
@@ -105,13 +104,10 @@ class ball_game_player {
 	draw() {
 		push();
     
-
-
-		if(this.move == 0) { this.sprite_anim.stop(); }
+		//if(this.move == 0) { this.sprite_anim.stop(); }
     if(this.isDead == 1){
       console.log("line 112");
-      this.update_anim("dead");
-      return;
+      //this.update_anim("dead");
     }
 		if (this.move) {
 			if (this.facing == "left") { this.x -= this.speed * (millis()/1000 - this.last_update); }
@@ -222,7 +218,7 @@ function ball_game() {
     this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
     this.font = loadFont('media/fonts/Alpharush.ttf');
     imageMode(CENTER);
-    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0,);
+    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0, 0);
     this.main_player_index = 0;
   }
 
@@ -296,7 +292,7 @@ function ball_game() {
     } else if (flag == "pos_player") {
       this.read_in_player_position(message);
     } else if (flag == "new_player") {
-      this.players[parseInt(message)] = new ball_game_player(this.greenSprite, 300, 300, 0);
+      this.players[parseInt(message)] = new ball_game_player(this.greenSprite, 300, 300, 0, (parseInt(message)%4));
     } else if (flag == "rmv_player") {
       var player_index = parseInt(message);
       this.players.splice(player_index, 1);
@@ -309,16 +305,18 @@ function ball_game() {
       seed_get = parseInt(message);
     }
      //make a flag for a dead player
-     else if (flag == "player_dead") {
+    else if (flag == "player_dead") {
+      console.log("dead player ->"+message);
       this.players[parseInt(message)].isDead = 1;
       this.players[parseInt(message)].update_anim("dead");
+      this.players[parseInt(message)].update_facing("dead");
     }
 
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
-    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, 0); }
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, 0, (p_vals[0]%4)); }
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
 
