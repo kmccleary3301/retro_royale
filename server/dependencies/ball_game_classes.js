@@ -9,7 +9,7 @@ class game_2_ball {
 		this.y = 0;
 		this.dx = 1;
 		this.dy = 1;
-		this.speed = 300;
+		this.speed = 100;
 		this.last_update = Date.now()/1000;
 	}
 
@@ -52,7 +52,7 @@ class game_2_ball {
 }
 
 class ball_game_player {
-  constructor(x, y, face, color,spriteSheet) {
+  constructor(x, y, face, color) {
     this.spriteColor = color;
 	this.sx = 0;
     this.x = x;
@@ -62,23 +62,27 @@ class ball_game_player {
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
     this.isDead = 0;
 	this.spriteColor = color;
-	
+	this.current_animation = "left_right";
+  }
 
+  update_data(x, y, move, speed, facing, is_dead, animation, name){
+	//if (sprite != null) {this.spriteSheet = }
+	if (x != null) { this.x = x; }
+	if (y != null) { this.y = y; }
+	if (move != null) { this.move = move; }
+	if (speed != null) { this.speed = speed; }
+  	if (is_dead != null) {this.isDead = this.is_dead; }
+	if (facing != null) { this.facing = facing; }
+	if (name != null) { this.name = name; }
+	if (animation != null) {this.animation = animation;}
+  }
+
+  make_data_raw(){
+	return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.isDead+","+this.animation+","+this.name;
   }
 
   make_data(player_index){
-    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-                      this.speed+","+this.facing;
-    return string_make;
-  }
-
-  update_data(sprite, x, y, move, speed, facing){
-    if (x != null) { this.x = x; }
-    if (y != null) { this.y = y; }
-    if (move != null) { this.move = move; }
-    if (speed != null) { this.speed = speed; }
-    if (facing != null) { this.facing = facing; }
-
+	return "pos_player:"+player_index+","+this.make_data_raw();
   }
   
 }
