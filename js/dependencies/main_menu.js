@@ -18,6 +18,7 @@ function main_menu() {
 		this.purple = [151, 0, 204];
 		//this.color_array = [this.red, this.cyan, this.purple, this.blue, this.yellow, this.pink];
 		this.vid_font = loadFont('media/fonts/videogame.ttf');
+		this.disco_ball = loadImage('media/misc/disco_ball_string.png');
 
 		this.test_background_1 = loadImage("media/backgrounds/test_background_2.png");
 		this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], 10);
@@ -36,17 +37,19 @@ function main_menu() {
 			"certify" : [],
 			"info" : []
 		};
-
+		
+		
+		
 		this.user_info = user_info;
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		
-		this.buttons["main"][0] = new button(810, 200, 150, 100, this.color_arrray[3], [10, 10, 10], "Certify", true, false);
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, this.color_arrray[3], [10, 10, 10], "Connect", true, false);
-		this.buttons["main"][2] = new button(810, 350, 150, 100, this.color_arrray[3], [10, 10, 10], "Server", true, false);
-		this.buttons["main"][3] = new button(1110, 350, 150, 100, this.color_arrray[3], [10, 10, 10], "Test Game", true, false);
-		this.buttons["main"][4] = new button(810, 500, 150, 100, this.color_arrray[3], [10, 10, 10], "Board\nGame\nTime", true, false);
-		this.buttons["main"][5] = new button(1110, 500, 150, 100, this.color_arrray[3], [10, 10, 10], "Info", true, false);
+		textFont(this.vid_font);
+		this.buttons["main"][0] = new button(810-100, 200+100, 150, 100, this.color_arrray[3], [10, 10, 10], "Certify", true, false);
+		this.buttons["main"][1] = new button(1110+100, 200+100, 150, 100, this.color_arrray[3], [10, 10, 10], "Connect", true, false);
+		this.buttons["main"][2] = new button(810-100, 350+100, 150, 100, this.color_arrray[3], [10, 10, 10], "Server", true, false);
+		this.buttons["main"][3] = new button(1110+100, 350+100, 150, 100, this.color_arrray[3], [10, 10, 10], "Test Game", true, false);
+		this.buttons["main"][4] = new button(810-100, 500+100, 150, 100, this.color_arrray[3], [10, 10, 10], "Board\nGame\nTime", true, false);
+		this.buttons["main"][5] = new button(1110+100, 500+100, 150, 100, this.color_arrray[3], [10, 10, 10], "Info", true, false);
 		this.buttons["server"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "Submit", true, false);
 		this.buttons["server"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "Cancel", true, false);
 		this.buttons["certify"][0] = new button(960, 620, 150, 100, this.color_arrray[3], [10, 10, 10], "Back", true, false);
@@ -74,6 +77,7 @@ function main_menu() {
 		this.scroll_background_1.draw();
 		this.scroll_background_2.draw();
 		this.adjust_current_menu();
+		textFont(this.vid_font);
 		this.current_time = millis()/1000 - this.start_time;
 		if (this.current_time < 3) { this.draw_startup_animation(); return; }
 		if (this.current_menu == "main") { this.draw_menu_1(); }
@@ -83,16 +87,21 @@ function main_menu() {
 	}
 
 	this.draw_menu_1 = function() {
+		//draw disco ball image
+		image(this.disco_ball, width/2-47.5, 0, 50*2, 175*2);
 		var r_color = rainbow_gradient(2*this.current_time);
+		var r_color2 = rainbow_gradient(2*this.current_time+2);
 		textAlign(CENTER, CENTER);
 		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
 		fill(r_color[0], r_color[1], r_color[2]);
-		textFont(this.vid_font);
-		text("retro royale", width/2, height/20);
-		text("retro royale", width/2+2, height/20);
+		textFont(this.vid_font, 110);
+		
+		text("retro  royale", width/2+40, height/20);
+		fill(r_color2[0], r_color2[1], r_color2[2]);
+		text("retro  royale", width/2+2+40, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
-		stroke(11);
+		//stroke(11);
 		if (connected_to_server) {
 			fill(0, 255, 0);
 			text("Connected", width - 50, 10);
@@ -161,8 +170,8 @@ function main_menu() {
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font);
-		text("RETRO ROYALE", text_position_x, height/2);
+		textFont(this.vid_font, 40);
+		text("retro royale", text_position_x, height/2);
 	}
 
 	this.key_pressed = function(keycode) {

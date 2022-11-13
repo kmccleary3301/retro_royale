@@ -4,6 +4,13 @@ function board_game() {
 		test_reset_draw_settings();
 		send_data("loading_board_game");
 		//reset();
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 		this.camera_scale = 1;
 		this.players = [];
 		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
@@ -42,9 +49,9 @@ function board_game() {
 			"overlay" : []
 		};
 		this.current_button_menu = "overlay";
-		this.buttons["overlay"][0] = new button(75, 50, 100, 50, [255, 78, 0], [10, 10, 10], "Center", true);
-		this.buttons["overlay"][1] = new button(75, 125, 100, 50, [255, 78, 0], [10, 10, 10], "Scores", true);
-		this.buttons["overlay"][2] = new button(75, 200, 100, 50, [255, 78, 0], [10, 10, 10], "Home", true);
+		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "Center", true);
+		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "Scores", true);
+		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "Home", true);
 
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
@@ -157,7 +164,7 @@ function board_game() {
 			}
 		} else { 
 			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
-				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "Roll", true);
+				this.buttons["overlay"][3] = new button(960, 440, 100, 100, this.blue, [10, 10, 10], "Roll", true);
 			}
 			if (!this.user_roll && this.current_turn_moves <= 0 && this.turn_done) {
 				send_data("end_turn");

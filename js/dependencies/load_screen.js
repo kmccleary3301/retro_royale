@@ -6,6 +6,7 @@ function load_screen() {
 		this.sent_load_flag = false;
 		this.connect_attempted = true;
 		g_cam.reset();
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
 	}
 
 	this.draw = function(){
@@ -46,6 +47,7 @@ function load_screen() {
 		}
 		text_make(0, 40, 0, 0);
 		textAlign(CENTER, CENTER);
+		textFont(this.vid_font);
 		fill(0, 0, 0);
 		g_cam.text(menu_text, width/2, height/2);
 	}
