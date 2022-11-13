@@ -79,15 +79,8 @@ class ball_game_player {
     if (speed != null) { this.speed = speed; }
     if (facing != null) { this.facing = facing; }
 
-
   }
-  update_anim(animation) {
-	if(animation == this.current_animation) {return;}
-	if(animation == "dead" || animation == "standing")  {this.move = 0; this.sprite_anim.stop(); }
-	else {this.move = 1; this.sprite_anim.start(); }
-	this.sprite_anim.change_animation(animation);
-	this.current_animation = animation;
-  }
+  
 }
 
 module.exports = {game_2_ball, ball_game_player};

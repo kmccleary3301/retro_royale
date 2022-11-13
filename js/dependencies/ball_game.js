@@ -104,9 +104,15 @@ class ball_game_player {
 	
 	draw() {
 		push();
+    
 
 
-		//if (this.move == 0) { this.sprite_anim.stop(); }
+		if(this.move == 0) { this.sprite_anim.stop(); }
+    if(this.isDead == 1){
+      console.log("line 112");
+      this.update_anim("dead");
+      return;
+    }
 		if (this.move) {
 			if (this.facing == "left") { this.x -= this.speed * (millis()/1000 - this.last_update); }
 			else if (this.facing == "right") { this.x += this.speed * (millis()/1000 - this.last_update); }
@@ -114,13 +120,42 @@ class ball_game_player {
 			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
 			this.last_update = millis()/1000;
 		} 
-    //else {this.update_anim("standing");}
+    for (let i in this.players){
+      if (this.players[i].isDead) { continue; }
+      for (let j in this.balls) {
+        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
+        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
+        var distance = Math.sqrt(dx*dx + dy*dy);
+        console.log("distance: "+distance);
+          if (distance <= this.balls[j].radius){
+            console.log("Player "+i+" is dead");
+            this.players[i].isDead = 1;
+            this.players[i].update_anim("dead");
+            //send player dead message
+            //sessions[this.session_id].clients[i].send("player_dead:"+i);
+            sessions[this.session_id].broadcast("player_dead:"+i, [i]);
+          }
+      }
+    }
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, true);
 		pop();
 	}
+
+  update_anim(animation) {
+    if(animation == this.current_animation) {return;}
+    if(animation == "dead")  
+    {
+      console.log("line 135");
+      this.move = 0; 
+      this.sprite_anim.stop(); 
+    }
+    else {this.move = 1; this.sprite_anim.start(); }
+    this.sprite_anim.change_animation(animation);
+    this.current_animation = animation;
+    }
   
 	get_pos_string(){
 	  var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
@@ -143,6 +178,8 @@ class ball_game_player {
 		} else if (facing == "dead") {
       this.sprite_anim.flip(0);
       this.sprite_anim.change_animation("dead");
+      console.log("line 166");
+
     }
 	}
 
@@ -252,6 +289,9 @@ function ball_game() {
     }
     for (let i in this.players) {
       this.players[i].draw();
+      if(this.players[i].isDead == 1){
+        this.players[i].update_anim("dead");
+      }
     }
 
     for (let i in this.balls) 
@@ -282,6 +322,12 @@ function ball_game() {
     } else if (flag == "random_seed") {
       seed_get = parseInt(message);
     }
+     //make a flag for a dead player
+     else if (flag == "player_dead") {
+      this.players[parseInt(message)].isDead = 1;
+      this.players[parseInt(message)].update_anim("dead");
+    }
+
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
