@@ -920,6 +920,7 @@ function ball_game() {
           if (distance <= this.balls[j].radius){
             console.log("Player "+i+" is dead");
             this.players[i].isDead = 1;
+            // this.players[i].update_anim("dead");
             //send player dead message
             //sessions[this.session_id].clients[i].send("player_dead:"+i);
             sessions[this.session_id].broadcast("player_dead:"+i, [i]);

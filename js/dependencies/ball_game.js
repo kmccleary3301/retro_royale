@@ -120,23 +120,7 @@ class ball_game_player {
 			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
 			this.last_update = millis()/1000;
 		} 
-    for (let i in this.players){
-      if (this.players[i].isDead) { continue; }
-      for (let j in this.balls) {
-        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
-        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
-        var distance = Math.sqrt(dx*dx + dy*dy);
-        console.log("distance: "+distance);
-          if (distance <= this.balls[j].radius){
-            console.log("Player "+i+" is dead");
-            this.players[i].isDead = 1;
-            this.players[i].update_anim("dead");
-            //send player dead message
-            //sessions[this.session_id].clients[i].send("player_dead:"+i);
-            sessions[this.session_id].broadcast("player_dead:"+i, [i]);
-          }
-      }
-    }
+  
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
@@ -244,6 +228,7 @@ function ball_game() {
 
   this.key_pressed = function(keycode) {
     for (let i in this.arrow_keys){
+      if (this.players[this.main_player_index].isDead == 1) { return; }
       if (keycode == this.arrow_keys[i]){
         this.players[this.main_player_index].update_facing(i);
         this.players[this.main_player_index].update_moving(true);
@@ -298,6 +283,7 @@ function ball_game() {
     { 
       this.balls[i].draw(); 
     }
+
   }
 
   this.read_network_data = function(flag, message) {
