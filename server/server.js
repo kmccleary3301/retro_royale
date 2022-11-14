@@ -128,7 +128,7 @@ server.on('connection', function connection(thisClient) {
           message = null;
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
-      }
+      }n
       if (session_id === undefined) {
         if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
         //else if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
@@ -293,9 +293,6 @@ class game_session {
       this.current_state.setup(this.session_id);
     }
     this.current_state_flag = state_flag;
-    for(let i in clients_info) {
-      sessions[this.session_id].clients_info[i] = i;
-    }
   }
 
   broadcast(data) {  //Send a message to all connected clients
@@ -318,7 +315,9 @@ class game_session {
     if (index == -1) { return; }
     if (flag == 'connected') { this.clients[index].send("connected"); } //This only constitutes a hello, establishes that the connection was made
     //if (flag == 'load_game') { this.clients[index].send("current_game:"+this.current_state_flag); }
-    if (flag == 'user_info') { this.clients_info[index].name = message; return; }
+    if (flag == 'user_info') { this.clients_info[index].name = message; 
+                               this.clients_info[index].color = index
+                               return; }
     //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
     this.current_state.read_network_data(flag, message, index);
   }

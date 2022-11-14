@@ -16,15 +16,15 @@ class game_end_screen_player {
 				// 	"row_length": 6
 				// },
 				"First": {
-					"row": 8,
+					"row": 9*(this.color+1)-1,
 					"row_length": 1
 				},
 				"SecondAndThird": {
-					"row": 0,
+					"row": 1*(this.color+1)-1,
 					"row_length": 1
 				},
 				"Fourth": {
-					"row": 7,
+					"row": 8*(this.color+1)-1,
 					"row_length": 1
 				}
 			});
@@ -35,7 +35,7 @@ class game_end_screen_player {
 		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
 		this.speed = 5;     // Player movement speed
 		this.name;
-		this.color;
+		this.color=0;
 		this.place;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
 		this.sprite_row = 0;

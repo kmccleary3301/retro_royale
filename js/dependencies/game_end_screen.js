@@ -11,12 +11,12 @@ function game_end_screen() {
       this.main_player_index = 0;
 
       //stores 1,2,3,4 depending on usr_id entered as index value
-      this.playerPlaces = [];
+      //this.playerPlaces = [];
 
       //stores names similarly
-      this.playerNames = [];
+      //this.playerNames = [];
 
-      this.numberOfPlayers = 2;
+      //this.numberOfPlayers = 2;
 
       //this gets the data stored in client info about the player scores/positions
       send_data("get_client_data");
@@ -56,7 +56,7 @@ function game_end_screen() {
 
       text_make(0,40,0,2);
       textAlign(CENTER, CENTER);
-      text(this.playerNames[0]+" WON!", width/2, 50);
+      text(this.players[0].name+" WON!", width/2, 50);
       
       j = 0;
       for (let i in this.players) {
@@ -64,24 +64,24 @@ function game_end_screen() {
         // this.players[i].y = 100*j;
         // this.players[i].x = 500;
         //text("Player "+j+" made: "+this.playerPlaces[i],20,100*j);
-        if(this.playerPlaces[i] == 1) {
+        if(this.players[i].place == 1) {
           this.players[i].y = 200;
           this.players[i].x = width/2;
           this.players[i].update_anim("First")
         }
-        else if(this.playerPlaces[i] > 4){
+        else if(this.players[i].place > 4){
           this.players[i].y = 400;
-          this.players[i].x = width/2+(this.playerPlaces[i]-3)*250;
+          this.players[i].x = width/2+(this.players[i].place-3)*250;
           this.players[i].update_anim("SecondAndThird")
         }
         else {
           this.players[i].y = 400;
-          this.players[i].x = width/2+(this.playerPlaces[i]-3)*250;
+          this.players[i].x = width/2+(this.players[i].place-3)*250;
           this.players[i].update_anim("Fourth")
         }
 
         this.players[i].draw();
-        text(this.playerNames[i],this.players[i].x,this.players[i].y+90);
+        text(this.players[i].name,this.players[i].x,this.players[i].y+90);
       }
     }
   
