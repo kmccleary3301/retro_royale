@@ -19,11 +19,14 @@ function main_menu() {
 		//this.color_array = [this.red, this.cyan, this.purple, this.blue, this.yellow, this.pink];
 		this.vid_font = loadFont('media/fonts/videogame.ttf');
 		this.disco_ball = loadImage('media/misc/disco_ball_string.png');
-
-		this.test_background_1 = loadImage("media/backgrounds/test_background_2.png");
-		this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], 10);
-		this.test_background_2 = loadImage("media/backgrounds/test_background_3.png");
-		this.scroll_background_2 = new scroll_image(this.test_background_2, [1920, 1080], 80);
+		this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
+		this.rando = [-20, 25, 6];
+		this.test_background_1 = loadImage("media/backgrounds/city_layer_3.png");
+		this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], 0);
+		this.test_background_2 = loadImage("media/backgrounds/city_layer_2.png");
+		this.scroll_background_2 = new scroll_image(this.test_background_2, [1920, 1080], 10);
+		this.test_background_3 = loadImage("media/backgrounds/city_layer_1.png");
+		this.scroll_background_3 = new scroll_image(this.test_background_3, [1920, 1080], 80);
 		
 		this.sounds = new Tone.Players({
 			"Hum" : 'media/sounds/synth_2.wav'
@@ -76,6 +79,7 @@ function main_menu() {
 	this.draw = function() {
 		this.scroll_background_1.draw();
 		this.scroll_background_2.draw();
+		this.scroll_background_3.draw();
 		this.adjust_current_menu();
 		textFont(this.vid_font);
 		this.current_time = millis()/1000 - this.start_time;
@@ -88,7 +92,11 @@ function main_menu() {
 
 	this.draw_menu_1 = function() {
 		//draw disco ball image
-		image(this.disco_ball, width/2-47.5, 0, 50*2, 175*2);
+		image(this.disco_ball, width/2, 175, 50*2, 175*2);
+		imageMode(CENTER);
+		image(this.sparkle, width/2+this.rando[2], 280+this.rando[0], abs(sin(frameCount/30))*30, abs(sin(frameCount/30))*30, 0, 0, this.sparkle.width, this.sparkle.height, CONTAIN, LEFT, CENTER);
+   		image(this.sparkle, width/2+this.rando[0], 280+this.rando[1], abs(sin(frameCount/25))*40, abs(sin(frameCount/25))*40, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
+   		image(this.sparkle, width/2+this.rando[1], 280+this.rando[2], abs(sin(frameCount/20))*50, abs(sin(frameCount/20))*50, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
 		var r_color = rainbow_gradient(2*this.current_time);
 		var r_color2 = rainbow_gradient(2*this.current_time+2);
 		textAlign(CENTER, CENTER);
@@ -98,7 +106,7 @@ function main_menu() {
 		
 		text("retro  royale", width/2+40, height/20);
 		fill(r_color2[0], r_color2[1], r_color2[2]);
-		text("retro  royale", width/2+2+40, height/20);
+		text("retro  royale", width/2+4+40, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
 		//stroke(11);

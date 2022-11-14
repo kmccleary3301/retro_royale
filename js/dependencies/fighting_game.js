@@ -252,9 +252,12 @@ function fighting_game() {
     //this.bounds = [0+this.boundary_offset, 1440-boundary_offset, 0, 1440/2];
     
     this.video_game_font = loadFont('media/fonts/videogame.ttf');
-    this.background1 = loadImage(repo_address+"media/backgrounds/melee_sunset_background.png");
-    this.background2 = loadImage(repo_address+"media/backgrounds/melee_sunset_background2.png");
-    this.background3 = loadImage(repo_address+"media/backgrounds/melee_sunset_background3.png");
+    // this.background1 = loadImage(repo_address+"media/backgrounds/melee_sunset_background.png");
+    // this.background2 = loadImage(repo_address+"media/backgrounds/melee_sunset_background2.png");
+    // this.background3 = loadImage(repo_address+"media/backgrounds/melee_sunset_background3.png");
+    this.background1 = loadImage(repo_address+"media/backgrounds/space1.png");
+    this.background2 = loadImage(repo_address+"media/backgrounds/space2.png");
+    this.background3 = loadImage(repo_address+"media/backgrounds/space3.png");
     this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
     this.disco_ball_string = loadImage(repo_address+"media/misc/disco_ball_string.png");
     imageMode(CENTER);
