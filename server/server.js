@@ -277,6 +277,8 @@ class game_session {
       if (this.board_game === undefined) {
         this.board_game = new board_game();
         this.board_game.setup(this.session_id);
+      } else {
+        this.board_game.read_in_minigame_results(this.current_state.game_result_json);
       }
       this.current_state = this.board_game;
     }
@@ -284,12 +286,19 @@ class game_session {
     else if (state_flag == "dev_room") { this.current_state = new dev_room(); }
     else if (state_flag == "fighting_game") { this.current_state = new fighting_game(); }
     else if (state_flag == "flappy_bird") { this.current_state = new flappy_bird(); }
-    else if (state_flag == "game_end_screen") { this.current_state = new game_end_screen(); }
+    else if (state_flag == "game_end_screen") {
+      var game_results = this.current_state.game_result_json; 
+      this.current_state = new game_end_screen(); 
+    }
     else { return; } // failsafe for invalid flags
     //this.current_state.session_id = this.session_id;
     if (state_flag != "board_game") {
-      this.current_state.setup(this.session_id);
-    }
+      if (state_flag == "game_end_screen") {
+        this.current_state.setup(this.session_id, game_results);
+      } else {
+        this.current_state.setup(this.session_id);
+      }
+    } 
     this.current_state_flag = state_flag;
   }
 
@@ -804,6 +813,13 @@ function board_game() {
     sessions[this.session_id].append_interval_id(int_id);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
 	}
+
+  this.read_in_minigame_results = function(game_result_json) {
+    for (let i in game_result_json) {
+      this.players[game_result_json[i]["player_id"]].coins += game_result_json[i]["coins_added"];
+      //if (game_result_json[i]["won_game"]) { this.players[game_result_json[i]["player_id"]].game_wins++; }
+    }
+  }
 
 	this.make_board_layout_preset_1 = function() {
 		this.tiles[0] = new board_game_tile(0, 25, 0, [1]);
