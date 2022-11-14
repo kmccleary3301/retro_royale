@@ -16,6 +16,8 @@ class board_game_player {
 					"row_length": 6
 				}
 			});
+		this.coins = 0;
+		this.stars = 0;
 		this.x = x;
 		this.y = y;
 		this.move = 0;
@@ -79,25 +81,27 @@ class board_game_player {
 		}
 	}
 
-	update_data(sprite, x, y, move, speed, facing, current_tile_index, previous_tile_index, name){
-	  //if (sprite != null) {this.spriteSheet = }
-	  if (x != null) { this.x = x; }
-	  if (y != null) { this.y = y; }
-	  if (move != null) { this.move = move; }
-	  if (speed != null) { this.speed = speed; }
-	  if (facing != null) { this.update_facing(facing); }
-	  if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
-	  if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
-		if (name != null) { this.name = name; }
+	update_data(x, y, move, speed, facing, current_tile_index, previous_tile_index, name, coins, stars){
+		//if (sprite != null) {this.spriteSheet = }
+		if (x != null) { this.x = x; }
+		if (y != null) { this.y = y; }
+		if (move != null) { this.move = move; }
+		if (speed != null) { this.speed = speed; }
+		if (facing != null) { this.update_facing(facing); }
+		if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
+		if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
+	  if (name != null) { this.name = name; }
+	  if (coins != null) {this.coins = coins; }
+	  if (stars != null) {this.stars = stars; }
 	}
-  
+	
 	make_data_raw(){
-	  return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
-						this.previous_tile_index+","+this.name;
+		return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
+						  this.previous_tile_index+","+this.name+","+this.coins+","+this.stars;
 	}
-  
-	make_data(player_index){
-	  return "pos_player:"+player_index+","+this.make_data_raw();
+	  
+  make_data(player_index){
+		return "pos_player:"+player_index+","+this.make_data_raw();
 	}
 }
 
@@ -139,12 +143,35 @@ class board_game_tile {
 
 	draw() {
 		push();
+
+		switch(this.type) {
+			case 'empty':
+				fill(0, 0, 125);
+				break;
+			case 'lose_coins':
+				fill(250, 0, 0);
+				break;
+			case 'gain_coins':
+				fill(0, 250, 0);
+				break;
+			case 'versus':
+				fill(180, 0, 180);
+				break;
+			case 'trap':
+				fill(255, 78, 0);
+				break;
+			case 'star':
+				fill(255, 255, 0);
+				break;
+		}
+		/*
 		if (this.type == 0) { fill(0, 0, 125); }
 		else if (this.type == 1) { fill(250, 0, 0); }
 		else if (this.type == 2) { fill(0, 250, 0); }
 		else if (this.type == 3) { fill(180, 0, 180); }
 		else if (this.type == 4) { fill(255, 78, 0); }
 		else if (this.type == 5) { fill(255, 255, 0); }
+		*/
 		stroke(50);
 		strokeWeight(5);
 		g_cam.ellipse(this.x, this.y, 100, 100);
@@ -278,16 +305,17 @@ class dice_display_element {
 	draw() {
 		push();
 		this.current_time = millis()/1000 - this.start_time;
-		var dice_length = this.expire*5/6;
+		var dice_length = this.expire*0.985;
+		var breakpoint = dice_length*0.8;
 		text_make(1, 50,  0, 2);
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
-		if (this.current_time < dice_length*0.8) {
+		if (this.current_time < breakpoint) {
 			for (let i in this.display_list) {
-				var x1 = this.current_time;
+				var time_element = this.current_time-1+Math.max(1, Math.exp(0.2*(this.current_time)));
 				//if (this.current_time > dice_length-3) { x1 += (x1-(dice_length-3))^3; }
-				var position = Math.exp(-(10/dice_length)*x1+2);
+				var position = Math.exp(-(6.5/breakpoint)*time_element+2);
 				var text_y_pos = height*(0.5+position)+2*height*(i-2)/this.display_list.length;
 				text_y_pos += (this.display_list.length%4)*height/(2*this.display_list.length);
 				text_y_pos = text_y_pos%(height*2)-height*0.5;
@@ -296,11 +324,18 @@ class dice_display_element {
 		} else {
 			fill(255, 78, 0);
 			var frequency = 0.3;
-			if (this.current_time%frequency*2 < frequency) {
+			var time_set = this.expire - breakpoint;
+			if (true) {
 				rectMode(CENTER);
 				fill(255, 78, 0);
 				console.log("drawing button rectangle");
-				rect(width/2, height/2, Math.max(100, 30*str(this.chosen_value).length), 100);
+				var factor_1 = Math.min(1, (this.current_time-breakpoint)*3/time_set);
+				var factor_2 = Math.min(1, 1+(breakpoint+time_set*2/3-this.current_time)*3/time_set);
+				factor_1 *= factor_2;
+				factor_1 = Math.pow(factor_1, 3);
+				factor_2 = Math.pow(factor_2, 3);
+				rect(width/2, height/2, Math.max(60, 30*str(this.chosen_value).length)*factor_1, 60*factor_1);
+				text_make(1, factor_2*50,  0, 2);
 			}
 			fill(r_color[0], r_color[1], r_color[2]);
 			text(this.chosen_value, width/2, height/2);

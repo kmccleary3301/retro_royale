@@ -15,7 +15,7 @@ function fruitGame() {
 			Win : 'media/sounds/win_sound.mp3',
 			Hit : 'media/sounds/hit.mp3',
 			Miss : 'media/sounds/miss.mp3'
-		})
+		});
 		this.sounds.toDestination();
 		this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
 		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");

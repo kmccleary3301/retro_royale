@@ -2,6 +2,9 @@ class board_game_player {
 	constructor(x, y, face) {
 		this.x = x;
 		this.y = y;
+		this.coins = 0;
+		this.stars = 0;
+		this.game_wins = 0;
 		this.move = 0;
 		this.speed = 5;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
@@ -11,7 +14,7 @@ class board_game_player {
 		this.name = "temp name";
 	}
 
-	update_data(x, y, move, speed, facing, current_tile_index, previous_tile_index, name){
+	update_data(x, y, move, speed, facing, current_tile_index, previous_tile_index, name, coins, stars){
 	  //if (sprite != null) {this.spriteSheet = }
 	  if (x != null) { this.x = x; }
 	  if (y != null) { this.y = y; }
@@ -21,11 +24,13 @@ class board_game_player {
 	  if (current_tile_index != null) { this.current_tile_index = current_tile_index; }
 	  if (previous_tile_index != null) { this.previous_tile_index = previous_tile_index; }
 		if (name != null) { this.name = name; }
+		if (coins != null) {this.coins = coins; }
+		if (stars != null) {this.stars = stars; }
 	}
   
 	make_data_raw(){
 	  return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.current_tile_index+","+
-						this.previous_tile_index+","+this.name;
+						this.previous_tile_index+","+this.name+","+this.coins+","+this.stars;
 	}
 	
 	make_data(player_index){
@@ -118,10 +123,10 @@ class board_game_tile {
 class dice_element {
 	constructor(elements, element_weights) {
 		var sum = 0;
-		for (let i in element_weights) {sum += element_weights[i]};
-		for (let i in element_weights) {element_weights[i] /= sum};
+		for (let i in element_weights) { sum += element_weights[i]; }
+		for (let i in element_weights) {element_weights[i] /= sum; }
 		this.display_list = [];
-		for (i = 0; i < 10; i++) {
+		for (var i=0; i < 10; i++) {
 			this.display_list[i] = select_random_element(elements, element_weights);
 		}
 		this.chosen_value = this.display_list[Math.round(this.display_list.length/4 + 1)];
@@ -129,7 +134,7 @@ class dice_element {
 
 	make_data() {
 		str_make = "";
-		for (i=0; i < this.display_list.length-1; i++) {
+		for (var i = 0; i < this.display_list.length-1; i++) {
 			str_make += this.display_list[i]+",";
 		}
 		str_make += this.display_list[this.display_list.length-1];
@@ -140,7 +145,9 @@ class dice_element {
 }
 
 function select_random_element(entries, weights) {
-	var index_current = 0, target = Math.random(), sum = 0;
+	var sum_weights = 0;
+	for (let i in weights) { sum_weights += weights[i]; }
+	var index_current = 0, target = sum_weights*Math.random(), sum = 0;
 	while (sum < target) {
 		//console.log("selecting random: i_c:"+index_current+" sum:"+sum+" target:"+target);
 		sum += weights[index_current];
@@ -149,4 +156,4 @@ function select_random_element(entries, weights) {
 	return entries[index_current-1];
 }
 
-module.exports = {board_game_player, board_game_tile, dice_element};
+module.exports = {board_game_player, board_game_tile, dice_element, select_random_element};
