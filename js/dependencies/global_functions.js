@@ -33,7 +33,7 @@ function convert_data_string(message, ints, floats, strings) {
   }
   if (!(floats === undefined)) {
     for (let i in floats) {
-      if (message_split[floats[i]] != "") { return_vals[floats[i]] = parseInt(message_split[floats[i]]); }
+      if (message_split[floats[i]] != "") { return_vals[floats[i]] = parseFloat(message_split[floats[i]]); }
     }
   }
   if (!(strings === undefined)) {
