@@ -10,6 +10,17 @@ function main_menu() {
 		this.current_menu = "main";
 		this.button_funcs = [];
 
+		this.test_background_1 = loadImage("media/backgrounds/test_background_2.png");
+		this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], 10);
+		this.test_background_2 = loadImage("media/backgrounds/test_background_3.png");
+		this.scroll_background_2 = new scroll_image(this.test_background_2, [1920, 1080], 80);
+		
+		this.sounds = new Tone.Players({
+			"Hum" : 'media/sounds/synth_2.wav'
+		});
+		this.sounds.toDestination();
+
+
 		this.buttons = {
 			"main" : [],
 			"server" : [],
@@ -20,21 +31,39 @@ function main_menu() {
 		this.user_info = user_info;
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify", true);
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect", true);
-		this.buttons["main"][2] = new button(810, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server", true);
-		this.buttons["main"][3] = new button(1110, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game", true);
-		this.buttons["main"][4] = new button(810, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board\nGame\nTime", true);
-		this.buttons["main"][5] = new button(1110, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Info", true);
-		this.buttons["server"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
-		this.buttons["server"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
-		this.buttons["certify"][0] = new button(960, 620, 150, 100, [255, 78, 0], [10, 10, 10], "Back", true);
-		this.buttons["info"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true);
-		this.buttons["info"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true);
+		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Certify", true, false);
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Connect", true, false);
+		this.buttons["main"][2] = new button(810, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Server", true, false);
+		this.buttons["main"][3] = new button(1110, 350, 150, 100, [255, 78, 0], [10, 10, 10], "Test Game", true, false);
+		this.buttons["main"][4] = new button(810, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Board\nGame\nTime", true, false);
+		this.buttons["main"][5] = new button(1110, 500, 150, 100, [255, 78, 0], [10, 10, 10], "Info", true, false);
+		this.buttons["server"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true, false);
+		this.buttons["server"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
+		this.buttons["certify"][0] = new button(960, 620, 150, 100, [255, 78, 0], [10, 10, 10], "Back", true, false);
+		this.buttons["info"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Submit", true, false);
+		this.buttons["info"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
 		g_cam.reset();
 	}
 
+	this.playSound = function(whichSound='Fail') {
+		this.sounds.player(whichSound).start();
+	}
+
+	this.adjust_current_menu = function() {
+		var max_text_size = this.buttons[this.current_menu][0].calculate_max_text_size();
+		for (let i in this.buttons[this.current_menu]) {
+			var new_size = this.buttons[this.current_menu][i].calculate_max_text_size();
+			if (new_size < max_text_size) { max_text_size = new_size; }
+		}
+		for (let i in this.buttons[this.current_menu]) {
+			this.buttons[this.current_menu][i].text_size = max_text_size;
+		}
+	}
+
 	this.draw = function() {
+		this.scroll_background_1.draw();
+		this.scroll_background_2.draw();
+		this.adjust_current_menu();
 		this.current_time = millis()/1000 - this.start_time;
 		if (this.current_time < 3) { this.draw_startup_animation(); return; }
 		if (this.current_menu == "main") { this.draw_menu_1(); }
@@ -46,9 +75,12 @@ function main_menu() {
 	this.draw_menu_1 = function() {
 		var r_color = rainbow_gradient(2*this.current_time);
 		textAlign(CENTER, CENTER);
-		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
+		text_make(3, Math.min(110*height/1080, 110*width/1920), 0, 1);
+		fill([3, 94, 232]);
+		text("retro royale", width/2, height/20);
+		//var r_color = rainbow_gradient(2*this.current_time+10);
 		fill(r_color[0], r_color[1], r_color[2]);
-		text("RETRO ROYALE", width/2, height/20);
+		text("retro royale", width/2+2, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
 		stroke(11);
@@ -139,6 +171,7 @@ function main_menu() {
 			if (this.buttons[this.current_menu][i].pressed) { 
 				this.buttons[this.current_menu][i].pressed = 0;
 				this.button_press(i);
+				this.playSound('Hum');
 				return;
 			}
 		}
