@@ -1,5 +1,5 @@
 class game_1_player {
-	constructor(x, y, face) {
+	constructor(x, y, face, color) {
 		this.sx = 0;
 		this.x = x;
 		this.y = y;
@@ -8,6 +8,7 @@ class game_1_player {
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.fruit_holding = 0;
 		this.fruit_held_id = 0;
+    this.spriteColor = color;
 	}
 
 	make_data(player_index){

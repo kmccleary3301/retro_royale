@@ -12,15 +12,25 @@ function session_menu() {
 			"join_session" : [],
 		};
 
+		this.vid_font = loadFont("media/fonts/videogame.ttf");
 		this.user_info = user_info;
 
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+		this.background1 = [226,200,226];
+
 		console.log("WINDOW DIMS : "+width+", "+height);
-		this.buttons["main"][0] = new button(810, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Create\nSession", true, false);
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, [255, 78, 0], [10, 10, 10], "Join\nSession", true, false);
-		this.buttons["create_session"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Start", true, false);
-		this.buttons["create_session"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
-		this.buttons["join_session"][0] = new button(860, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Join", true, false);
-		this.buttons["join_session"][1] = new button(1060, 680, 150, 100, [255, 78, 0], [10, 10, 10], "Cancel", true, false);
+		this.buttons["main"][0] = new button(810, 200, 150, 100, this.blue, [10, 10, 10], "", true, false);
+		
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, this.blue, [10, 10, 10], "", true, false);
+		this.buttons["create_session"][0] = new button(860, 680, 150, 100, this.blue, [10, 10, 10], "Start", true, false);
+		this.buttons["create_session"][1] = new button(1060, 680, 150, 100, this.blue, [10, 10, 10], "Cancel", true, false);
+		this.buttons["join_session"][0] = new button(860, 680, 150, 100, this.blue, [10, 10, 10], "Join", true, false);
+		this.buttons["join_session"][1] = new button(1060, 680, 150, 100, this.blue, [10, 10, 10], "Cancel", true, false);
 		g_cam.reset();
 	}
 
@@ -43,32 +53,47 @@ function session_menu() {
 	}
 
 	this.draw_menu_1 = function() {
+		background(this.background1);
 		var r_color = rainbow_gradient(2*this.current_time);
 		textAlign(CENTER, CENTER);
 		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
 		fill(r_color[0], r_color[1], r_color[2]);
-		text("RETRO ROYALE", width/2, height/20);
+		textFont(this.vid_font);
+		
+		text("retro royale", width/2, height/20);
+		fill(this.blue);
+		text("retro royale", width/2+2, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
+		textFont(this.vid_font, 25);
+		fill(this.cyan);
+		text("join\nsession", 760, 100, 150, 100);
+		text("create\nsession", 530, 100, 150, 100);
 		text_make(0, 10, 0, 1);
-		stroke(11);
+		//stroke(11);
 		if (connected_to_server) {
 			fill(0, 255, 0);
-			text("Connected", width - 50, 10);
+			textFont(this.vid_font);
+			text("connected", width - 50, 10);
 		} else {
 			fill(255, 0, 0);
-			text("Not connected", width - 50, 10);
+			textFont(this.vid_font);
+			text("not connected", width - 50, 10);
 		}
+		
+		
 	}
 
 	this.draw_menu_2 = function() {
 		//background(255, 78, 0);
+		background(this.background1);
 		strokeWeight(5);
 		fill(200, 200, 255);
 		rect(width*4/10, height*3/10, width*2/10, height*4/10);
 		text_make(0, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		text("Session_id", width/2, height*415/1080);
+		textFont(this.vid_font);
+		text("session_id", width/2, height*415/1080);
         fill(255, 0, 0);
         text(this.warning_message, width/2, height*525/1080);
 		for (let i in this.buttons["create_session"]) { this.buttons["create_session"][i].draw(); }
@@ -76,13 +101,15 @@ function session_menu() {
 
 	this.draw_menu_3 = function() {
 		//background(255, 78, 0);
+		background(this.background1);
 		strokeWeight(5);
 		fill(200, 200, 255);
 		rect(width*4/10, height*3/10, width*2/10, height*4/10);
 		text_make(0, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		text("Session_id", width/2, height*415/1080);
+		textFont(this.vid_font);
+		text("session_id", width/2, height*415/1080);
         fill(255, 0, 0);
         text(this.warning_message, width/2, height*525/1080);
 		for (let i in this.buttons["join_session"]) { this.buttons["join_session"][i].draw(); }
@@ -99,12 +126,13 @@ function session_menu() {
 		var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_width = 350, box_height = 100;
-		fill(255, 78, 0);
+		fill(this.blue);
 		rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
-		text("RETRO ROYALE", text_position_x, height/2);
+		textFont(this.vid_font);
+		text("retro royale", text_position_x, height/2);
 	}
 
 	this.key_pressed = function(keycode) {

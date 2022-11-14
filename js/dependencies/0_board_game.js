@@ -4,6 +4,13 @@ function board_game() {
 		test_reset_draw_settings();
 		send_data("loading_board_game");
 		//reset();
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 		this.camera_scale = 1;
 		this.players = [];
 		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
