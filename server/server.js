@@ -693,6 +693,7 @@ function board_game() {
 		this.players = [];
 		this.tiles = [];
 		this.tile_grid_dimensions = [50, 50];
+    this.game_action_store = "";
 		
     this.max_turns = 20;
     this.current_turn = 1;
@@ -702,7 +703,6 @@ function board_game() {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new board_game_player(0, 0, 1);
         this.players[i].name = sessions[this.session_id].clients_info[i].name;
-        console.log("sending assigned id 2");
         sessions[this.session_id].clients[i].send("assigned_id:"+i);
       }
     }
@@ -710,7 +710,6 @@ function board_game() {
     var int_id = setInterval(function(){self.tick_function();}, 100);
     sessions[this.session_id].append_interval_id(int_id);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
-    //this.make_board_layout_preset_1();
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -806,6 +805,7 @@ function board_game() {
   }
 
   this.end_turn = function(message) {
+    this.read_game_action();
     this.turning_player_index = (this.turning_player_index + 1) % this.players.length;
     if (this.turning_player_index == 0) {
       this.current_turn += 1;
@@ -831,7 +831,8 @@ function board_game() {
     this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
     sessions[this.session_id].broadcast("player_move_tile:"+usr_id+","+direction);
-    this.current_turn_moves--;
+    if (this.tiles[this.players[usr_id].current_tile_index].type == 'star') { this.current_turn_moves = 0; }
+    else { this.current_turn_moves--; }
   }
 
   this.tile_event_action = function(tile_type) {
@@ -840,24 +841,53 @@ function board_game() {
       case 'empty':
 				break;
 			case 'lose_coins':
-				this.players[this.turning_player_index].coins = Math.max(this.players[this.turning_player_index].coins-3, 0);
+				var coin_change = Math.max(this.players[this.turning_player_index].coins-3, 0) - 
+                          this.players[this.turning_player_index].coins;
+        this.game_action_store = "change_coins:"+this.turning_player_index+","+coin_change;
 				break;
 			case 'gain_coins':
-				this.players[this.turning_player_index].coins += 3;
+				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
 				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
+        this.game_action_store = "swap_game:"+dice_make.chosen_value;
 				break;
 			case 'unlucky':
 				break;
 			case 'star':
-				this.players[this.turning_player_index].stars++;
-        this.players[this.turning_player_index].current_tile_index = 0;
-        this.players[this.turning_player_index].previous_tile_index = 0;
+				this.game_action_store = "add_star:"+this.turning_player_index;
 				break;
     }
     sessions[this.session_id].broadcast(this.players[this.turning_player_index].make_data(this.turning_player_index))
+  }
+
+  this.read_game_action = function() {
+    console.log("read game action called");
+    if (this.game_action_store == '') { return; }
+    else {
+      console.log("game action store is nonempty");
+      var pieces = this.game_action_store.split(":");
+      var flag = pieces[0], message = pieces[1];
+      this.game_action_store = "";
+      switch(flag) {
+        case 'swap_game':
+          sessions[this.session_id].swap_current_state(message);
+          break;
+        case 'change_coins':
+          p_vals = convert_data_string(message, [0, 1]);
+          this.players[p_vals[0]].coins += p_vals[1];
+          sessions[this.session_id].broadcast(this.players[p_vals[0]].make_data(p_vals[0]));
+          break;
+        case 'add_star':
+          var p_id = parseInt(message);
+          this.players[p_id].stars++;
+          this.players[p_id].current_tile_index = 0;
+          this.players[p_id].previous_tile_index = 0;
+          sessions[this.session_id].broadcast(this.players[p_id].make_data(p_id));
+          break;
+      }
+    }
   }
 
   this.start_versus_event = function() {
