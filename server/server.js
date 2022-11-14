@@ -137,7 +137,7 @@ server.on('connection', function connection(thisClient) {
         else if (flag == 'create_session') {
           console.log("creating_session_called -> "+message);
           if (sessions[message] !== undefined || message.length == 0) {
-            thisClient.send("session_warning:Session already exists");
+            thisClient.send("session_warning:session already exists");
           } else {
             clients_info[index].session_id = message;
             console.log("sessions -> "+Object.keys(sessions));
@@ -149,7 +149,7 @@ server.on('connection', function connection(thisClient) {
           }
         } else if (flag == 'join_session') {
           if (sessions[message] === undefined) {
-            thisClient.send("session_warning:Session doesn't exist");
+            thisClient.send("session_warning:session doesn't exist");
           } else {
             clients_info[index].session_id = message;
             thisClient.send("assigned_session:"+message);
@@ -392,7 +392,7 @@ function fruitGame() {
     this.game_dimensions = [2000, 1000];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
       }
     }
     var p = new PoissonDiskSampling({
@@ -471,7 +471,7 @@ function fruitGame() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -524,7 +524,7 @@ function purgatory() {
     if (sessions[this.session_id] !== undefined) {
       console.log("purgatory setup - session identified");
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
       }
     } else {
       console.log("purgatory setup - session doesn't exist");
@@ -548,7 +548,7 @@ function purgatory() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -581,7 +581,7 @@ function load_room() {
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
       }
     }
     this.host_id = 0;
@@ -612,7 +612,7 @@ function load_room() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -744,7 +744,7 @@ function dev_room() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + sessions[this.session_id].clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -1141,9 +1141,10 @@ function ball_game() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string,  [0, 3, 6], [1, 2, 4], [5, 7]);
-    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, 0, (p_vals[0]%4)); }
-    this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1, p_vals[0]%4); }
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    return p_vals[0];
   }
 }
 
