@@ -626,7 +626,7 @@ function dev_room() {
   }
 
   this.tick_function = function() {
-    console.log("start time -> "+this.start_time);
+    //console.log("start time -> "+this.start_time);
     //console.log("dev_room tick called"); 
     return; 
   }
@@ -940,7 +940,7 @@ function ball_game() {
     if (sessions[this.session_id] !== undefined) {
       console.log("session found, making players");
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1, i);
       }
     }
     this.random_seed = Math.floor(Math.random()*100000);
@@ -948,13 +948,13 @@ function ball_game() {
     var self = this;
     var int_id = setInterval(function(){self.tick_function();}, 100);
     sessions[this.session_id].append_interval_id(int_id);
-    int_id = setInterval(function(){self.tick_function_ball()}, 20);
+    int_id = setInterval(function(){self.tick_function_ball()}, 200);
     sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.tick_function = function() { 
     this.current_time = Date.now()/1000 - this.start_time;
-    console.log("start time -> "+this.start_time);
+    //console.log("start time -> "+this.start_time);
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if (Date.now()/1000 - this.add_last_time > 10) {
       this.add_last_time = Date.now()/1000;
@@ -964,23 +964,27 @@ function ball_game() {
       //broadcast(this.make_everything());
     }
     for (let i in this.balls) { 
-      console.log("updating ball "+i);
+      //console.log("updating ball "+i);
       this.balls[i].update(seed_random, random_seed); 
+      sessions[this.session_id].broadcast(this.balls[i].make_data(i));
     }
     //broadcast(this.make_everything());
   }
 
   this.tick_function_ball = function() {
     //console.log("players: "+this.players);
-    for (let i in this.balls) { this.balls[i].update(seed_random, random_seed); }
+    for (let i in this.balls) { 
+      this.balls[i].update(seed_random, random_seed); 
+      sessions[this.session_id].broadcast(this.balls[i].make_data(i));
+    }
     var str_make = "";
     //console.log("ball_tick_function 2" + this.balls);
-
+    /*
     for (let i in this.balls) { 
       //console.log("data for ball "+i);
       //console.log(this.balls[i].make_data(i)); 
       str_make += this.balls[i].make_data(i) + "\n";
-    }
+    }*/
     for (let i in this.players){
       if (this.players[i].isDead) { continue; }
       for (let j in this.balls) {
@@ -990,7 +994,11 @@ function ball_game() {
         console.log("distance: "+distance);
           if (distance <= this.balls[j].radius){
             console.log("Player "+i+" is dead");
-            this.players[i].isDead = 1; 
+            this.players[i].isDead = 1;
+            // this.players[i].update_anim("dead");
+            //send player dead message
+            //sessions[this.session_id].clients[i].send("player_dead:"+i);
+            sessions[this.session_id].broadcast("player_dead:"+i);
           }
       }
     }
@@ -1004,6 +1012,10 @@ function ball_game() {
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    }
+    else if (flag == "player_dead") {
+      this.players[usr_id].isDead = 1;
+      sessions[this.session_id].broadcast("player_dead:"+usr_id);
     }
   }
 
@@ -1028,10 +1040,9 @@ function ball_game() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
-    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1); }
-    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
-    return p_vals[0];
+    p_vals = convert_data_string(data_string,  [0, 3, 6], [1, 2, 4], [5, 7]);
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, 0, (p_vals[0]%4)); }
+    this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
 }
 
