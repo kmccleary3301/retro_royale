@@ -74,6 +74,24 @@ class fighting_game_player  {
     
 		push();
     
+    var sparkle = {
+      locationX: random(width),
+      locationY: random(height-300),
+      size: random(5, 12)
+  }
+
+  var sparkle2 = {
+    locationX: random(width),
+    locationY: random(height-300),
+    size: random(5, 15)
+}
+  
+  fill (243, 199, 82);
+  noStroke();
+ // ellipse(mouseX, mouseY, sparkle.size, sparkle.size);
+  //ellipse(sparkle.locationX, sparkle.locationY, sparkle.size, sparkle.size);
+  rect(sparkle.locationX, sparkle.locationY, sparkle.size, sparkle.size);
+  rect(sparkle2.locationX, sparkle2.locationY, sparkle2.size, sparkle2.size);
 
     
 

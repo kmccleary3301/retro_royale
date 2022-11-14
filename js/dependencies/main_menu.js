@@ -101,12 +101,14 @@ function main_menu() {
 		var r_color2 = rainbow_gradient(2*this.current_time+2);
 		textAlign(CENTER, CENTER);
 		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
-		fill(r_color[0], r_color[1], r_color[2]);
+		//fill(r_color[0], r_color[1], r_color[2]);
+		fill(this.blue);
 		textFont(this.vid_font, 110);
 		
 		text("retro  royale", width/2+40, height/20);
-		fill(r_color2[0], r_color2[1], r_color2[2]);
-		text("retro  royale", width/2+4+40, height/20);
+		//fill(r_color2[0], r_color2[1], r_color2[2]);
+		fill(this.cyan);
+		text("retro  royale", width/2+6+40, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
 		//stroke(11);
