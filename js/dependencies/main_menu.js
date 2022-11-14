@@ -75,10 +75,11 @@ function main_menu() {
 	this.draw_menu_1 = function() {
 		var r_color = rainbow_gradient(2*this.current_time);
 		textAlign(CENTER, CENTER);
-		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
-		fill(r_color[0], r_color[1], r_color[2]);
-		textFont(this.vid_font);
+		text_make(3, Math.min(110*height/1080, 110*width/1920), 0, 1);
+		fill([3, 94, 232]);
 		text("retro royale", width/2, height/20);
+		//var r_color = rainbow_gradient(2*this.current_time+10);
+		fill(r_color[0], r_color[1], r_color[2]);
 		text("retro royale", width/2+2, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);

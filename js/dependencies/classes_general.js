@@ -421,8 +421,29 @@ class sprite_animation_object {
     }
     this.flip_image_ref = (1-2*this.flip_image);
   }
-}
 
+  draw_thumbnail(x, y, draw_size, use_g_cam) {
+    if (use_g_cam === undefined) { var use_g_cam = false; } 
+    push();
+
+    if (use_g_cam) {
+      g_cam.translate(x, y);
+      imageMode(CENTER);
+      var row_get = this.row_dictionary[Object.keys(this.row_dictionary)[0]]["row"],
+          col_get = this.row_dictionary[Object.keys(this.row_dictionary)[0]]["first_tile"];
+      g_cam.image(this.sprite, null, null, draw_size*this.w_h_ratio, draw_size, 
+        this.x_mod*(col_get), this.y_mod*row_get, this.x_mod, this.y_mod);
+    } else {
+      translate(x, y);
+      imageMode(CENTER);
+      image(this.sprite, 0, 0, draw_size*this.w_h_ratio, draw_size, 
+        this.x_mod*(col_get), this.y_mod*row_get, this.x_mod, this.y_mod);
+    }
+
+
+    pop();
+  }
+}
 
 class scroll_image {
   constructor(image, draw_dimensions, scroll_rate) {
