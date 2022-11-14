@@ -66,6 +66,13 @@ class fighting_game_player  {
     this.start_hit;           // Time when the player was hit
     this.duckTimer = 0;       // Timer for ducking
     this.duckTimeout = 0;     // Timeout for ducking
+
+    this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
     
 	}
 
@@ -85,13 +92,24 @@ class fighting_game_player  {
     locationY: random(height-300),
     size: random(5, 15)
 }
+
+var sparkle3 = {
+  locationX: random(width),
+  locationY: random(height-300),
+  size: random(5, 15)
+}
   
   fill (243, 199, 82);
   noStroke();
  // ellipse(mouseX, mouseY, sparkle.size, sparkle.size);
   //ellipse(sparkle.locationX, sparkle.locationY, sparkle.size, sparkle.size);
   rect(sparkle.locationX, sparkle.locationY, sparkle.size, sparkle.size);
+  noStroke();
+  fill(this.blue);
   rect(sparkle2.locationX, sparkle2.locationY, sparkle2.size, sparkle2.size);
+  noStroke();
+  fill(this.red);
+  rect(sparkle3.locationX, sparkle2.locationY, sparkle3.size, sparkle3.size);
 
     
 
