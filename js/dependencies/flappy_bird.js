@@ -234,7 +234,13 @@ function flappy_bird() {
 	  //drawing the second loop of the background
 	  image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
 			this.backGroundWidth, this.backGroundHeight);
+
+	  this.bilbo = 0;
+	  for(let i in this.players) {
+		this.bilbo++;
+	  }
 	  
+	  console.log("Number Of Players:"+this.bilbo);
 
       fill(0, 0, 0);
       text_make(0, 200, 0, 2);
@@ -259,17 +265,20 @@ function flappy_bird() {
 		this.players[i].draw();
 		if(this.players[i].isDead == false)
 			this.everyPlayerIsDead = false;
+		else {
+			this.players[i].update_anim("die");
+		}
 	  }
 
-	  if(this.everyPlayerIsDead) {
-		send_data("swap_current_state:game_end_screen");
-		swap_current_state("game_end_screen");
-	  }
+	//   if(this.everyPlayerIsDead) {
+	// 	send_data("swap_current_state:game_end_screen");
+	// 	swap_current_state("game_end_screen");
+	//   }
 
 	  this.players[this.main_player_index].playerIsInPipe = false;
 
 	  for(let p in this.pipesList) {
-		if(this.players[this.main_player_index].x > this.pipesList[p].x - 100-40 && this.players[this.main_player_index].x < this.pipesList[p].x+100+40) { 
+		/*if(this.players[this.main_player_index].x > this.pipesList[p].x - 100-40 && this.players[this.main_player_index].x < this.pipesList[p].x+100+40) { 
 			if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
 				this.players[this.main_player_index].isDead = true;
 				send_data("death");
@@ -282,6 +291,12 @@ function flappy_bird() {
 				this.players[this.main_player_index].playerIsInPipe = true;
 				this.players[this.main_player_index].update_anim("die");
 			}
+		}*/
+		if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
+			this.players[this.main_player_index].isDead = true;
+			send_data("death");
+			this.players[this.main_player_index].playerIsInPipe = true;
+			//this.players[this.main_player_index].update_anim("die");
 		}
 		else if(this.pipesList[p].hasBeenPassed == false && 
 				this.players[this.main_player_index].x > this.pipesList[p].x && 
@@ -327,14 +342,14 @@ function flappy_bird() {
     this.read_network_data = function(flag, message) {
       if (flag == "player_count") {
         for (j=this.players.length; j < parseInt(message); j++){
-          this.players[j] = new flappy_bird_player(this.greenSprite, 300, 300, 1);
+          this.players[j] = new flappy_bird_player(this.Sprite, 200, 200, 0);
         }
       } else if (flag == "assigned_id") {
         this.main_player_index = parseInt(message);
       } else if (flag == "pos_player") {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
-        this.players[parseInt(message)] = new flappy_bird_player(this.greenSprite, 300, 300, 0);
+        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, 0);
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
         this.players.splice(player_index, 1);
@@ -347,6 +362,8 @@ function flappy_bird() {
 		this.move_pipes();
 	  } else if (flag == "death") {
 		this.players[message].isDead = true;
+	  } else if (flag == "go_to_game_end_screen") {
+		swap_current_state("game_end_screen");
 	  }
     }
   

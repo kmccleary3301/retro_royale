@@ -13,8 +13,13 @@ function game_end_screen() {
       //stores 1,2,3,4 depending on usr_id entered as index value
       this.playerPlaces = [];
 
+      //stores names similarly
+      this.playerNames = [];
+
+      this.numberOfPlayers = 2;
+
       //this gets the data stored in client info about the player scores/positions
-      send_data("get_places");
+      send_data("get_client_data");
     }
   
     this.key_pressed = function(keycode) {
@@ -43,42 +48,59 @@ function game_end_screen() {
     this.mouse_released = function() { return; }
   
     this.draw = function() {
+      //send_data("get_places");
       background(200, 200, 200);
       fill(0, 0, 0);
       text_make(0, 200, 0, 2);
       textAlign(CENTER, CENTER);
-      text("PURGATORY", width/2, height/2);
 
       text_make(0,40,0,2);
-      textAlign(LEFT, CENTER);
-      j;
+      textAlign(CENTER, CENTER);
+      text(this.playerNames[0]+" WON!", width/2, 50);
+      
+      j = 0;
       for (let i in this.players) {
+        j++;
+        // this.players[i].y = 100*j;
+        // this.players[i].x = 500;
+        //text("Player "+j+" made: "+this.playerPlaces[i],20,100*j);
+        if(this.playerPlaces[i] == 1) {
+          this.players[i].y = 200;
+          this.players[i].x = width/2;
+        }
+        else {
+          this.players[i].y = 400;
+          this.players[i].x = width/2+(this.playerPlaces[i]-3)*250;
+        }
         this.players[i].draw();
-        j = i+1;
-        text("Player "+j+" made: "+this.playerPlaces[i],20,100*(i+1));
+        text(this.playerNames[i],this.players[i].x,this.players[i].y+90);
       }
     }
   
     this.read_network_data = function(flag, message) {
       if (flag == "player_count") {
         for (j=this.players.length; j < parseInt(message); j++){
-          this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
+          this.numberOfPlayers++;
+          this.players[j] = new game_1_player(this.greenSprite, height/2, width/2*this.numberOfPlayers, 1);
         }
       } else if (flag == "assigned_id") {
         this.main_player_index = parseInt(message);
       } else if (flag == "pos_player") {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
-        this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+        this.numberOfPlayers++;
+        this.players[parseInt(message)] = new game_1_player(this.greenSprite, height/2, width/2*this.numberOfPlayers, 0);
+        console.log("Number of Players:"+this.players.length);
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
         this.players.splice(player_index, 1);
         if (this.main_player_index > player_index) {
           this.main_player_index -= 1;
         }
-      } else if (flag == "player_place") {
-        this.playerAndPosition = convert_data_string(message,[0,1]);
-        this.playerPlaces[this.playerAndPosition[0]] = this.playerAndPosition[1];
+      } else if (flag == "clients_info") {
+        this.p_vals = convert_data_string(message,[0,1],null,[2]);
+        this.playerPlaces[this.p_vals[0]] = this.p_vals[1];
+        this.playerNames[this.p_vals[0]] = this.p_vals[2];
       }
     }
   

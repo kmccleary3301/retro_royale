@@ -660,9 +660,15 @@ function game_end_screen() {
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
-    } else if (flag == "get_places") {
-      for(let i in clients) {
-        broadcast("player_place:"+i+","+clients_info[i].placeInGame);
+    } else if (flag == "get_client_data") {
+      // for(let i in clients_info) {
+      //   sessions[this.session_id].broadcast("player_place:"+i+","+clients_info[i].placeInGame);
+      //   //broadcast("player_place:"+i+",1");
+      // }
+      this.j = 0;
+      for(let i in clients_info) {
+        this.j++;
+        sessions[this.session_id].broadcast("clients_info:"+i+","+this.j+","+clients_info[i].name);
         //broadcast("player_place:"+i+",1");
       }
     }
@@ -1229,15 +1235,20 @@ function flappy_bird() {
       // }
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "death") {
-      sessions[this.session_id].broadcast("death:"[usr_id]);
+      sessions[this.session_id].broadcast("death:"+usr_id);
+      //sessions[this.session_id].broadcast("rmv_player:"+usr_id);
       this.numberOfPlayersDead++;
       //this.clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
       sessions[this.session_id].clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
+      if(this.numberOfPlayersDead == 1) {
+        sessions[this.session_id].swap_current_state("game_end_screen");
+        sessions[this.session_id].broadcast("go_to_game_end_screen");
+      }
     } else if (flag == "debug") {
       console.log("client sent "+message);
-    } else if (flag == "swap_current_state") {
+    } /*else if (flag == "swap_current_state") {
       sessions[this.session_id].swap_current_state(message);
-    }
+    }*/
   }
 
   this.user_loaded = function(usr_id) {
