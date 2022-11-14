@@ -79,28 +79,20 @@ class game_1_fruit {
 }
 
 class game_1_endzone {
-  constructor(x1, x2, y1, y2) {
+  constructor(x1, y1, width, height) {
     this.x = x1;
     this.y = y1;
-    this.width = x2 - x1;
-    this.height = y2 - y1;  
+    this.width = width;
+    this.height = height;  
     this.score = 0;
-  }
-
-  draw(){
-    fill(255, 204, 0);
-    rect(this.x, this.y, this.width, this.height);
-
-    fill(0, 0, 0);
-    text(str(this.score), this.width/2+this.x, this.height/2+this.y);
   }
 
   check_placement(x, y){
     x -= this.x;
     y -= this.y;
-    if ((x >= 0) && (x <= this.width) && (y >= 0) && (y <= this.height)) {
-      return true;
-    }
+    if ((Math.abs(x) <= this.width/2) && (Math.abs(y) <= this.height/2)) {
+			return true;
+		}
     return false;
   }
 
@@ -112,9 +104,13 @@ class game_1_endzone {
     if (!isNaN(score)) { this.score = score; }
   }
 
-  make_data(index){
-    return "upd_endzone:"+index+","+this.x+","+this.y+","+this.width+","+this.height+","+this.score;
-  }
+  make_data_raw() {
+		return this.x+","+this.y+","+this.width+","+this.height+","+this.score;
+	}
+
+	make_data(index){
+		return "upd_endzone:"+index+","+this.make_data_raw();
+	}
 }
 
 module.exports = {game_1_player, game_1_fruit, game_1_endzone};

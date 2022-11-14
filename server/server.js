@@ -391,9 +391,11 @@ function fruitGame() {
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
     this.game_dimensions = [2000, 1000];
+    this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
+    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
+        this.players[i] = new game_1_player(this.endzones[Math.floor(i/2)%2].x, this.endzones[Math.floor(i/2)%2].y, 1, i%4);
       }
     }
     var p = new PoissonDiskSampling({
@@ -405,9 +407,6 @@ function fruitGame() {
     var poisson_points = p.fill();
     console.log("Poisson points: "+poisson_points[0]);
     console.log("made "+poisson_points.length+" poisson points");
-    this.endzones[0] = new game_1_endzone(0, 100, this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
-    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[0], 
-                                          this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
     //The following code removes fruits that are generated in an endzone.
     for (i=0; i < poisson_points.length; i++) { //counts downwards because we will be removing indices
       for (let j in this.endzones) {

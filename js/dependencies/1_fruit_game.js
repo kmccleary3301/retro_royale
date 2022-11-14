@@ -31,8 +31,8 @@ function fruitGame() {
 			this.fruits[i] = new game_1_fruit(this.fruitSprite, width*Math.random(), height*Math.random(), 3+Math.random()*12);
 		}
 		this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
-		this.endzones[0] = new game_1_endzone(0, 100, 200, 400);
-		this.endzones[1] = new game_1_endzone(500, 600, 200, 400);
+		this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
+		this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
 		this.main_player_index = 0;
 		this.end_message = "GAME OVER";
 		g_cam.reset();

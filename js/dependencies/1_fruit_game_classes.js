@@ -175,11 +175,11 @@ class game_1_fruit {
 }
 
 class game_1_endzone {
-	constructor(x1, x2, y1, y2) {
+	constructor(x1, y1, width, height) {
 		this.x = x1;
 		this.y = y1;
-		this.width = x2 - x1;
-		this.height = y2 - y1;  
+		this.width = width;
+		this.height = height;  
 		this.score = 0;
 	}
 
@@ -187,6 +187,7 @@ class game_1_endzone {
 		push();
 		text_make(0, 30, 0, 1);
 		fill(255, 204, 0);
+		rectMode
 		g_cam.rect(this.x, this.y, this.width, this.height);
 		fill(0, 0, 0);
 		g_cam.text(str(this.score), this.x, this.y);
@@ -196,7 +197,7 @@ class game_1_endzone {
 	check_placement(x, y){
 		x -= this.x;
 		y -= this.y;
-		if ((x >= 0) && (x <= this.width) && (y >= 0) && (y <= this.height)) {
+		if ((Math.abs(x) <= this.width/2) && (Math.abs(y) <= this.height/2)) {
 			return true;
 		}
 		return false;
@@ -210,8 +211,12 @@ class game_1_endzone {
 		if (!isNaN(score)) { this.score = score; }
 	}
 
+	make_data_raw() {
+		return str(this.x)+","+str(this.y)+","+str(this.width)+","+str(this.height)+","+str(this.score)
+	}
+
 	make_data(index){
-		return "upd_endzone:"+str(index)+","+str(this.x)+","+str(this.y)+","+str(this.width)+","+str(this.height)+","+str(this.score);
+		return "upd_endzone:"+str(index)+","+this.make_data_raw();
 	}
 
 }
