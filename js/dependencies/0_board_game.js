@@ -39,12 +39,14 @@ function board_game() {
 		this.current_turn = 1;
 		this.current_turn_moves = 0;
 		this.buttons = {
-			"overlay" : []
+			"overlay" : [],
+			"leaderboard": []
 		};
 		this.current_button_menu = "overlay";
 		this.buttons["overlay"][0] = new button(75, 50, 100, 50, [255, 78, 0], [10, 10, 10], "Center", true);
 		this.buttons["overlay"][1] = new button(75, 125, 100, 50, [255, 78, 0], [10, 10, 10], "Scores", true);
 		this.buttons["overlay"][2] = new button(75, 200, 100, 50, [255, 78, 0], [10, 10, 10], "Home", true);
+		this.buttons["leaderboard"][0] = new button(75, 125, 100, 50, [255, 78, 0], [10, 10, 10], "Back", true);
 
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
@@ -165,6 +167,7 @@ function board_game() {
 			}
 		}
 
+		if (this.current_button_menu == "leaderboard") { this.draw_leaderboard(); }
 		for (let i in this.buttons[this.current_button_menu]) { this.buttons[this.current_button_menu][i].draw(); }
 		pop();
 	}
@@ -172,9 +175,24 @@ function board_game() {
 	this.draw_leaderboard = function() {
 		push();
 		fill(255, 78, 0);
-		stroke(5);
-		rectmode(CENTER);
-		rect(width/2, height/2, width*0.7, height*0.7);
+		strokeWeight(5);
+		stroke(10);
+		rectMode(CENTER);
+		rect(width/2, height/2, width*0.4, height*0.4);
+		text_make(2, 40, 0, 1);
+		fill(230, 50, 180);
+		text("leaderboard", width/2, height*(1-0.4)/2+20);
+		for (let i in this.players) {
+			var row_position = height*(1-0.4)/2+70 + (i+1)*70,
+				x_pos_start = width*(1-0.4)/2+50;
+			this.players[i].sprite_anim.draw_thumbnail(x_pos_start, row_position, 50);
+			text_make(2, 20, 0, 1);
+			fill(0, 0, 0);
+			textAlign(LEFT);
+			text(this.players[i].name, x_pos_start+50, row_position);
+			text(this.players[i].coins, x_pos_start+200, row_position);
+			text(this.players[i].stars, x_pos_start+275, row_position);
+		}
 		pop();
 	}
 
@@ -321,6 +339,7 @@ function board_game() {
 				this.buttons[this.current_button_menu][i].pressed = 0;
 				console.log("pressed "+i);
 				this.button_press(i);
+				return;
 			}
 		}
 		return;
@@ -333,14 +352,13 @@ function board_game() {
 
 	this.button_press = function(code) {
 		if (this.current_button_menu == "overlay") {
-			console.log("code ->"+code);
 			switch(int(code)) {
 				case 0:
 					console.log("button_pressed"); 
 					this.toggle_camera_center_on_player(); 
 					break;
 				case 1:
-					console.log("button_press 1");
+					this.current_button_menu = "leaderboard";
 					break;
 				case 2:
 					socket.close();
@@ -353,6 +371,12 @@ function board_game() {
 					this.buttons["overlay"].splice(3, 1);
 					break;
 				default:
+					break;
+			}
+		} else if (this.current_button_menu == "leaderboard") {
+			switch(int(code)) {
+				case 0:
+					this.current_button_menu = "overlay";
 					break;
 			}
 		}
@@ -469,6 +493,5 @@ function board_game() {
 			if (this.center_on_player) { this.center_on_player = 0; }
 			else { this.center_on_player = 1; }
 		}
-		console.log("toggle center called: centered_on_player: "+this.center_on_player);
 	}
 }
