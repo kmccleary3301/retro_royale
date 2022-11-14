@@ -178,7 +178,7 @@ function board_game() {
 
 	this.draw_leaderboard = function() {
 		push();
-		fill(255, 78, 0);
+		fill(this.blue);
 		stroke(5);
 		rectmode(CENTER);
 		rect(width/2, height/2, width*0.7, height*0.7);
