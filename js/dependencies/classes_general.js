@@ -125,6 +125,7 @@ class button {
     this.box_height_in = height_in;
     this.box_width = width_in, this.box_height = height_in;
 
+    this.vid_font = loadFont('media/fonts/videogame.ttf');
     this.text = text.split('\n');
     this.color = color;
     this.text_color = text_color;
@@ -168,7 +169,7 @@ class button {
     push();
     
     if (this.proportion_definition) { this.reposition(); }
-
+    textFont(this.vid_font);
     fill(this.color);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
