@@ -33,8 +33,9 @@ function setup() {
   connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.
   font_set =[loadFont("media/fonts/Inconsolata.ttf"),
                 loadFont("media/fonts/Alpharush.ttf"),
-                loadFont("media/fonts/PublicPixel.ttf")];
-  font_size_scaling = [1, 1.2, 0.5];
+                loadFont("media/fonts/PublicPixel.ttf"),
+              loadFont("media/fonts/videogame.ttf")];
+  font_size_scaling = [1, 1.2, 0.5, 1];
   make_socket();
   current_state.setup();
 }
