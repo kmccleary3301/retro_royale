@@ -42,6 +42,8 @@ var {fighting_game_player} =
         require("./dependencies/fighting_game_classes");
 var {flappy_bird_pipe, flappy_bird_player} =
         require("./dependencies/flappy_bird_classes");
+var {game_end_screen_player} =
+        require("./dependencies/game_end_screen_classes");
 var {parse_board_from_image, swap_new_direction, pixel, linked_pixel} =
         require("./dependencies/board_from_image");
 
@@ -291,6 +293,9 @@ class game_session {
       this.current_state.setup(this.session_id);
     }
     this.current_state_flag = state_flag;
+    for(let i in clients_info) {
+      sessions[this.session_id].clients_info[i] = i;
+    }
   }
 
   broadcast(data) {  //Send a message to all connected clients
@@ -354,6 +359,9 @@ class client_info {
     this.session_id;
     this.latency;
     this.name;
+    //0,1,2,3
+    this.color;
+
     if (arguments.length >= 1) { this.update_info(arguments); } 
 
     //temporary variable to store the 1st, 2nd, 3rd, 4th place of a player
@@ -641,7 +649,7 @@ function game_end_screen() {
     if (sessions[this.session_id] !== undefined) {
       console.log("purgatory setup - session identified");
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+        this.players[i] = new game_end_screen_player(600*Math.random(), 600*Math.random(), 1);
       }
     } else {
       console.log("purgatory setup - session doesn't exist");
@@ -668,7 +676,7 @@ function game_end_screen() {
       this.j = 0;
       for(let i in clients_info) {
         this.j++;
-        sessions[this.session_id].broadcast("clients_info:"+i+","+this.j+","+clients_info[i].name);
+        sessions[this.session_id].broadcast("clients_info:"+i+","+this.j+","+clients_info[i].name+","+clients_info[i].color);
         //broadcast("player_place:"+i+",1");
       }
     }
@@ -676,7 +684,7 @@ function game_end_screen() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    this.players[usr_id] = new game_end_screen_player(600*Math.random(), 600*Math.random(), 1);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());

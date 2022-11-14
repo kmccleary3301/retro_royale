@@ -4,10 +4,10 @@ function game_end_screen() {
       this.players = [];
       this.main_player_index;
       this.arrow_keys = [39, 37, 38, 40];
-      this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
-      //this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
+      //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+      this.greenSprite = loadImage("media/sprites/Spritesheet_64.png");
       imageMode(CENTER);
-      this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
+      this.players[0] = new game_end_screen_player(this.greenSprite, 200, 200, 0);
       this.main_player_index = 0;
 
       //stores 1,2,3,4 depending on usr_id entered as index value
@@ -67,11 +67,19 @@ function game_end_screen() {
         if(this.playerPlaces[i] == 1) {
           this.players[i].y = 200;
           this.players[i].x = width/2;
+          this.players[i].update_anim("First")
+        }
+        else if(this.playerPlaces[i] > 4){
+          this.players[i].y = 400;
+          this.players[i].x = width/2+(this.playerPlaces[i]-3)*250;
+          this.players[i].update_anim("SecondAndThird")
         }
         else {
           this.players[i].y = 400;
           this.players[i].x = width/2+(this.playerPlaces[i]-3)*250;
+          this.players[i].update_anim("Fourth")
         }
+
         this.players[i].draw();
         text(this.playerNames[i],this.players[i].x,this.players[i].y+90);
       }
@@ -81,7 +89,7 @@ function game_end_screen() {
       if (flag == "player_count") {
         for (j=this.players.length; j < parseInt(message); j++){
           this.numberOfPlayers++;
-          this.players[j] = new game_1_player(this.greenSprite, height/2, width/2*this.numberOfPlayers, 1);
+          this.players[j] = new game_end_screen_player(this.greenSprite, height/2, width/2*this.numberOfPlayers, 1);
         }
       } else if (flag == "assigned_id") {
         this.main_player_index = parseInt(message);
@@ -89,7 +97,7 @@ function game_end_screen() {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
         this.numberOfPlayers++;
-        this.players[parseInt(message)] = new game_1_player(this.greenSprite, height/2, width/2*this.numberOfPlayers, 0);
+        this.players[parseInt(message)] = new game_end_screen_player(this.greenSprite, height/2, width/2*this.numberOfPlayers, 0);
         console.log("Number of Players:"+this.players.length);
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
@@ -98,9 +106,11 @@ function game_end_screen() {
           this.main_player_index -= 1;
         }
       } else if (flag == "clients_info") {
-        this.p_vals = convert_data_string(message,[0,1],null,[2]);
-        this.playerPlaces[this.p_vals[0]] = this.p_vals[1];
-        this.playerNames[this.p_vals[0]] = this.p_vals[2];
+        this.p_vals = convert_data_string(message,[0,1,3],null,[2]);
+        this.players[this.p_vals[0]].place = this.p_vals[1];
+        this.players[this.p_vals[0]].name = this.p_vals[2];
+        this.players[this.p_vals[0]].color = this.p_vals[3];
+
       }
     }
   
