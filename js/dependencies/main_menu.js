@@ -112,10 +112,12 @@ function main_menu() {
 		//stroke(11);
 		if (connected_to_server) {
 			fill(0, 255, 0);
-			text("Connected", width - 50, 10);
+			textFont(this.vid_font, 10);
+			text("connected", width - 50, 10);
 		} else {
-			fill(255, 0, 0);
-			text("Not connected", width - 50, 10);
+			fill(this.red);
+			textFont(this.vid_font, 10);
+			text("not connected", width - 50, 10);
 		}
 	}
 
@@ -128,8 +130,8 @@ function main_menu() {
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
 		textFont(this.vid_font);
-		text("Server address", width/2, height*415/1080);
-		text("Server port", width/2, height*525/1080);
+		text("server address", width/2, height*415/1080);
+		text("server port", width/2, height*525/1080);
 		for (let i in this.buttons["server"]) { this.buttons["server"][i].draw(); }
 	}
 
@@ -140,8 +142,8 @@ function main_menu() {
 		text_make(0, Math.min(25*width/1920, 30*height/1080), 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font);
-		text("WebSockets with self-signed\ncertificates aren't accepted\nuntil you authorize them",
+		textFont(this.vid_font, 15);
+		text("webSockets with self-signed\ncertificates are not accepted\nuntil you authorize them",
 								width/2, height*440/1080);
 		for (let i in this.buttons["certify"]) { this.buttons["certify"][i].draw(); }
 	}

@@ -1,5 +1,5 @@
 class game_1_player {
-	constructor(spriteSheet, x, y, face) {
+	constructor(spriteSheet, x, y, face, color) {
 		this.spriteSheet = spriteSheet;
 		this.sx = 0;        //Frame counter for when the player is moving.
 		this.x = x;
@@ -7,10 +7,12 @@ class game_1_player {
 		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
 		this.speed = 5;     // Player movement speed
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
-		this.sprite_row = 0;
+		this.sprite_row = color*640;
 		this.fruit_holding = 0;
 		this.fruit_held_id = 0;
 		this.bounds = [0, 2000, 0, 1000];
+		this.frame_size = 64;
+		this.spriteColor = color;
 	}
 
 	draw() {
@@ -19,13 +21,13 @@ class game_1_player {
 		if (this.move == 1){
 			if (this.facing < 2){
 				scale(1-this.facing*2, 1);  
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx+1), 0, 80, 80);
+				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size*(this.sx), 1*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //left or right
 				this.x = this.x + this.speed * (1-this.facing*2);
 			} else if (this.facing == 2) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx), 400, 80, 80);
+				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size*(this.sx), 2*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //up
 				this.y = this.y - this.speed;
 			} else if (this.facing == 3) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 480 + 80*(this.sx), 400, 80, 80);
+				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size*(this.sx), 0*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //down
 				this.y = this.y + this.speed;
 			}
 
@@ -36,16 +38,16 @@ class game_1_player {
 		else {
 			if (this.facing < 2){
 				scale(1-this.facing*2, 1);  
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 0, 80, 80);
+				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size, 1*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //left or right
 			} else if (this.facing == 2) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 400, 80, 80);
+				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size, 2*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //up
 			} else if (this.facing == 3) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, 480, 400, 80, 80);
+				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size, 0*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //down
 			}
 		}
 		
-		if (frameCount % 6 == 0) {
-			this.sx = (this.sx + 1) % 6;
+		if (frameCount % 4 == 0) {
+			this.sx = (this.sx+1)  % 4;
 		}
 
 		pop();

@@ -4,9 +4,9 @@ function load_room() {
 		this.main_player_index;
 		this.arrow_keys = [39, 37, 38, 40];
 		this.host_started_game = false;
-		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+		this.sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
 		imageMode(CENTER);
-		this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
+		this.players[0] = new game_1_player(this.sprite, 200, 200, 0, 0);
 		this.main_player_index = 0;
 		this.start_time = Date.now()/1000;
 		this.current_time = 0;
@@ -15,6 +15,15 @@ function load_room() {
 			"overlay": [],
 			"host_menu": [20],
 		};
+
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
+		this.background1 = [226,200,226];
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 
 		this.host_settings = [20]; //# of turns turns;
 
@@ -75,14 +84,17 @@ function load_room() {
 
 	this.draw = function() {
 		this.current_time = Date.now()/1000 - this.start_time;
-		background(200, 200, 200);
+		background(background1);
 		fill(0, 0, 0);
 		text_make(0, 50, 0, 2);
 		textAlign(CENTER, CENTER);
+		textFont(vid_font);
 		if (this.host_started_game) {
-			text("Game starting in "+str(Math.max(0, int(10-this.current_time))), width/2, height/2);
+			textFont(vid_font);
+			text("game starting in "+str(Math.max(0, int(10-this.current_time))), width/2, height/2);
 		} else {
-			text("Waiting for host to start game", width/2, height/2);
+			textFont(vid_font);
+			text("waiting for host to start game", width/2, height/2);
 		}
 		for (let i in this.players) {
 			this.players[i].draw();
@@ -93,24 +105,26 @@ function load_room() {
 
 	this.draw_host_menu = function() {
 		push();
+		background(background1);
 		text_make(0, 20, 0, 0);
 		textAlign(CENTER, CENTER);
 		fill(0, 0, 0);
-		text("Turns : "+this.host_settings[0], 200, 150);
+		textFont(vid_font);
+		text("turns : "+this.host_settings[0], 200, 150);
 		pop();
 	}
 
 	this.read_network_data = function(flag, message) {
 		if (flag == "player_count") {
 			for (j=this.players.length; j < parseInt(message); j++){
-				this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
+				this.players[j] = new game_1_player(this.sprite, 300, 300, 1, j%4);
 			}
 		} else if (flag == "assigned_id") {
 			this.main_player_index = parseInt(message);
 		} else if (flag == "pos_player") {
 			this.read_in_player_position(message);
 		} else if (flag == "new_player") {
-			this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+			this.players[parseInt(message)] = new game_1_player(this.sprite, 300, 300, 1, parseInt(message)%4);
 		} else if (flag == "rmv_player") {
 			var player_index = parseInt(message);
 			this.players.splice(player_index, 1);
@@ -123,8 +137,8 @@ function load_room() {
 			this.host_started_game = true;
 		} else if (flag == "assigned_host") {
 			this.client_is_host = 1;
-			this.buttons["overlay"][0] = new button(width/6, 100, 150, 100, [255, 78, 0], [10, 10, 10], "Start");
-			this.buttons["overlay"][1] = new button(width/6, 300, 150, 100, [255, 78, 0], [10, 10, 10], "Menu");
+			this.buttons["overlay"][0] = new button(width/6, 100, 150, 100, this.blue, [10, 10, 10], "Start");
+			this.buttons["overlay"][1] = new button(width/6, 300, 150, 100, this.blue, [10, 10, 10], "Menu");
 		}
 	}
 

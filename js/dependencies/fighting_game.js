@@ -3,8 +3,8 @@
 var GOtimer = 5;
 var video_game_font; //font for the game
 let gameOver = 0; //game over variable
-let game_round = 3; //game round variable
-let round_bound = [100, 310, 460]; //round boundary increments
+let game_round = 1; //game round variable
+let round_bound = [0, 165, 405]; //round boundary increments
 const gravity = .5;
 const floor = 570;
 var countdown_time = 30;
@@ -393,14 +393,14 @@ function fighting_game() {
       image(this.background3, width/2, height/2, width, height);
     }
     
-    //image(this.background1, width/2, height/2, width, height);
+    textFont(this.video_game_font, 40);
+    text("round "+game_round, width/2, height-120);
 
-
+/*
     //DISCO DISCO HEAVEN
     image(this.disco_ball_string, width/2, 50, 50*2, 175*2);
 
-    textFont(this.video_game_font, 40);
-    text("round "+game_round, width/2, height-120);
+    
 
    image(this.sparkle, width/2+this.rando[2], 150+this.rando[0], sin(frameCount/30)*10, sin(frameCount/30)*30);
    image(this.sparkle, width/2+this.rando[0], 150+this.rando[1], sin(frameCount/25)*20, sin(frameCount/25)*40);
@@ -408,7 +408,7 @@ function fighting_game() {
     
    
 
-    /*
+    
 
     //fill (243,199,82);
     fill(3,94,232);
