@@ -97,6 +97,7 @@ function swap_current_state(flag) { //Global function for changing current_state
   else if (flag == "fighting_game") { current_state = new fighting_game(); }
   else if (flag == "flappy_bird") { current_state = new flappy_bird(); }
   else if (flag == "session_menu") { current_state = new session_menu(); }
+  else if (flag == "game_end_screen") { current_state = new game_end_screen(); }
   else { return; }
   current_state.setup();
   current_state_flag = flag;
