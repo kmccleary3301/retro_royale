@@ -166,6 +166,10 @@ function board_game() {
 				}
 			}
 		} else { 
+			if (this.turning_player_index == this.user_player_index && this.current_turn_moves <= 0 && this.turn_done) {
+				send_data("end_turn");
+				this.turn_done = false;
+			}
 			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
 				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "Roll", true);
 			}
@@ -258,7 +262,7 @@ function board_game() {
 			this.animation_info[0] = 0;
 			this.reset_event_timer();
 			if (this.current_turn_moves <= 0) {
-				this.tile_event_trigger(this.tiles[this.animation_info[3]].type);
+				//this.tile_event_trigger(this.tiles[this.animation_info[3]].type);
 				if (this.turning_player_index == this.user_player_index) {
 					send_data("begin_tile_event");
 				}
@@ -274,26 +278,37 @@ function board_game() {
 	}
 
 	this.tile_event_trigger = function(tile_type) {
-		/*
-		if (this.current_turn_moves > 0) { return; }
-		if (tile_type == 0) {			//Empty tile
-			return;
-		} else if (tile_type == 1) { 	//Lose coins
-			this.animation_queue.splice(0, 0, new message_display_element("Lose coins", 5));
-		} else if (tile_type == 2) { 	//Gain coins
-			this.animation_queue.splice(0, 0, new message_display_element("Gain coins", 5));
-		} else if (tile_type == 3) { 	//Random game
-			//this.animation_element = new message_display_element("Random Game", 5);
-			this.animation_queue.splice(0, 0, new message_display_element("Random game", 3));
-			this.animation_queue.splice(1, 0, new dice_display_element(20, ["5A", "5B", "5C", "5D"], [5, 5, 5, 5], 10));
-		} else if (tile_type == 4) { 	//Trap
-			this.animation_queue.splice(0, 0, new message_display_element("Trap", 5));
-		} else if (tile_type == 5) { 	//Star
-			this.animation_queue.push(new message_display_element("Star", 5));
+		console.log("tile event trigger: "+tile_type);
+		var timeout_flag = true;
+		switch(tile_type) {
+			case 'empty':
+				//setTimeout(function(){ send_data("end_turn"); }, 500);
+				timeout_flag = false;
+				break;
+			case 'lose_coins':
+				this.animation_queue.splice(0, 0, new message_display_element("-3 coins", 5));
+				break;
+			case 'gain_coins':
+				this.animation_queue.splice(0, 0, new message_display_element("+3 coins", 5));
+				break;
+			case 'versus':
+				this.animation_queue.splice(0, 0, new message_display_element("Versus", 5));
+				break;
+			case 'star':
+				this.animation_queue.splice(0, 0, new message_display_element("Star", 5));
+				break;
 		}
-		return;
+		var self = this;
+		setTimeout(function(){
+			if (self.animation_queue == [] && self.turn_done) { send_data("end_turn"); }
+		}, 2000);
+		setTimeout(function(){ self.turn_done = true;}, 1200);
+		/*
+		if (timeout_flag) {
+			setTimeout(function(){ send_data("end_turn"); }, 500);
+		}
 		*/
-		if (this.turning_player_index == this.user_player_index) { this.turn_done = true; }
+		//if (this.turning_player_index == this.user_player_index) { this.turn_done = true; }
 	}
 
 	this.reset_event_timer = function() { this.event_timer_start = millis()/1000; }
