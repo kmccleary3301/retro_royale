@@ -302,8 +302,7 @@ function fighting_game() {
     this.main_player_index;
     this.arrow_keys = [39, 37];
     this.space_key = 32;
-    this.rando = [-20, 25, 6]
-    
+    this.rando = [-20, 25, 6];
     this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
     imageMode(CENTER);
     
@@ -517,6 +516,7 @@ if (game_round == 4) {
     //display timer that counts down from 5
     text(round(GOtimer), width/2, height/2+100);
     GOtimer -= 1/60;
+
 
     
 
