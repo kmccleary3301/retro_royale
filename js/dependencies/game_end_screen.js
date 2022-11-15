@@ -74,11 +74,12 @@ function game_end_screen() {
 			background(this.colors[this.game_results_json[this.winner_names[0]]["player_id"]]);
 			for (let i in this.winner_names) {
 				var x_position = width*(int(i)+1)/(this.winner_names.length+1),
-					y_position = height*1/4, w_name = this.winner_names[i],
-					player_i = this.game_results_json[w_name]["player_id"];	
-				//this.players[player_i].sprite_anim.draw_thumbnail(x_position, y_position, 0.1*Math.min(height, width), false);
+					y_position = height*1/4, w_name = this.winner_names[i];
+				var player_i = this.game_results_json[w_name]["player_id"];	
+				this.players[player_i].sprite_anim.draw_size = Math.min(height, width)*0.2;
 				this.players[player_i].x = x_position;
 				this.players[player_i].y = y_position;
+				this.players[player_i].sprite_anim.draw(x_position, y_position, false);
 				stroke(0, 0, 0);
 				text_make(1, 20, 0, 1);
 				var text_color = this.colors[(this.game_results_json[this.winner_names[0]]["player_id"]+1)%4];
@@ -90,9 +91,9 @@ function game_end_screen() {
 			}
 			for (let i in this.loser_names) {
 				var x_position = width*(int(i)+1)/(this.loser_names.length+1),
-					y_position = height*3/4, l_name = this.loser_names[i],
-					player_i = this.game_results_json[l_name]["player_id"];	
-				//this.players[player_i].sprite_anim.draw_thumbnail(x_position, y_position, 0.1*Math.min(height, width), false);
+					y_position = height*3/4, l_name = this.loser_names[i];
+				var player_i = this.game_results_json[l_name]["player_id"];	
+				this.players[player_i].sprite_anim.draw_size = Math.min(height, width)*0.15;
 				this.players[player_i].x = x_position;
 				this.players[player_i].y = y_position;
 				text_make(1, 20, 0, 1);
