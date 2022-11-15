@@ -34,7 +34,7 @@ class game_end_screen_player {
 		this.y = y;
 		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
 		this.speed = 5;     // Player movement speed
-		this.name;
+		this.name = "";
 		this.color=0;
 		this.place;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively

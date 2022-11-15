@@ -64,19 +64,26 @@ function game_end_screen() {
         // this.players[i].y = 100*j;
         // this.players[i].x = 500;
         //text("Player "+j+" made: "+this.playerPlaces[i],20,100*j);
-        if(this.players[i].place == 1) {
-          this.players[i].y = 200;
-          this.players[i].x = width/2;
-          this.players[i].update_anim("First")
-        }
-        else if(this.players[i].place > 4){
-          this.players[i].y = 400;
-          this.players[i].x = width/2+(this.players[i].place-3)*250;
-          this.players[i].update_anim("SecondAndThird")
+        if(this.players[i].place != null && this.players[i].place != undefined) {
+          if(this.players[i].place == 1) {
+            this.players[i].y = 200;
+            this.players[i].x = width/2;
+            this.players[i].update_anim("First")
+          }
+          else if(this.players[i].place > 4){
+            this.players[i].y = 400;
+            this.players[i].x = width/2+(this.players[i].place-3)*250;
+            this.players[i].update_anim("SecondAndThird")
+          }
+          else {
+            this.players[i].y = 400;
+            this.players[i].x = width/2+(this.players[i].place-3)*250;
+            this.players[i].update_anim("Fourth")
+          }
         }
         else {
           this.players[i].y = 400;
-          this.players[i].x = width/2+(this.players[i].place-3)*250;
+          this.players[i].x = width/2+(4-3)*250;
           this.players[i].update_anim("Fourth")
         }
 
@@ -106,11 +113,14 @@ function game_end_screen() {
           this.main_player_index -= 1;
         }
       } else if (flag == "clients_info") {
-        this.p_vals = convert_data_string(message,[0,1,3],null,[2]);
-        this.players[this.p_vals[0]].place = this.p_vals[1];
-        this.players[this.p_vals[0]].name = this.p_vals[2];
-        this.players[this.p_vals[0]].color = this.p_vals[3];
-
+        var p_vals = convert_data_string(message,[0,1,3],null,[2]);
+        if(this.players[p_vals[0]] == undefined) {
+          this.players[p_vals[0]] = new game_end_screen_player(this.greenSprite,200,200,0);
+        }
+        
+        this.players[p_vals[0]].place = p_vals[1];
+        this.players[p_vals[0]].name = p_vals[2];
+        //this.players[this.p_vals[0]].color = this.p_vals[3];
       }
     }
   
