@@ -10,12 +10,17 @@ function game_end_screen() {
 		this.main_player_index = 0;
 		this.start_time = Date.now()/1000;
 		this.current_time = 0;
+		this.timer_length = 20;
 		this.client_is_host = 0;
 		this.colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8'];
-		
+		for (let i in this.colors) {
+			this.colors[i] = this.colors[i].substring(1, this.colors[i].length);
+			var num = parseInt(this.colors[i], 16);
+			this.colors[i] = [Math.floor(num/(256*256)), Math.floor(num/256)%256, num%256];
+		}
 		this.winner_names = [];
 		this.loser_names = [];
-
+		this.game_message = "";
     	this.game_results_json = {};
 	}
 
@@ -68,10 +73,13 @@ function game_end_screen() {
 		this.current_time = Date.now()/1000 - this.start_time;
 		background(200, 200, 200);
 		if (Object.keys(this.game_results_json).length > 0) {
-			console.log("game results -> "+JSON.stringify(this.game_results_json));
-			console.log("draw winner names -> "+this.winner_names);
-			console.log("draw loser names -> "+this.loser_names);
-			background(this.colors[this.game_results_json[this.winner_names[0]]["player_id"]]);
+			var get_color = this.colors[this.game_results_json[this.winner_names[0]]["player_id"]];
+			background(get_color);
+			var text_position = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time);
+			text_make(1, 50, 0, 1);
+			stroke(0, 0, 0);
+			fill(color(255-get_color[0], 255-get_color[1], 255-get_color[2]));
+			text(this.game_message, text_position, height/2);
 			for (let i in this.winner_names) {
 				var x_position = width*(int(i)+1)/(this.winner_names.length+1),
 					y_position = height*1/4, w_name = this.winner_names[i];
@@ -79,14 +87,19 @@ function game_end_screen() {
 				this.players[player_i].sprite_anim.draw_size = Math.min(height, width)*0.2;
 				this.players[player_i].x = x_position;
 				this.players[player_i].y = y_position;
+				var fade_player = int(Math.max(0, Math.min((this.current_time-3)/0.5, 1))*255);
+				tint(255, fade_player)
 				this.players[player_i].sprite_anim.draw(x_position, y_position, false);
-				stroke(0, 0, 0);
-				text_make(1, 20, 0, 1);
+				text_make(1, 30, 0, 1);
 				var text_color = this.colors[(this.game_results_json[this.winner_names[0]]["player_id"]+1)%4];
-				fill(text_color);
+				var fade_1 = int(Math.max(0, Math.min((this.current_time-4.5)/0.5, 1))*255);
+				stroke(color(0, 0, 0, fade_1));
+				fill(color(text_color[0], text_color[1], text_color[2], fade_1));
 				text(w_name, x_position, y_position+height*0.13);
-				var fade_alpha = int(Math.max(0, Math.min((this.current_time-5)/4, 1))*255);
-				fill(text_color);
+				var fade_2 = int(Math.max(0, Math.min((this.current_time-6)/0.5, 1))*255);
+				text_make(1, 20, 0, 1);
+				stroke(color(0, 0, 0, fade_2));
+				fill(color(text_color[0], text_color[1], text_color[2], fade_2));
 				text("+"+this.game_results_json[w_name]["coins_added"]+" coins", x_position, y_position + height*0.18);
 			}
 			for (let i in this.loser_names) {
@@ -96,21 +109,25 @@ function game_end_screen() {
 				this.players[player_i].sprite_anim.draw_size = Math.min(height, width)*0.15;
 				this.players[player_i].x = x_position;
 				this.players[player_i].y = y_position;
+				var fade_player = int(Math.max(0, Math.min((this.current_time-8)/0.5, 1))*255);
+				tint(255, fade_player)
+				this.players[player_i].sprite_anim.draw(x_position, y_position, false);
+				stroke(0, 0, 0);
 				text_make(1, 20, 0, 1);
 				var text_color = this.colors[(this.game_results_json[this.winner_names[0]]["player_id"]+1)%4];
-				fill(text_color);
-				text(w_name, x_position, y_position+height*0.1);
-				var fade_alpha = int(Math.max(0, Math.min((this.current_time-5)/4, 1))*255);
-				fill(color(text_color[0], text_color[1], text_color[2], fade_alpha));
-				text("+"+this.game_results_json[w_name]["coins_added"]+" coins", x_position, y_position + height*0.15);
+				var fade_1 = int(Math.max(0, Math.min((this.current_time-9.5)/0.5, 1))*255);
+				fill(color(text_color[0], text_color[1], text_color[2], fade_1));
+				text(w_name, x_position, y_position+height*0.13);
+				var fade_2 = int(Math.max(0, Math.min((this.current_time-11)/0.5, 1))*255);
+				text_make(1, 20, 0, 0);
+				fill(color(text_color[0], text_color[1], text_color[2], fade_2));
+				text("+"+this.game_results_json[w_name]["coins_added"]+" coins", x_position, y_position + height*0.18);
 			}
-		}
-		//fill(0, 0, 0);
-		//text_make(0, 20, 0, 2);
-		//textAlign(CENTER, CENTER);
-    	//text(JSON.stringify(this.game_results_json), width/2, height/2);
-		for (let i in this.players) {
-			this.players[i].draw();
+			var rect_length = Math.max(0, ((this.timer_length-this.current_time)/this.timer_length)*width*0.7);
+			fill(color(255-get_color[0], 255-get_color[1], 255-get_color[2]));
+			strokeWeight(0);
+			rectMode(CORNER);
+			rect(width*0.15, height*0.9, rect_length, 5);
 		}
 		pop();
 	}
@@ -154,8 +171,17 @@ function game_end_screen() {
 			this.loser_names[this.loser_names.length] = player_name;
 		}
 	}
+
+	if (this.winner_names.length == 1) { this.game_message = this.winner_names[0] + " WINS"; }
+	else if (this.winner_names.length == 2) {
+		this.game_message = this.winner_names[0] + " AND " + this.winner_names[1] + " WIN";
+	} else if (this.winner_names.length > 2) {
+		this.game_message = this.winner_names.length + " WAY TIE"
+	}
+
 	console.log("winner names 8 ->"+this.winner_names);
 	this.window_resize();
+	this.start_time = Date.now()/1000;
   }
 
 	this.read_network_data = function(flag, message) {
@@ -185,7 +211,10 @@ function game_end_screen() {
 			this.client_is_host = 1;
 		} else if (flag == "game_result_json") {
       		this.read_in_game_results_json(message);
-    	}
+    	} else if (flag == "current_time") {
+			this.current_time = parseFloat(message);
+			this.start_time = Date.now()/1000 - this.current_time;
+		}
 	}
 
 	this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id

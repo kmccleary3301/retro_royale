@@ -674,12 +674,14 @@ function game_end_screen() {
     this.game_result_json = game_result_json;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
+    this.timer_length = 20;
     this.start_game = false;
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "down", i%4);
         sessions[this.session_id].clients[i].send(this.game_result_json_to_string());
+        sessions[this.session_id].clients[i].send("current_time:"+this.current_time);
       }
     }
     this.host_id = 0;
@@ -692,7 +694,7 @@ function game_end_screen() {
   this.tick_function = function() {
     console.log("tick function, current_time -> "+this.current_time);
     this.current_time = Date.now()/1000 - this.start_time;
-    if (this.current_time >= 1000) { 
+    if (this.current_time >= this.timer_length) { 
       sessions[this.session_id].swap_current_state("board_game");
     }
   }
@@ -731,6 +733,7 @@ function game_end_screen() {
   this.make_everything = function() {
     str_make = "";
     for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    str_make += "current_time:"+this.current_time;
     return str_make;
   }
 
