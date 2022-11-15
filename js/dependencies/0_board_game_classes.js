@@ -306,7 +306,7 @@ class dice_display_element {
 		push();
 		this.current_time = millis()/1000 - this.start_time;
 		var dice_length = this.expire*0.985;
-		var breakpoint = dice_length*0.9;
+		var breakpoint = dice_length*0.8;
 		text_make(1, 50,  0, 2);
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
@@ -315,7 +315,7 @@ class dice_display_element {
 			for (let i in this.display_list) {
 				var time_element = this.current_time-1+Math.max(1, Math.exp(0.2*(this.current_time)));
 				//if (this.current_time > dice_length-3) { x1 += (x1-(dice_length-3))^3; }
-				var position = Math.exp(-(10/breakpoint)*time_element+2);
+				var position = Math.exp(-(6.5/breakpoint)*time_element+2);
 				var text_y_pos = height*(0.5+position)+2*height*(i-2)/this.display_list.length;
 				text_y_pos += (this.display_list.length%4)*height/(2*this.display_list.length);
 				text_y_pos = text_y_pos%(height*2)-height*0.5;
