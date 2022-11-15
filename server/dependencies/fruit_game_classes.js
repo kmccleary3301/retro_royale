@@ -4,7 +4,7 @@ class game_1_player {
 		this.x = x;
 		this.y = y;
 		this.move = 0;
-		this.speed = 5;
+		this.speed = 400;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
 		this.fruit_holding = 0;
 		this.fruit_held_id = 0;
@@ -32,7 +32,7 @@ class game_1_fruit {
   constructor(x, y, size) {
     this.x = x;
     this.y = y;
-    this.size = ~~size;
+    this.size = size;
     this.held = 0
     this.scored = 0;
     this.player_holding_id = 0;

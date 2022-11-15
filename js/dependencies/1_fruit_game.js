@@ -5,11 +5,16 @@ function fruitGame() {
 		this.fruits = [];
 		this.endzones = [];
 		this.game_active = 0;
-		this.game_length = 30.000;
+		this.game_length = 5.000;
 		this.start_time;
 		this.current_time = this.game_length;
 		this.main_player_index;
-		this.arrow_keys = [39, 37, 38, 40];  
+		this.arrow_keys = {
+			"left" : 37,
+			"right" : 39,
+			"up" : 38,
+			"down" : 40
+		}; 
 		this.sounds = new Tone.Players({
 			Fail : 'media/sounds/fail_sound.mp3',
 			Win : 'media/sounds/win_sound.mp3',
@@ -18,7 +23,7 @@ function fruitGame() {
 		});
 		this.sounds.toDestination();
 		this.soundNames = ['Fail', 'Win', 'Hit', 'Miss']
-		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+		this.main_sprite = loadImage("media/sprites/Spritesheet_64.png");
 		this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
 		this.start_time = millis()/1000;
 		this.game_dimensions = [2000, 1000];
@@ -30,7 +35,7 @@ function fruitGame() {
 		for (i=0; i < 15; i++) {
 			this.fruits[i] = new game_1_fruit(this.fruitSprite, width*Math.random(), height*Math.random(), 3+Math.random()*12);
 		}
-		this.players[0] = new game_1_player(this.greenSprite, 200, 200, 0);
+		this.players[0] = new game_1_player(this.main_sprite, 200, 200, "left", 0);
 		this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
 		this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
 		this.main_player_index = 0;
@@ -39,11 +44,11 @@ function fruitGame() {
 	}
 
 	this.key_pressed = function(keycode) {
-		for (i=0;i<4;i++){
+		for (let i in this.arrow_keys){
 			if (keycode == this.arrow_keys[i]){
-				this.players[this.main_player_index].facing = i;
+				this.players[this.main_player_index].update_facing(i);
+				this.players[this.main_player_index].update_moving(true);
 				this.players[this.main_player_index].move = 1;
-				this.players[this.main_player_index].sx = 0;
 				send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
 				return;
 			}
@@ -92,8 +97,10 @@ function fruitGame() {
 	}
 
 	this.key_released = function(keycode) {
-		for (i=0;i<4;i++){
+		for (let i in this.arrow_keys){
 			if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
+				this.players[this.main_player_index].dx = 0;
+				this.players[this.main_player_index].update_moving(false);
 				this.players[this.main_player_index].move = 0;
 			}
 		}
@@ -104,11 +111,13 @@ function fruitGame() {
 	this.mouse_released = function() { return; }
 
 	this.draw = function() {
+		push();
 		textFont(font_set[0]);
 		this.current_time = this.game_length - ((millis()/1000) - this.start_time);
 		if (this.game_active == 0) { this.draw_game_load(); }
 		else if (this.game_active == 1) { this.draw_game_active();}
 		else if (this.game_active == 2) { this.draw_game_over(); }
+		pop();
 	}
 
 	this.draw_game_load = function() {
@@ -141,6 +150,8 @@ function fruitGame() {
 				);
 			}
 			this.players[i].draw();
+			this.players[i].x = Math.max(0, Math.min(this.players[i].x, this.game_dimensions[0]));
+			this.players[i].y = Math.max(0, Math.min(this.players[i].y, this.game_dimensions[1]));
 		}
 		for (let i in this.fruits){ this.fruits[i].draw(); }
 		text("Time: "+str(Math.max(0, int(this.current_time))), width/2, 50);
@@ -240,7 +251,7 @@ function fruitGame() {
 		} else if (flag == "pos_player") {
 			this.read_in_player_position(message);
 		} else if (flag == "new_player") {
-			this.players[parseInt(message)] = new game_1_player(this.greenSprite, 300, 300, 0);
+			this.players[parseInt(message)] = new game_1_player(this.main_sprite, 200, 200, "left", parseInt(message)%4);
 		} else if (flag == "rmv_player") {
 			var player_index = parseInt(message);
 			this.players.splice(player_index, 1);
@@ -259,7 +270,7 @@ function fruitGame() {
 	}
 
 	this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-		p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+		p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
 		this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
 	}
 

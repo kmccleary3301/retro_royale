@@ -1,66 +1,112 @@
 class game_1_player {
 	constructor(spriteSheet, x, y, face, color) {
-		this.spriteSheet = spriteSheet;
+		this.spriteColor = color;
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 50, 64, 64,
+		{
+			"left_right": {
+				"row": 1+10*this.spriteColor,
+				"row_length": 4
+			},
+			"down": {
+				"row": 0+10*this.spriteColor,
+				"row_length": 4
+			},
+			"standing" : {
+				"row" : 1+10*this.spriteColor,
+				"row_length": 1,
+				"first_tile": 1
+			},
+			"up": {
+				"row": 2+10*this.spriteColor,
+				"row_length": 4
+			}
+		});
 		this.sx = 0;        //Frame counter for when the player is moving.
 		this.x = x;
 		this.y = y;
 		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
-		this.speed = 5;     // Player movement speed
+		this.speed = 400;     // Player movement speed
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
 		this.sprite_row = color*640;
 		this.fruit_holding = 0;
 		this.fruit_held_id = 0;
+		this.last_update = millis()/1000;
 		this.bounds = [0, 2000, 0, 1000];
 		this.frame_size = 64;
-		this.spriteColor = color;
 	}
 
 	draw() {
 		push();
-		g_cam.translate(this.x, this.y);
-		if (this.move == 1){
-			if (this.facing < 2){
-				scale(1-this.facing*2, 1);  
-				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size*(this.sx), 1*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //left or right
-				this.x = this.x + this.speed * (1-this.facing*2);
-			} else if (this.facing == 2) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size*(this.sx), 2*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //up
-				this.y = this.y - this.speed;
-			} else if (this.facing == 3) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size*(this.sx), 0*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //down
-				this.y = this.y + this.speed;
-			}
-
-			this.x = Math.min(this.bounds[1]-40, Math.max(this.bounds[0]+40, this.x));    //Prevents the player from leaving the game boundaries.
-			this.y = Math.min(this.bounds[3]-40, Math.max(this.bounds[2]+40, this.y));   
-
-		}
-		else {
-			if (this.facing < 2){
-				scale(1-this.facing*2, 1);  
-				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size, 1*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //left or right
-			} else if (this.facing == 2) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size, 2*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //up
-			} else if (this.facing == 3) {
-				g_cam.image(this.spriteSheet, null, null, 100, 100, this.frame_size, 0*this.frame_size+this.sprite_row, this.frame_size, this.frame_size); //down
-			}
-		}
-		
-		if (frameCount % 4 == 0) {
-			this.sx = (this.sx+1)  % 4;
-		}
-
+    
+		//if(this.move == 0) { this.sprite_anim.stop(); }
+    if(this.isDead == 1){
+      console.log("line 112");
+      //this.update_anim("dead");
+    }
+		if (this.move) {
+			if (this.facing == "left") { this.x -= this.speed * (millis()/1000 - this.last_update); }
+			else if (this.facing == "right") { this.x += this.speed * (millis()/1000 - this.last_update); }
+			else if (this.facing == "up") { this.y -= this.speed * (millis()/1000 - this.last_update); }
+			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
+			this.last_update = millis()/1000;
+		} 
+  
+		text_make(0, 20, 0, 1);
+		fill(0, 0, 255);
+		g_cam.text(this.name, this.x, this.y+60);
+		this.sprite_anim.draw(this.x, this.y, true);
 		pop();
+	}
+
+  update_anim(animation) {
+    if(animation == this.current_animation) {return;}
+    if(animation == "dead")  
+    {
+      console.log("line 135");
+      this.move = 0; 
+      this.sprite_anim.stop(); 
+    }
+    else {this.move = 1; this.sprite_anim.start(); }
+    this.sprite_anim.change_animation(animation);
+    this.current_animation = animation;
+    }
+	
+	update_facing(facing) {
+		if (facing == this.facing) { return; }
+		this.facing = facing;
+		if (facing == "left" || facing == "right") {
+			this.sprite_anim.change_animation("left_right");
+			if (facing == "left") { this.sprite_anim.flip(1); }
+			else { this.sprite_anim.flip(0); }
+		} else if (facing == "up") {
+			this.sprite_anim.flip(3);
+			this.sprite_anim.change_animation("up");
+		} else if (facing == "down") {
+			this.sprite_anim.flip(4);
+			this.sprite_anim.change_animation("down");
+		}
+	}
+
+	update_moving(value) {
+		if (value == this.move) { return; }
+		if (value) {
+			this.move = 1;
+			this.last_update = millis()/1000;
+			this.sprite_anim.start();
+		} else {
+			this.move = 0;
+			this.sprite_anim.stop();
+		}
 	}
 
 	grab_fruit(fruit_id, size){
 		this.fruit_holding = 1;
 		this.fruit_held_id = fruit_id;
-		this.speed = 15/size;
+		this.speed = 400/size;
 	}
 
 	drop_fruit(){
-		this.speed = 5;
+		this.speed = 400;
 		this.fruit_holding = 0;
 	}
 
@@ -73,9 +119,9 @@ class game_1_player {
 		//if (sprite != null) {this.spriteSheet = }
 		if (x != null) { this.x = x; }
 		if (y != null) { this.y = y; }
-		if (move != null) { this.move = move; }
+		if (move != null) { this.update_moving(move); }
 		if (speed != null) { this.speed = speed; }
-		if (facing != null) { this.facing = facing; }
+		if (facing != null) { this.update_facing(facing); }
 		if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
 		if (fruit_id != null) { this.fruit_held_id = fruit_id; }
 	}
@@ -86,8 +132,7 @@ class game_1_player {
 	}
 
 	make_data(player_index){
-		var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-											this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+		var string_make = "pos_player:"+player_index+","+this.make_data_raw();
 		return string_make;
 	}
 }
