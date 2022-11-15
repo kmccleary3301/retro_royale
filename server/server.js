@@ -857,6 +857,9 @@ function board_game() {
       this.players[game_result_json[i]["player_id"]].coins += game_result_json[i]["coins_added"];
       //if (game_result_json[i]["won_game"]) { this.players[game_result_json[i]["player_id"]].game_wins++; }
     }
+    for (let i in this.players) {
+      this.user_loaded(i);
+    }
   }
 
 	this.make_board_layout_preset_1 = function() {
@@ -1043,10 +1046,12 @@ function board_game() {
 
   this.user_loaded = function(usr_id) {
     clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new board_game_player(this.tiles[0].x, this.tiles[0].y, 1);
-    this.players[usr_id].name = clients_info[usr_id].name;
-    this.players[usr_id].x = this.tiles[0].x;
-    this.players[usr_id].y = this.tiles[0].y;
+    if (this.players[usr_id] === undefined) {
+      this.players[usr_id] = new board_game_player(this.tiles[0].x, this.tiles[0].y, 1);
+      this.players[usr_id].name = clients_info[usr_id].name;
+      this.players[usr_id].x = this.tiles[0].x;
+      this.players[usr_id].y = this.tiles[0].y;
+    }
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send("reset_tiles");
