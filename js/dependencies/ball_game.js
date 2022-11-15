@@ -114,10 +114,10 @@ class ball_game_player {
 		push();
     
 		//if(this.move == 0) { this.sprite_anim.stop(); }
-    if(this.isDead == 1){
-      console.log("line 112");
-      //this.update_anim("dead");
-    }
+   // if(this.isDead == 1){
+   //   console.log("line 112");
+   //   this.update_anim("dead");
+  //  }
 		if (this.move) {
 			if (this.facing == "left") { this.x -= this.speed * (millis()/1000 - this.last_update); }
 			else if (this.facing == "right") { this.x += this.speed * (millis()/1000 - this.last_update); }
@@ -125,11 +125,12 @@ class ball_game_player {
 			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
 			this.last_update = millis()/1000;
 		} 
-  
+    console.log("player coords -> "+this.x+", "+this.y);
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
-		this.sprite_anim.draw(this.x, this.y, true);
+		this.sprite_anim.draw(this.x, this.y, false);
+    fill(255, 0, 0);
 		pop();
 	}
 
@@ -137,7 +138,6 @@ class ball_game_player {
     if(animation == this.current_animation) {return;}
     if(animation == "dead")  
     {
-      console.log("line 135");
       this.move = 0; 
       this.sprite_anim.stop(); 
     }
@@ -162,8 +162,6 @@ class ball_game_player {
 		} else if (facing == "dead") {
       this.sprite_anim.flip(0);
       this.sprite_anim.change_animation("dead");
-      console.log("line 166");
-
     }
 	}
 
@@ -207,7 +205,7 @@ var timelimit = 20; //20 seconds
 function ball_game() {
   this.setup = function() {
     this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
-
+    this.result;
     this.players = [];
     this.balls = [];
     this.main_player_index;
@@ -268,11 +266,12 @@ function ball_game() {
       fill(colors[4]);
       text("DISCO BLITZ", width/2, height/2);
     }
+
     for (let i in this.players) {
       this.players[i].draw();
-      if(this.players[i].isDead == 1){
-        this.players[i].update_anim("dead");
-      }
+    //  if(this.players[i].isDead == 1){
+    //    this.players[i].update_anim("dead");
+    //   }
     }
 
     for (let i in this.balls) 
@@ -311,7 +310,9 @@ function ball_game() {
       this.players[parseInt(message)].update_anim("dead");
       this.players[parseInt(message)].update_facing("dead");
     }
-
+    else if (flag == "go_to_game_end_screen") {
+		swap_current_state("game_end_screen");
+	  }
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id

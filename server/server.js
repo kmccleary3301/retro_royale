@@ -1,6 +1,8 @@
 //var current_state = new dev_room();
 //var current_state_flag = "dev_room";
 
+
+
 var sessions = {
   "temp": undefined
 };
@@ -1009,7 +1011,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 50, 1]);
+				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 50]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         this.game_action_store = "swap_game:"+dice_make.chosen_value;
 				break;
@@ -1099,6 +1101,8 @@ function ball_game() {
     this.add_last_time = Date.now()/1000;
     this.players = [];
     this.balls = [];
+    // this.condition;
+    this.game_over = false;
     if (sessions[this.session_id] !== undefined) {
       console.log("session found, making players");
       for (let i in sessions[this.session_id].clients) {
@@ -1110,8 +1114,9 @@ function ball_game() {
     var self = this;
     var int_id = setInterval(function(){self.tick_function();}, 100);
     sessions[this.session_id].append_interval_id(int_id);
-    int_id = setInterval(function(){self.tick_function_ball()}, 200);
+    int_id = setInterval(function(){self.tick_function_ball()}, 100);
     sessions[this.session_id].append_interval_id(int_id);
+    this.game_result_json = {};
   }
 
   this.tick_function = function() { 
@@ -1148,23 +1153,45 @@ function ball_game() {
       str_make += this.balls[i].make_data(i) + "\n";
     }*/
     for (let i in this.players){
+      console.log("player "+i+" coords -> "+Math.floor(this.players[i].x)+", "+Math.floor(this.players[i].y));
+
       if (this.players[i].isDead) { continue; }
       for (let j in this.balls) {
-        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
-        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
+        var dx= Math.abs(this.players[i].x-this.balls[j].x);
+        var dy= Math.abs(this.players[i].y-this.balls[j].y);
         var distance = Math.sqrt(dx*dx + dy*dy);
         console.log("distance: "+distance);
-          if (distance <= this.balls[j].radius){
+          if (distance <= this.balls[j].radius+50){
             console.log("Player "+i+" is dead");
             this.players[i].isDead = 1;
-            // this.players[i].update_anim("dead");
             //send player dead message
             //sessions[this.session_id].clients[i].send("player_dead:"+i);
             sessions[this.session_id].broadcast("player_dead:"+i);
+            var all_dead = true;
+            for (let q in this.players) {
+              if (this.players[q].isDead == 0) { all_dead = false; }
+            }
+            if (all_dead && !this.game_over) {
+              this.game_over = true;
+              this.end_game(i);
+            }
+
           }
       }
     }
     sessions[this.session_id].broadcast(str_make);
+  }
+
+  this.end_game = function(last_player_id) {
+    for (let i in this.players) {
+      this.game_result_json[String(i)] = {
+        "player_id" : i,
+        "coins_added" : 15
+      }
+      this.game_result_json[String(last_player_id)]["coins_added"] += 50;
+      var self = this;
+      setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen");}, 2000);
+    }
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -1179,6 +1206,15 @@ function ball_game() {
       this.players[usr_id].isDead = 1;
       sessions[this.session_id].broadcast("player_dead:"+usr_id);
     }
+  //  for(let i in this.players)
+   // {
+  //    condition = true;
+ //     if(player[i].isDead == 0)
+ //     {
+ //       condition = false;
+ //     }
+
+    
   }
 
   this.user_loaded = function(usr_id) {
@@ -1216,6 +1252,7 @@ function fighting_game() {
     this.current_time = 0;
     this.floor = 570;
     this.players = [];
+    this.game_result_json = {};
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
@@ -1273,10 +1310,23 @@ function fighting_game() {
       for (let i in this.players){
         if (this.players[i].isDead == 0){   //take the winning player's id and send it to the clients
           broadcast("winner:"+i);     //send the winner to the clients
-          this.leaderboard();        //this is where the leaderboard function would be called to determine placement
+          this.end_game(i);
+          //this.leaderboard();        //this is where the leaderboard function would be called to determine placement
         }
       }
     }}
+
+  this.end_game = function(winner_id) {
+    for (let i in this.players) {
+      this.game_result_json[String(i)] = {
+        "player_id": i,
+        "coins_added": 30
+      }
+    }
+    this.game_result_json[String(winner_id)]["coins_added"] += 30;
+    var self = this;
+    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+  }
 
   this.tick_function = function() {
     for(let i in this.players) {
