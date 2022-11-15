@@ -16,7 +16,8 @@ class flappy_bird_player {
     this.y = y;
     this.xVelocity = 400; //pixels per second
     this.velocity = 0;
-		this.acceleration = -58; //pixels per second per second
+		this.acceleration = -130; //pixels per second per second
+    //this.acceleration = 0;
     this.move = 0;
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
@@ -25,12 +26,14 @@ class flappy_bird_player {
   }
 
   jump() {
-    this.velocity = 700;
+    this.velocity = 990;
+    //this.velocity = 10;
   }
 
   make_data(player_index){
     var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id+
+                      ","+this.velocity;
     return string_make;
   }
 

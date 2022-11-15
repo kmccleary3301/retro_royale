@@ -33,8 +33,9 @@ function setup() {
   connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.
   font_set =[loadFont("media/fonts/Inconsolata.ttf"),
                 loadFont("media/fonts/Alpharush.ttf"),
-                loadFont("media/fonts/PublicPixel.ttf")];
-  font_size_scaling = [1, 1.2, 0.5];
+                loadFont("media/fonts/PublicPixel.ttf"),
+              loadFont("media/fonts/videogame.ttf")];
+  font_size_scaling = [1, 1.2, 0.5, 1];
   make_socket();
   current_state.setup();
 }
@@ -96,6 +97,7 @@ function swap_current_state(flag) { //Global function for changing current_state
   else if (flag == "fighting_game") { current_state = new fighting_game(); }
   else if (flag == "flappy_bird") { current_state = new flappy_bird(); }
   else if (flag == "session_menu") { current_state = new session_menu(); }
+  else if (flag == "game_end_screen") { current_state = new game_end_screen(); }
   else { return; }
   current_state.setup();
   current_state_flag = flag;

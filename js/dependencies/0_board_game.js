@@ -46,7 +46,8 @@ function board_game() {
 		this.current_turn = 1;
 		this.current_turn_moves = 0;
 		this.buttons = {
-			"overlay" : []
+			"overlay" : [],
+			"leaderboard": []
 		};
 		this.current_button_menu = "overlay";
 		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "center", true);
@@ -154,6 +155,7 @@ function board_game() {
 				if (this.animation_queue[1] === undefined) {
 					this.animation_queue = [];
 					if (this.turning_player_index == this.user_player_index && this.current_turn_moves <= 0 && this.turn_done) {
+						send_data("end_turn");
 						this.turn_done = false;
 					}
 					this.turning_player_index = this.next_turning_player_index;
@@ -163,25 +165,49 @@ function board_game() {
 				}
 			}
 		} else { 
-			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
-				this.buttons["overlay"][3] = new button(960, 440, 100, 100, this.blue, [10, 10, 10], "Roll", true);
-			}
-			if (!this.user_roll && this.current_turn_moves <= 0 && this.turn_done) {
+			if (this.turning_player_index == this.user_player_index && this.current_turn_moves <= 0 && this.turn_done) {
 				send_data("end_turn");
 				this.turn_done = false;
 			}
+			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
+				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "Roll", true);
+			}
 		}
 
+		if (this.current_button_menu == "leaderboard") { this.draw_leaderboard(); }
 		for (let i in this.buttons[this.current_button_menu]) { this.buttons[this.current_button_menu][i].draw(); }
 		pop();
 	}
 
 	this.draw_leaderboard = function() {
 		push();
-		fill(this.blue);
-		stroke(5);
-		rectmode(CENTER);
-		rect(width/2, height/2, width*0.7, height*0.7);
+		fill(255, 78, 0);
+		strokeWeight(5);
+		stroke(10);
+		rectMode(CENTER);
+		rect(width/2, height/2, width*0.4, height*0.4);
+		text_make(2, 40, 0, 1);
+		fill(230, 50, 180);
+		text("leaderboard", width/2, height*(1-0.4)/2+20);
+		text_make(0, 25, 0, 1);
+		fill(0, 0, 0);
+		textAlign(LEFT);
+		var row_position = height*(1-0.4)/2+70,
+			x_pos_start = width*(1-0.4)/2+50;
+		text("Name", x_pos_start+50, row_position);
+		text("Coins", x_pos_start+200, row_position);
+		text("Stars", x_pos_start+325, row_position);
+		for (let i in this.players) {
+			row_position = (height*(1-0.4)/2) + 125 + i*55;
+			x_pos_start = width*(1-0.4)/2 + 50;
+			this.players[i].sprite_anim.draw_thumbnail(x_pos_start, row_position, 50);
+			text_make(0, 25, 0, 1);
+			fill(0, 0, 0);
+			textAlign(LEFT);
+			text(this.players[i].name, x_pos_start+50, row_position);
+			text(this.players[i].coins, x_pos_start+200, row_position);
+			text(this.players[i].stars, x_pos_start+325, row_position);
+		}
 		pop();
 	}
 
@@ -235,7 +261,7 @@ function board_game() {
 			this.animation_info[0] = 0;
 			this.reset_event_timer();
 			if (this.current_turn_moves <= 0) {
-				this.tile_event_trigger(this.tiles[this.animation_info[3]].type);
+				//this.tile_event_trigger(this.tiles[this.animation_info[3]].type);
 				if (this.turning_player_index == this.user_player_index) {
 					send_data("begin_tile_event");
 				}
@@ -251,26 +277,37 @@ function board_game() {
 	}
 
 	this.tile_event_trigger = function(tile_type) {
-		/*
-		if (this.current_turn_moves > 0) { return; }
-		if (tile_type == 0) {			//Empty tile
-			return;
-		} else if (tile_type == 1) { 	//Lose coins
-			this.animation_queue.splice(0, 0, new message_display_element("Lose coins", 5));
-		} else if (tile_type == 2) { 	//Gain coins
-			this.animation_queue.splice(0, 0, new message_display_element("Gain coins", 5));
-		} else if (tile_type == 3) { 	//Random game
-			//this.animation_element = new message_display_element("Random Game", 5);
-			this.animation_queue.splice(0, 0, new message_display_element("Random game", 3));
-			this.animation_queue.splice(1, 0, new dice_display_element(20, ["5A", "5B", "5C", "5D"], [5, 5, 5, 5], 10));
-		} else if (tile_type == 4) { 	//Trap
-			this.animation_queue.splice(0, 0, new message_display_element("Trap", 5));
-		} else if (tile_type == 5) { 	//Star
-			this.animation_queue.push(new message_display_element("Star", 5));
+		console.log("tile event trigger: "+tile_type);
+		var timeout_flag = true;
+		switch(tile_type) {
+			case 'empty':
+				//setTimeout(function(){ send_data("end_turn"); }, 500);
+				timeout_flag = false;
+				break;
+			case 'lose_coins':
+				this.animation_queue.splice(0, 0, new message_display_element("-3 coins", 5));
+				break;
+			case 'gain_coins':
+				this.animation_queue.splice(0, 0, new message_display_element("+3 coins", 5));
+				break;
+			case 'versus':
+				this.animation_queue.splice(0, 0, new message_display_element("Versus", 5));
+				break;
+			case 'star':
+				this.animation_queue.splice(0, 0, new message_display_element("Star", 5));
+				break;
 		}
-		return;
+		var self = this;
+		setTimeout(function(){
+			if (self.animation_queue == [] && self.turn_done) { send_data("end_turn"); }
+		}, 2000);
+		setTimeout(function(){ self.turn_done = true;}, 1200);
+		/*
+		if (timeout_flag) {
+			setTimeout(function(){ send_data("end_turn"); }, 500);
+		}
 		*/
-		if (this.turning_player_index == this.user_player_index) { this.turn_done = true; }
+		//if (this.turning_player_index == this.user_player_index) { this.turn_done = true; }
 	}
 
 	this.reset_event_timer = function() { this.event_timer_start = millis()/1000; }
@@ -328,6 +365,7 @@ function board_game() {
 				this.buttons[this.current_button_menu][i].pressed = 0;
 				console.log("pressed "+i);
 				this.button_press(i);
+				return;
 			}
 		}
 		return;
@@ -340,14 +378,13 @@ function board_game() {
 
 	this.button_press = function(code) {
 		if (this.current_button_menu == "overlay") {
-			console.log("code ->"+code);
 			switch(int(code)) {
 				case 0:
 					console.log("button_pressed"); 
 					this.toggle_camera_center_on_player(); 
 					break;
 				case 1:
-					console.log("button_press 1");
+					this.current_button_menu = "leaderboard";
 					break;
 				case 2:
 					socket.close();
@@ -360,6 +397,12 @@ function board_game() {
 					this.buttons["overlay"].splice(3, 1);
 					break;
 				default:
+					break;
+			}
+		} else if (this.current_button_menu == "leaderboard") {
+			switch(int(code)) {
+				case 0:
+					this.current_button_menu = "overlay";
 					break;
 			}
 		}
@@ -476,6 +519,5 @@ function board_game() {
 			if (this.center_on_player) { this.center_on_player = 0; }
 			else { this.center_on_player = 1; }
 		}
-		console.log("toggle center called: centered_on_player: "+this.center_on_player);
 	}
 }

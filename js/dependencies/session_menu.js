@@ -24,9 +24,8 @@ function session_menu() {
 		this.background1 = [226,200,226];
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		this.buttons["main"][0] = new button(810, 200, 150, 100, this.blue, [10, 10, 10], "", true, false);
-		
-		this.buttons["main"][1] = new button(1110, 200, 150, 100, this.blue, [10, 10, 10], "", true, false);
+		this.buttons["main"][0] = new button(810, 200, 150, 100, this.blue, [10, 10, 10], "Create\nSession", true, false);
+		this.buttons["main"][1] = new button(1110, 200, 150, 100, this.blue, [10, 10, 10], "Join\nSession", true, false);
 		this.buttons["create_session"][0] = new button(860, 680, 150, 100, this.blue, [10, 10, 10], "Start", true, false);
 		this.buttons["create_session"][1] = new button(1060, 680, 150, 100, this.blue, [10, 10, 10], "Cancel", true, false);
 		this.buttons["join_session"][0] = new button(860, 680, 150, 100, this.blue, [10, 10, 10], "Join", true, false);
@@ -64,11 +63,11 @@ function session_menu() {
 		fill(this.blue);
 		text("retro royale", width/2+2, height/20);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
-		textFont(this.vid_font, 25);
-		fill(this.cyan);
-		text("join\nsession", 760, 100, 150, 100);
-		text("create\nsession", 530, 100, 150, 100);
-		text_make(0, 10, 0, 1);
+		//textFont(this.vid_font, 25);
+		//fill(this.cyan);
+		//text("join\nsession", 760, 100, 150, 100);
+		//text("create\nsession", 530, 100, 150, 100);
+		//text_make(0, 10, 0, 1);
 		//stroke(11);
 		if (connected_to_server) {
 			fill(0, 255, 0);
