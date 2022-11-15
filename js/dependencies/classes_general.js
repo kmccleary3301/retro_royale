@@ -132,7 +132,7 @@ class button {
     this.pressed = 0;
     this.radius = 5;
     this.max_text_length = this.text[0].length;
-    this.text_size = 4;
+    this.text_size = 5;
     this.cyan = [45, 226, 230];
 
     for (let i in this.text) { 

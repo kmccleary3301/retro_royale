@@ -54,6 +54,14 @@ function board_game() {
 		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "scores", true);
 		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "home", true);
 
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+		this.vid_font = loadFont('media/fonts/videogame.ttf');
+
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
 	}
@@ -170,7 +178,7 @@ function board_game() {
 				this.turn_done = false;
 			}
 			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
-				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "Roll", true);
+				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "roll", true);
 			}
 		}
 
@@ -181,7 +189,7 @@ function board_game() {
 
 	this.draw_leaderboard = function() {
 		push();
-		fill(255, 78, 0);
+		fill(this.blue);
 		strokeWeight(5);
 		stroke(10);
 		rectMode(CENTER);
@@ -194,9 +202,9 @@ function board_game() {
 		textAlign(LEFT);
 		var row_position = height*(1-0.4)/2+70,
 			x_pos_start = width*(1-0.4)/2+50;
-		text("Name", x_pos_start+50, row_position);
-		text("Coins", x_pos_start+200, row_position);
-		text("Stars", x_pos_start+325, row_position);
+		text("name", x_pos_start+50, row_position);
+		text("coins", x_pos_start+200, row_position);
+		text("stars", x_pos_start+325, row_position);
 		for (let i in this.players) {
 			row_position = (height*(1-0.4)/2) + 125 + i*55;
 			x_pos_start = width*(1-0.4)/2 + 50;
