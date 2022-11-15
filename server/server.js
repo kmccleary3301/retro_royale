@@ -303,7 +303,9 @@ class game_session {
       } else {
         this.current_state.setup(this.session_id);
       }
-    } 
+    } else if (state_flag == 'board_game' && this.current_state_flag == 'game_end_screen') {
+      this.current_state.second_setup();
+    }
     this.current_state_flag = state_flag;
   }
 
@@ -450,18 +452,18 @@ function fruitGame() {
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 30;
+        this.game_length = 15;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
 
         for (let i in this.players) {
-          this.game_result_json[String(i)] = {
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
             "player_id": i,
             "coins_added": Math.floor(this.endzones[i%2].score/20)
           }
           if (this.endzones[i%2].score > this.endzones[(i+1)%2].score) {
-            this.game_result_json[String(i)]["coins_added"] += 15;
+            this.game_result_json[sessions[this.session_id].clients_info[i].name]["coins_added"] += 15;
           }
         }
 
@@ -690,7 +692,7 @@ function game_end_screen() {
   this.tick_function = function() {
     console.log("tick function, current_time -> "+this.current_time);
     this.current_time = Date.now()/1000 - this.start_time;
-    if (this.current_time >= 10) { 
+    if (this.current_time >= 1000) { 
       sessions[this.session_id].swap_current_state("board_game");
     }
   }
@@ -858,10 +860,7 @@ function board_game() {
         sessions[this.session_id].clients[i].send("assigned_id:"+i);
       }
     }
-    var self = this;
-    var int_id = setInterval(function(){self.tick_function();}, 100);
-    sessions[this.session_id].append_interval_id(int_id);
-    sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
+    this.second_setup();
 	}
 
   this.read_in_minigame_results = function(game_result_json) {
@@ -926,6 +925,13 @@ function board_game() {
     }
 		
 	}
+
+  this.second_setup = function() {
+    var self = this;
+    var int_id = setInterval(function(){self.tick_function();}, 100);
+    sessions[this.session_id].append_interval_id(int_id);
+    sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
+  }
 
   this.tick_function = function() {
     //console.log("boardgame tick function called");
@@ -1011,7 +1017,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 50]);
+				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 50, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         this.game_action_store = "swap_game:"+dice_make.chosen_value;
 				break;
@@ -1184,11 +1190,11 @@ function ball_game() {
 
   this.end_game = function(last_player_id) {
     for (let i in this.players) {
-      this.game_result_json[String(i)] = {
+      this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
         "player_id" : i,
         "coins_added" : 15
       }
-      this.game_result_json[String(last_player_id)]["coins_added"] += 50;
+      this.game_result_json[sessions[this.session_id].clients_info[last_player_id].name]["coins_added"] += 50;
       var self = this;
       setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen");}, 2000);
     }
@@ -1318,12 +1324,12 @@ function fighting_game() {
 
   this.end_game = function(winner_id) {
     for (let i in this.players) {
-      this.game_result_json[String(i)] = {
+      this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
         "player_id": i,
         "coins_added": 30
       }
     }
-    this.game_result_json[String(winner_id)]["coins_added"] += 30;
+    this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 30;
     var self = this;
     setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
   }

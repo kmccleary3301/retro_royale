@@ -7,7 +7,7 @@ function game_end_screen() {
 		this.host_started_game = false;
 		this.sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
 		imageMode(CENTER);
-		this.players[0] = new game_1_player(this.sprite, 200, 200, "down", 0);
+		this.players[0] = new game_1_player(this.sprite, 200, 200, "left", 0);
 		this.main_player_index = 0;
 		this.start_time = Date.now()/1000;
 		this.current_time = 0;
@@ -53,6 +53,7 @@ function game_end_screen() {
 	}
 
 	this.draw = function() {
+		push();
 		this.current_time = Date.now()/1000 - this.start_time;
 		background(200, 200, 200);
 		fill(0, 0, 0);
@@ -66,41 +67,65 @@ function game_end_screen() {
       this.players[i].y = 200*(i+1);
       text(this.names[i],this.players[i].x,this.players[i].y+50);
 		}
-		//for (let i in this.buttons[this.current_menu]) { this.buttons[this.current_menu][i].draw(); }
-		if (this.current_menu == "host_menu") { this.draw_host_menu(); }
-	}
-
-	this.draw_host_menu = function() {
-		push();
-		background(200, 200, 200);
-		text_make(0, 20, 0, 0);
-		textAlign(CENTER, CENTER);
-		fill(0, 0, 0);
-		text("turns : "+this.host_settings[0], 200, 150);
 		pop();
 	}
+
 
   this.read_in_game_results_json = function(data) {
     var vals_get = data.split(",");
     for (i=0; i<Math.floor(vals_get.length/3); i++) {
       this.game_results_json[vals_get[3*i]] = {
         "player_id" : parseInt(vals_get[3*i+1]),
-        "coins_added" : parseInt(vals_get[3*i+2])
+        "coins_added" : parseInt(vals_get[3*i+2]),
+		"won" : false
       }
     }
+
+	for (let player_name in this.game_results_json) {
+		if (this.winner_names.length == 0) { this.winner_names[0] = player_name; } 
+		else if (this.game_results_json[player_name]["coins_added"] > this.game_results_json[this.winner_names[0]]["coins_added"]) {
+			console.log("winner names 1 ->"+this.winner_names);
+			this.winner_names.splice(0, this.winner_names.length);
+			console.log("winner names 2 ->"+this.winner_names);
+			this.winner_names[0] = player_name;
+			console.log("winner names 3 ->"+this.winner_names);
+		} else if (this.game_results_json[player_name]["coins_added"]  == 
+					this.game_results_json[this.winner_names[0]]["coins_added"]) {
+			console.log("winner names 4 ->"+this.winner_names);
+			this.winner_names[this.winner_names.length] = player_name;
+			console.log("winner names 5 ->"+this.winner_names);
+		}
+	}
+	console.log("winner names 6 ->"+this.winner_names);
+	for (let i in this.winner_names) {
+		console.log("game results json -> "+JSON.stringify(this.game_results_json));
+		console.log("player name -> "+player_name);
+		var player_name = this.winner_names[i];
+		this.game_results_json[player_name]["won"] = true;
+	}
+	console.log("winner names 7 ->"+this.winner_names);
+	for (let player_name in this.game_results_json) {
+		if (!this.game_results_json[player_name]["won"]) {
+			this.loser_names[this.loser_names.length] = player_name;
+		}
+	}
+	console.log("winner names 8 ->"+this.winner_names);
+	this.window_resize();
   }
 
 	this.read_network_data = function(flag, message) {
 		if (flag == "player_count") {
 			for (j=this.players.length; j < parseInt(message); j++){
-				this.players[j] = new game_1_player(this.sprite, 300, 300, "down", j%4);
+				this.players[j] = new game_1_player(this.sprite, 300, 300, "left", j%4);
+				this.window_resize();
 			}
 		} else if (flag == "assigned_id") {
 			this.main_player_index = parseInt(message);
 		} else if (flag == "pos_player") {
 			this.read_in_player_position(message);
 		} else if (flag == "new_player") {
-			this.players[parseInt(message)] = new game_1_player(this.sprite, 300, 300, "down", parseInt(message)%4);
+			this.players[parseInt(message)] = new game_1_player(this.sprite, 300, 300, "left", parseInt(message)%4);
+			this.window_resize();
 		} else if (flag == "rmv_player") {
 			var player_index = parseInt(message);
 			this.players.splice(player_index, 1);

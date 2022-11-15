@@ -50,6 +50,7 @@ class game_end_screen_player {
 		this.sprite_anim.draw(this.x, this.y, true);
 		pop();
 	}
+	
 	update_anim(animation) {
 		if (animation == this.current_animation) { return; }
 		//if (animation == "standing" || animation == "dead") { this.moving = 0; this.sprite_anim.stop(); }
