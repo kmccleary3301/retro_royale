@@ -100,7 +100,7 @@ class flappy_bird_player {
 		
 		//this.velocity += 0.1*this.acceleration;
 		//this.y += this.velocity;
-		console.log("velocity -> "+this.velocity);
+		//console.log("velocity -> "+this.velocity);
 		this.update_rotation(this.velocity);
 
 		this.sprite_anim.draw(this.x, this.y, true);
@@ -173,6 +173,8 @@ function flappy_bird() {
       //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
 	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
 	  this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
+	  
+	  this.game_is_over = false;
 
 	  //1280x330 height/330
 	  this.backGroundOriginalHeight = 330;
@@ -205,19 +207,19 @@ function flappy_bird() {
 		if (this.players[this.main_player_index].isDead) { return; }
         //this.players[this.main_player_index].jump();
 		send_data("jump");
-		send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+		//send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
 		this.players[this.main_player_index].velocity = 990;
       }
     }
   
-    this.key_released = function(keycode) {
-      for (i=0;i<4;i++){
-        if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
-          this.players[this.main_player_index].move = 0;
-        }
-      }
-      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-    }
+    // this.key_released = function(keycode) {
+    //   for (i=0;i<4;i++){
+    //     if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
+    //       this.players[this.main_player_index].move = 0;
+    //     }
+    //   }
+    //   send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+    // }
   
     this.mouse_pressed = function() { return; }
     this.mouse_released = function() { return; }
@@ -235,12 +237,12 @@ function flappy_bird() {
 	  image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
 			this.backGroundWidth, this.backGroundHeight);
 
-	  this.bilbo = 0;
-	  for(let i in this.players) {
-		this.bilbo++;
-	  }
+	//   this.bilbo = 0;
+	//   for(let i in this.players) {
+	// 	this.bilbo++;
+	//   }
 	  
-	  console.log("Number Of Players:"+this.bilbo);
+	//   console.log("Number Of Players:"+this.bilbo);
 
       fill(0, 0, 0);
       text_make(0, 200, 0, 2);
@@ -255,14 +257,48 @@ function flappy_bird() {
         else {
           this.pipesList.shift;
         }
+		if(this.players[this.main_player_index].x > this.pipesList[i].x - 100-40 && this.players[this.main_player_index].x < this.pipesList[i].x+100+40) { 
+			if(this.players[this.main_player_index].y < this.pipesList[i].y-(this.pipesList[i].pipeWidth/2)+40) {
+				this.players[this.main_player_index].isDead = true;
+				send_data("death");
+				this.players[this.main_player_index].playerIsInPipe = true;
+				this.players[this.main_player_index].update_anim("die");
+			}
+			else if(this.players[this.main_player_index].y > this.pipesList[i].y+(this.pipesList[i].pipeWidth/2)-40) {
+				this.players[this.main_player_index].isDead = true;
+				send_data("death");
+				this.players[this.main_player_index].playerIsInPipe = true;
+				this.players[this.main_player_index].update_anim("die");
+			}
+		}
+		else if(this.pipesList[i].hasBeenPassed == false && 
+				this.players[this.main_player_index].x > this.pipesList[i].x && 
+				this.players[this.main_player_index].isDead == false) {
+			//if the player hasn't passed the pipe and is ahead of it
+			this.players[this.main_player_index].pipesPassed++;
+			this.pipesList[i].hasBeenPassed = true;
+	}
       }
 
 	  this.everyPlayerIsDead = true;
+
+	//   if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
+	// 	this.players[this.main_player_index].isDead = true;
+	// 	send_data("death");
+	// 	this.players[this.main_player_index].playerIsInPipe = true;
+	// 	this.players[this.main_player_index].update_anim("die");
+	//   }
 
 	  //draws the players
 
       for (let i in this.players) {
 		this.players[i].draw();
+		console.log("Player "+i+" is at : "+this.players[i].x+","+this.players[i].y);
+
+		if(this.players[i].y < 0) {
+			this.everPlayerIsDead = true;
+		}
+
 		if(this.players[i].isDead == false)
 			this.everyPlayerIsDead = false;
 		else {
@@ -292,19 +328,19 @@ function flappy_bird() {
 				this.players[this.main_player_index].update_anim("die");
 			}
 		}*/
-		if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
-			this.players[this.main_player_index].isDead = true;
-			send_data("death");
-			this.players[this.main_player_index].playerIsInPipe = true;
-			//this.players[this.main_player_index].update_anim("die");
-		}
-		else if(this.pipesList[p].hasBeenPassed == false && 
-				this.players[this.main_player_index].x > this.pipesList[p].x && 
-				this.players[this.main_player_index].isDead == false) {
-			//if the player hasn't passed the pipe and is ahead of it
-			this.players[this.main_player_index].pipesPassed++;
-			this.pipesList[p].hasBeenPassed = true;
-		}
+		// if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
+		// 	this.players[this.main_player_index].isDead = true;
+		// 	send_data("death");
+		// 	this.players[this.main_player_index].playerIsInPipe = true;
+		// 	this.players[this.main_player_index].update_anim("die");
+		// }
+		// else if(this.pipesList[p].hasBeenPassed == false && 
+		// 		this.players[this.main_player_index].x > this.pipesList[p].x && 
+		// 		this.players[this.main_player_index].isDead == false) {
+		// 	//if the player hasn't passed the pipe and is ahead of it
+		// 	this.players[this.main_player_index].pipesPassed++;
+		// 	this.pipesList[p].hasBeenPassed = true;
+		// }
 	  }
 
 	  //collision loop for main player
@@ -337,6 +373,11 @@ function flappy_bird() {
 	  text("Player is in Pipe: "+this.players[this.main_player_index].playerIsInPipe, 20, 20);
       text("Player is dead: "+this.players[this.main_player_index].isDead,20,50);
       text("Pipes Passed: "+this.players[this.main_player_index].pipesPassed,20,80);
+
+	  if(this.game_is_over) {
+		text_make(0,80,0,2);
+		text("GAME OVER",width/2,height/2);
+	  }
     }
   
     this.read_network_data = function(flag, message) {
@@ -350,6 +391,7 @@ function flappy_bird() {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
         this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, 0);
+		console.log("New player connected");
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
         this.players.splice(player_index, 1);
@@ -363,12 +405,14 @@ function flappy_bird() {
 	  } else if (flag == "death") {
 		this.players[message].isDead = true;
 	  } else if (flag == "go_to_game_end_screen") {
+		this.game_is_over == true;
 		swap_current_state("game_end_screen");
 	  }
     }
   
     this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id,velocity
       p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7, 8], [1, 2, 4]);
+	  if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new flappy_bird_player(this.Sprite, 200, 200, 0)}
       this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
       //send_data("debug:"+p_vals[1]);
     //   for(let i in this.pipesList) { //this activates on every tick

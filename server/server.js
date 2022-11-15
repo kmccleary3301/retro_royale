@@ -44,6 +44,8 @@ var {fighting_game_player} =
         require("./dependencies/fighting_game_classes");
 var {flappy_bird_pipe, flappy_bird_player} =
         require("./dependencies/flappy_bird_classes");
+var {game_end_screen_player} =
+        require("./dependencies/game_end_screen_classes");
 var {parse_board_from_image, swap_new_direction, pixel, linked_pixel} =
         require("./dependencies/board_from_image");
 
@@ -325,7 +327,7 @@ class game_session {
     if (index == -1) { return; }
     if (flag == 'connected') { this.clients[index].send("connected"); } //This only constitutes a hello, establishes that the connection was made
     //if (flag == 'load_game') { this.clients[index].send("current_game:"+this.current_state_flag); }
-    if (flag == 'user_info') { this.clients_info[index].name = message; return; }
+    if (flag == 'user_info') { this.clients_info[index].name = message;return; }
     //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
     this.current_state.read_network_data(flag, message, index);
   }
@@ -336,6 +338,7 @@ class game_session {
     this.clients[this.clients.length-1].send("remove_inputs");
     this.clients[this.clients.length-1].send("current_game:"+this.current_state_flag);
     this.clients[this.clients.length-1].send("please work v0.5");
+    this.clients_info[this.clients_info.length-1].color = this.clients_info.length-1;
     client.send("Please work");
     this.broadcast("HELLO");
     this.current_state.user_loaded(this.clients.length-1);
@@ -366,6 +369,9 @@ class client_info {
     this.session_id;
     this.latency;
     this.name;
+    //0,1,2,3
+    this.color;
+
     if (arguments.length >= 1) { this.update_info(arguments); } 
 
     //temporary variable to store the 1st, 2nd, 3rd, 4th place of a player
@@ -474,7 +480,7 @@ function fruitGame() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     this.game_update();
     if (flag == "load_game") {
       this.user_loaded(usr_id);
@@ -559,7 +565,7 @@ function purgatory() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -618,7 +624,7 @@ function load_room() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -690,7 +696,7 @@ function game_end_screen() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -772,7 +778,7 @@ function dev_room() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -938,7 +944,7 @@ function board_game() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     /*if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else */if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
@@ -1185,7 +1191,7 @@ function ball_game() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -1252,7 +1258,7 @@ function fighting_game() {
 
   this.read_network_data = function(flag, message, usr_id) {
     if (usr_id >= this.players.length) { this.user_loaded(usr_id); }
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -1389,7 +1395,10 @@ function flappy_bird() {
     this.timeLastPipeWasGenerated;
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new flappy_bird_player(400-100*i, 500, 1);
+        //for every player except usr_id=0, a new flappy bird player is probably being generated
+        if(this.players[i] == undefined) {
+          this.players[i] = new flappy_bird_player(400-100*i, 250, 1);
+        }
       }
     }
     var self = this;
@@ -1419,19 +1428,21 @@ function flappy_bird() {
       //if the player is in the air, make them rise or fall according to their
       //velocity. if they aren't in the air, but they have a velocity greater
       //than zero, put them into the air.
-      if(this.players[i].y < 1000 || this.players[i].velocity > 0) {
-        this.players[i].velocity+=this.players[i].acceleration;
-        this.players[i].y -= this.players[i].velocity*0.035;
-        //this.tick_interval/1000 is NaN but 0.2 is fine?
-        //console.log("y is now: "+this.players[i].y);
-      } else if(this.players[i].velocity != 0) {
-        this.players[i].velocity+=this.players[i].acceleration;
-        this.players[i].y -= this.players[i].velocity*0.035;
-        //this.tick_interval/1000 is NaN but 0.2 is fine?
-        //console.log("y is now: "+this.players[i].y);
-        if(this.players[i].y >= 1000) {
-          this.players[i].y = 1000;
-          this.players[i].velocity = 0;
+      if(this.players[i].hasJumped) {
+        if(this.players[i].y < 1000 || this.players[i].velocity > 0) {
+          this.players[i].velocity+=this.players[i].acceleration;
+          this.players[i].y -= this.players[i].velocity*0.035;
+          //this.tick_interval/1000 is NaN but 0.2 is fine?
+          //console.log("y is now: "+this.players[i].y);
+        } else if(this.players[i].velocity != 0) {
+          this.players[i].velocity+=this.players[i].acceleration;
+          this.players[i].y -= this.players[i].velocity*0.035;
+          //this.tick_interval/1000 is NaN but 0.2 is fine?
+          //console.log("y is now: "+this.players[i].y);
+          if(this.players[i].y >= 1000) {
+            this.players[i].y = 1000;
+            this.players[i].velocity = 0;
+          }
         }
       }
       /*if(i == 0) {
@@ -1444,8 +1455,8 @@ function flappy_bird() {
       sessions[this.session_id].broadcast(this.players[i].make_data(i), [i]);
     }
 
-    broadcast("move_pipes");
-    console.log("Moving pipes "+Date.now());
+    sessions[this.session_id].broadcast("move_pipes");
+    //console.log("Moving pipes "+Date.now());
 
     // //shows the user the pipeses
     // if(this.pipesList != null) {
@@ -1456,7 +1467,7 @@ function flappy_bird() {
   }
 
   this.read_network_data = function(flag, message, usr_id) {
-    console.log(flag+":"+message);
+    //console.log(flag+":"+message);
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
@@ -1464,10 +1475,11 @@ function flappy_bird() {
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "jump") {
       this.players[usr_id].jump();
+      this.players[usr_id].hasJumped = true;
       // for(let i in this.pipesList) {
       //   broadcast(this.pipesList[i].make_data());
       // }
-      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      //sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "death") {
       sessions[this.session_id].broadcast("death:"+usr_id);
       //sessions[this.session_id].broadcast("rmv_player:"+usr_id);
@@ -1475,8 +1487,11 @@ function flappy_bird() {
       //this.clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
       sessions[this.session_id].clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
       if(this.numberOfPlayersDead == 1) {
-        sessions[this.session_id].swap_current_state("game_end_screen");
-        sessions[this.session_id].broadcast("go_to_game_end_screen");
+        var self = this;
+        setTimeout(function(){
+          sessions[self.session_id].broadcast("go_to_game_end_screen");
+          sessions[self.session_id].swap_current_state("game_end_screen");
+        }, 2000);
       }
     } else if (flag == "debug") {
       console.log("client sent "+message);
@@ -1487,7 +1502,8 @@ function flappy_bird() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new flappy_bird_player(400-100*usr_id, 500, 1);
+    this.players[usr_id] = new flappy_bird_player(400-100*usr_id, 250, 1);
+    //console.log("A player loaded into da game "+usr_id);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());

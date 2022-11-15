@@ -16,17 +16,19 @@ class flappy_bird_player {
     this.y = y;
     this.xVelocity = 400; //pixels per second
     this.velocity = 0;
-		this.acceleration = -130; //pixels per second per second
+		this.acceleration = -125; //pixels per second per second
     //this.acceleration = 0;
     this.move = 0;
     this.speed = 5;
     this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+    //this measures whether the player has jumped, and when to start dropping them
+    this.hasJumped = false;
     this.fruit_holding = 0;
     this.fruit_held_id = 0;
   }
 
   jump() {
-    this.velocity = 990;
+    this.velocity = 900;
     //this.velocity = 10;
   }
 
