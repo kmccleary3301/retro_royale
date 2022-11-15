@@ -999,7 +999,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 50, 1]);
+				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 50]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         this.game_action_store = "swap_game:"+dice_make.chosen_value;
 				break;
@@ -1089,6 +1089,8 @@ function ball_game() {
     this.add_last_time = Date.now()/1000;
     this.players = [];
     this.balls = [];
+    // this.condition;
+    this.game_over = false;
     if (sessions[this.session_id] !== undefined) {
       console.log("session found, making players");
       for (let i in sessions[this.session_id].clients) {
@@ -1102,6 +1104,7 @@ function ball_game() {
     sessions[this.session_id].append_interval_id(int_id);
     int_id = setInterval(function(){self.tick_function_ball()}, 100);
     sessions[this.session_id].append_interval_id(int_id);
+    this.game_result_json = {};
   }
 
   this.tick_function = function() { 
@@ -1152,10 +1155,31 @@ function ball_game() {
             //send player dead message
             //sessions[this.session_id].clients[i].send("player_dead:"+i);
             sessions[this.session_id].broadcast("player_dead:"+i);
+            var all_dead = true;
+            for (let q in this.players) {
+              if (this.players[q].isDead == 0) { all_dead = false; }
+            }
+            if (all_dead && !this.game_over) {
+              this.game_over = true;
+              this.end_game(i);
+            }
+
           }
       }
     }
     sessions[this.session_id].broadcast(str_make);
+  }
+
+  this.end_game = function(last_player_id) {
+    for (let i in this.players) {
+      this.game_result_json[String(i)] = {
+        "player_id" : i,
+        "coins_added" : 15
+      }
+      this.game_result_json[String(last_player_id)]["coins_added"] += 50;
+      var self = this;
+      setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen");}, 2000);
+    }
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -1170,6 +1194,15 @@ function ball_game() {
       this.players[usr_id].isDead = 1;
       sessions[this.session_id].broadcast("player_dead:"+usr_id);
     }
+  //  for(let i in this.players)
+   // {
+  //    condition = true;
+ //     if(player[i].isDead == 0)
+ //     {
+ //       condition = false;
+ //     }
+
+    
   }
 
   this.user_loaded = function(usr_id) {

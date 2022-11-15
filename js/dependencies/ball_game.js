@@ -131,7 +131,6 @@ class ball_game_player {
 		g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, false);
     fill(255, 0, 0);
-    ellipse(this.x, this.y, 10);
 		pop();
 	}
 
@@ -206,7 +205,7 @@ var timelimit = 20; //20 seconds
 function ball_game() {
   this.setup = function() {
     this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
-
+    this.result;
     this.players = [];
     this.balls = [];
     this.main_player_index;
@@ -311,7 +310,9 @@ function ball_game() {
       this.players[parseInt(message)].update_anim("dead");
       this.players[parseInt(message)].update_facing("dead");
     }
-
+    else if (flag == "go_to_game_end_screen") {
+		swap_current_state("game_end_screen");
+	  }
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
