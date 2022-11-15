@@ -141,7 +141,7 @@ function game_end_screen() {
 		} else if (flag == "game_result_json") {
       this.read_in_game_results_json(message);
     } else if (flag == "client_info") {
-      if(players)
+      //if(players)
       p_vals = convert_data_string(message,[0],null,[1]);
       this.names[p_vals[0]] = p_vals[1];
     }

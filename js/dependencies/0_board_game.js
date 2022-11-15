@@ -109,8 +109,13 @@ function board_game() {
 	}
 
 	this.adjust_current_menu = function() {
-		//var max_text_size = this.buttons[this.current_button_menu][0].calculate_max_text_size();
-		var max_text_size = 100000000000000000000;
+		try{
+			var max_text_size = this.buttons[this.current_button_menu][0].calculate_max_text_size();
+		}
+		catch {
+			var max_text_size = 100000000000000000000;
+			console.log("goobered");
+		}
 		for (let i in this.buttons[this.current_button_menu]) {
 			var new_size = this.buttons[this.current_button_menu][i].calculate_max_text_size();
 			if (new_size < max_text_size) { max_text_size = new_size; }
