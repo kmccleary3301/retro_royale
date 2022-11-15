@@ -1041,7 +1041,7 @@ function ball_game() {
     var self = this;
     var int_id = setInterval(function(){self.tick_function();}, 100);
     sessions[this.session_id].append_interval_id(int_id);
-    int_id = setInterval(function(){self.tick_function_ball()}, 200);
+    int_id = setInterval(function(){self.tick_function_ball()}, 100);
     sessions[this.session_id].append_interval_id(int_id);
   }
 
@@ -1079,16 +1079,17 @@ function ball_game() {
       str_make += this.balls[i].make_data(i) + "\n";
     }*/
     for (let i in this.players){
+      console.log("player "+i+" coords -> "+Math.floor(this.players[i].x)+", "+Math.floor(this.players[i].y));
+
       if (this.players[i].isDead) { continue; }
       for (let j in this.balls) {
-        var dx= Math.abs(this.balls[j].x-(this.players[i].x));
-        var dy= Math.abs(this.balls[j].y-(this.players[i].y));
+        var dx= Math.abs(this.players[i].x-this.balls[j].x);
+        var dy= Math.abs(this.players[i].y-this.balls[j].y);
         var distance = Math.sqrt(dx*dx + dy*dy);
         console.log("distance: "+distance);
-          if (distance <= this.balls[j].radius){
+          if (distance <= this.balls[j].radius+50){
             console.log("Player "+i+" is dead");
             this.players[i].isDead = 1;
-            // this.players[i].update_anim("dead");
             //send player dead message
             //sessions[this.session_id].clients[i].send("player_dead:"+i);
             sessions[this.session_id].broadcast("player_dead:"+i);

@@ -60,14 +60,14 @@ class game_2_ball {
 
 class ball_game_player {
   constructor(x, y, face, color) {
-    this.spriteColor = color;
+  this.spriteColor = color;
 	this.sx = 0;
-    this.x = x;
-    this.y = y;
+  this.x = x;
+  this.y = y;
 	this.move = 0;
 	this.speed = 300;
-    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
-    this.isDead = 0;
+  this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+  this.isDead = 0;
 	this.spriteColor = color;
 	this.current_animation = "left_right";
   }
@@ -78,7 +78,7 @@ class ball_game_player {
 	if (y != null) { this.y = y; }
 	if (move != null) { this.move = move; }
 	if (speed != null) { this.speed = speed; }
-  	if (is_dead != null) {this.isDead = this.is_dead; }
+  //if (is_dead != null) {this.isDead = this.is_dead; }
 	if (facing != null) { this.facing = facing; }
 	if (name != null) { this.name = name; }
 	if (animation != null) {this.animation = animation;}
