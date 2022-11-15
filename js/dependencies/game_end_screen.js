@@ -1,15 +1,4 @@
 function game_end_screen() {
-<<<<<<< HEAD
-    this.setup = function() {
-      this.players = [];
-      this.main_player_index;
-      this.arrow_keys = [39, 37, 38, 40];
-      //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
-      this.greenSprite = loadImage("media/sprites/Spritesheet_64.png");
-      imageMode(CENTER);
-      this.players[0] = new game_end_screen_player(this.greenSprite, 200, 200, 0);
-      this.main_player_index = 0;
-=======
   this.setup = function() {
 		this.players = [];
 		this.main_player_index;
@@ -22,7 +11,6 @@ function game_end_screen() {
 		this.start_time = Date.now()/1000;
 		this.current_time = 0;
 		this.client_is_host = 0;
->>>>>>> origin/master
 
     this.game_results_json = {};
 	}
@@ -185,7 +173,7 @@ function game_end_screen() {
 			this.client_is_host = 1;
 		} else if (flag == "game_result_json") {
       this.read_in_game_results_json(message);
->>>>>>> origin/master
+>>>>>>> 0d0179fcf1abb620dce26e5e53bca44c7b4ffa73
     }
 	}
 
