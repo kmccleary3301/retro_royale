@@ -364,7 +364,6 @@ class sprite_animation_object {
       }
     } else {
       if (use_g_cam) {
-        console.log("drawing row -> "+this.current_animation_row);
         g_cam.translate(x, y);
         scale (this.flip_image_ref, 1);
         rotate(this.rotation_angle*Math.PI/180);
@@ -395,9 +394,7 @@ class sprite_animation_object {
   }
 
   change_animation(animation) {
-    console.log("changing animation -> "+animation);
     if (typeof animation === "string") {
-      console.log("recieved animation as string");
       this.current_animation_row = this.row_dictionary[animation]["row"];
       this.current_row_length = this.row_dictionary[animation]["row_length"];
       this.current_first_tile = this.row_dictionary[animation]["first_tile"];

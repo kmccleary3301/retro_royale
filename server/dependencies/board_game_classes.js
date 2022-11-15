@@ -4,6 +4,7 @@ class board_game_player {
 		this.y = y;
 		this.coins = 0;
 		this.stars = 0;
+		this.game_wins = 0;
 		this.move = 0;
 		this.speed = 5;
 		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively

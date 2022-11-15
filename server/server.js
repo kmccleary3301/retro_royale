@@ -270,6 +270,7 @@ class game_session {
 
   swap_current_state(state_flag) {
     console.log("session ("+this.session_id+") swapping state to "+state_flag);
+    if (this.current_state_flag == "board_game") { this.board_game = this.current_state; }
     this.clear_all_intervals();
     this.broadcast("current_game:"+state_flag);
     if (state_flag == "fruit_game") { this.current_state = new fruitGame(); }
@@ -279,6 +280,8 @@ class game_session {
       if (this.board_game === undefined) {
         this.board_game = new board_game();
         this.board_game.setup(this.session_id);
+      } else {
+        this.board_game.read_in_minigame_results(this.current_state.game_result_json);
       }
       this.current_state = this.board_game;
     }
@@ -286,12 +289,19 @@ class game_session {
     else if (state_flag == "dev_room") { this.current_state = new dev_room(); }
     else if (state_flag == "fighting_game") { this.current_state = new fighting_game(); }
     else if (state_flag == "flappy_bird") { this.current_state = new flappy_bird(); }
-    else if (state_flag == "game_end_screen") { this.current_state = new game_end_screen(); }
+    else if (state_flag == "game_end_screen") {
+      var game_results = this.current_state.game_result_json; 
+      this.current_state = new game_end_screen(); 
+    }
     else { return; } // failsafe for invalid flags
     //this.current_state.session_id = this.session_id;
     if (state_flag != "board_game") {
-      this.current_state.setup(this.session_id);
-    }
+      if (state_flag == "game_end_screen") {
+        this.current_state.setup(this.session_id, game_results);
+      } else {
+        this.current_state.setup(this.session_id);
+      }
+    } 
     this.current_state_flag = state_flag;
     for(let i in clients_info) {
       sessions[this.session_id].clients_info[i] = i;
@@ -386,13 +396,15 @@ function fruitGame() {
     this.fruits = [];
     this.endzones = [];
     this.game_active = 0;
-    this.game_length = 30.000;
+    this.game_length = 5.000;
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
     this.game_dimensions = [2000, 1000];
+    this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
+    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
+        this.players[i] = new game_1_player(this.endzones[i%2].x, this.endzones[i%2].y, "down", i%4);
       }
     }
     var p = new PoissonDiskSampling({
@@ -404,9 +416,6 @@ function fruitGame() {
     var poisson_points = p.fill();
     console.log("Poisson points: "+poisson_points[0]);
     console.log("made "+poisson_points.length+" poisson points");
-    this.endzones[0] = new game_1_endzone(0, 100, this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
-    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[0], 
-                                          this.game_dimensions[1]/2-100, this.game_dimensions[1]/2+100);
     //The following code removes fruits that are generated in an endzone.
     for (i=0; i < poisson_points.length; i++) { //counts downwards because we will be removing indices
       for (let j in this.endzones) {
@@ -430,6 +439,8 @@ function fruitGame() {
     for (let i in sessions[this.session_id].clients) {
       sessions[this.session_id].clients[i].send(this.make_everything());
     }
+
+    this.game_result_json = {};
   }
   
   this.tick_function = function() { this.game_update(); }
@@ -439,15 +450,32 @@ function fruitGame() {
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 60;
+        this.game_length = 30;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
+
+        for (let i in this.players) {
+          this.game_result_json[String(i)] = {
+            "player_id": i,
+            "coins_added": Math.floor(this.endzones[i%2].score/20)
+          }
+          if (this.endzones[i%2].score > this.endzones[(i+1)%2].score) {
+            this.game_result_json[String(i)]["coins_added"] += 15;
+          }
+        }
+
         this.game_active = 2;
         this.game_length = 20;
         this.start_time = Date.now()/1000;
+        var self = this;
+        setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen"); }, 100);
       }
       sessions[this.session_id].broadcast("game_state:"+this.game_active+","+this.current_time+","+this.game_length);
+    }
+    for (let i in this.players) {
+      this.players[i].x = Math.max(0, Math.min(this.players[i].x, this.game_dimensions[0]));
+      this.players[i].y = Math.max(0, Math.min(this.players[i].y, this.game_dimensions[1]));
     }
   }
 
@@ -471,7 +499,7 @@ function fruitGame() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -496,7 +524,7 @@ function fruitGame() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
@@ -581,7 +609,7 @@ function load_room() {
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "left", i%4);
       }
     }
     this.host_id = 0;
@@ -612,7 +640,7 @@ function load_room() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -632,32 +660,43 @@ function load_room() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
 }
 
 function game_end_screen() {
-  this.setup = function(session_id) {
+  this.setup = function(session_id, game_result_json) {
     this.session_id = session_id;
-    console.log("purgatory session id ->"+this.session_id);
+    this.game_result_json = game_result_json;
     this.start_time = Date.now()/1000;
     this.current_time = 0;
+    this.start_game = false;
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
-      console.log("purgatory setup - session identified");
       for (let i in sessions[this.session_id].clients) {
+<<<<<<< HEAD
         this.players[i] = new game_end_screen_player(600*Math.random(), 600*Math.random(), 1);
+=======
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "down", i%4);
+        sessions[this.session_id].clients[i].send(this.game_result_json_to_string());
+>>>>>>> origin/master
       }
-    } else {
-      console.log("purgatory setup - session doesn't exist");
     }
+    this.host_id = 0;
+    this.start_message = "";
+    var self = this;
+    var int_id = setInterval(function(){ self.tick_function(); }, 200);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
-  this.tick_function = function() { 
+  this.tick_function = function() {
+    console.log("tick function, current_time -> "+this.current_time);
     this.current_time = Date.now()/1000 - this.start_time;
-    if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    if (this.current_time >= 10) { 
+      sessions[this.session_id].swap_current_state("board_game");
+    }
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -667,6 +706,7 @@ function game_end_screen() {
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
       sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+<<<<<<< HEAD
     } else if (flag == "get_client_data") {
       // for(let i in clients_info) {
       //   sessions[this.session_id].broadcast("player_place:"+i+","+clients_info[i].placeInGame);
@@ -678,15 +718,29 @@ function game_end_screen() {
         sessions[this.session_id].broadcast("clients_info:"+i+","+this.j+","+clients_info[i].name+","+clients_info[i].color);
         //broadcast("player_place:"+i+",1");
       }
+=======
+    } else if (flag == "start_game" && usr_id == this.host_id) {
+      this.start_game = true;
+      this.start_message = message;
+      this.start_time = Date.now()/1000;
+      sessions[this.session_id].broadcast("host_started_game:"+0);
+>>>>>>> origin/master
     }
   }
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
+<<<<<<< HEAD
     this.players[usr_id] = new game_end_screen_player(600*Math.random(), 600*Math.random(), 1);
+=======
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
+>>>>>>> origin/master
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].clients[usr_id].send(this.game_result_json_to_string());
+    if (this.start_game) { sessions[this.session_id].clients[usr_id].send("host_started_game:"+this.current_time); }
+    if (usr_id == this.host_id) { sessions[this.session_id].clients[usr_id].send("assigned_host"); }
   }
 
   this.user_disconnected = function(usr_id) {
@@ -700,8 +754,16 @@ function game_end_screen() {
     return str_make;
   }
 
+  this.game_result_json_to_string = function() {
+    var str_make = "game_result_json:";
+    for (let i in this.game_result_json) {
+      str_make += i+","+this.game_result_json[i]["player_id"] + ","+this.game_result_json[i]["coins_added"]+",";
+    }
+    return str_make.substring(0, str_make.length-1);
+  }
+
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
@@ -715,6 +777,13 @@ function dev_room() {
     this.current_time = 0;
     this.start_game = false;
     this.players = [];
+
+    if (sessions[this.session_id] !== undefined) {
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "down", i%4);
+      }
+    }
+
     console.log("this.session_id -> "+this.session_id);
     console.log("sessions -> "+sessions);
     console.log("session keys ->"+Object.keys(sessions));
@@ -744,7 +813,7 @@ function dev_room() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + sessions[this.session_id].clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -763,7 +832,7 @@ function dev_room() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
@@ -812,6 +881,13 @@ function board_game() {
     sessions[this.session_id].append_interval_id(int_id);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
 	}
+
+  this.read_in_minigame_results = function(game_result_json) {
+    for (let i in game_result_json) {
+      this.players[game_result_json[i]["player_id"]].coins += game_result_json[i]["coins_added"];
+      //if (game_result_json[i]["won_game"]) { this.players[game_result_json[i]["player_id"]].game_wins++; }
+    }
+  }
 
 	this.make_board_layout_preset_1 = function() {
 		this.tiles[0] = new board_game_tile(0, 25, 0, [1]);
@@ -950,7 +1026,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 1]);
+				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 50, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         this.game_action_store = "swap_game:"+dice_make.chosen_value;
 				break;

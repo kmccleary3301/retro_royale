@@ -6,7 +6,7 @@ function load_room() {
 		this.host_started_game = false;
 		this.sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
 		imageMode(CENTER);
-		this.players[0] = new game_1_player(this.sprite, 200, 200, 0, 0);
+		this.players[0] = new game_1_player(this.sprite, 200, 200, "down", 0);
 		this.main_player_index = 0;
 		this.start_time = Date.now()/1000;
 		this.current_time = 0;
@@ -124,7 +124,7 @@ function load_room() {
 		} else if (flag == "pos_player") {
 			this.read_in_player_position(message);
 		} else if (flag == "new_player") {
-			this.players[parseInt(message)] = new game_1_player(this.sprite, 300, 300, 1, parseInt(message)%4);
+			this.players[parseInt(message)] = new game_1_player(this.sprite, 300, 300, "down", parseInt(message)%4);
 		} else if (flag == "rmv_player") {
 			var player_index = parseInt(message);
 			this.players.splice(player_index, 1);
@@ -143,7 +143,7 @@ function load_room() {
 	}
 
 	this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-		p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+		p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
 		this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
 	}
 }
