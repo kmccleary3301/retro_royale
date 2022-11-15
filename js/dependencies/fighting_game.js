@@ -517,6 +517,15 @@ if (game_round == 4) {
     //display timer that counts down from 5
     text(round(GOtimer), width/2, height/2+100);
     GOtimer -= 1/60;
+
+    
+
+
+
+    if (GOtimer < 0) {
+      //go back to menu
+      this.game_over();
+    }
     
 
     
