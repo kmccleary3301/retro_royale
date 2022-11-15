@@ -1,3 +1,4 @@
+
 function game_end_screen() {
   this.setup = function() {
 		this.players = [];
@@ -11,8 +12,11 @@ function game_end_screen() {
 		this.start_time = Date.now()/1000;
 		this.current_time = 0;
 		this.client_is_host = 0;
+    this.names = [];
 
     this.game_results_json = {};
+
+    send_data("get_clients_info");
 	}
 
 	this.key_pressed = function(keycode) {
@@ -54,10 +58,13 @@ function game_end_screen() {
 		fill(0, 0, 0);
 		text_make(0, 20, 0, 2);
 		textAlign(CENTER, CENTER);
-    text(JSON.stringify(this.game_results_json), width/2, height/2);
+    text("PLAYER "+this.names[0]+" WON!",width/2,50)
+    //text(JSON.stringify(this.game_results_json), width/2, height/2);
 		
 		for (let i in this.players) {
-			this.players[i].draw();
+			this.players[i].x = 100;
+      this.players[i].y = 200*(i+1);
+      text(this.names[i],this.players[i].x,this.players[i].y+50);
 		}
 		//for (let i in this.buttons[this.current_menu]) { this.buttons[this.current_menu][i].draw(); }
 		if (this.current_menu == "host_menu") { this.draw_host_menu(); }
@@ -108,6 +115,10 @@ function game_end_screen() {
 			this.client_is_host = 1;
 		} else if (flag == "game_result_json") {
       this.read_in_game_results_json(message);
+    } else if (flag == "client_info") {
+      if(players)
+      p_vals = convert_data_string(message,[0],null,[1]);
+      this.names[p_vals[0]] = p_vals[1];
     }
 	}
 

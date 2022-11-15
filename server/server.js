@@ -705,6 +705,10 @@ function game_end_screen() {
       this.start_message = message;
       this.start_time = Date.now()/1000;
       sessions[this.session_id].broadcast("host_started_game:"+0);
+    } else if (flag == "get_clients_info") {
+      for(let i in sessions[this.session_id].clients_info) {
+        sessions[this.session_id].broadcast("client_info:"+i+","+sessions[this.session_id].clients_info[i].name);
+      }
     }
   }
 
@@ -1334,7 +1338,7 @@ function flappy_bird() {
     this.start_time = Date.now()/1000;
     this.current_time = 0;
     this.players = [];
-
+    this.game_result_json = {};
     this.numberOfPlayersDead = 0;
 
     this.pipesList = [];
@@ -1378,7 +1382,7 @@ function flappy_bird() {
       //if the player is in the air, make them rise or fall according to their
       //velocity. if they aren't in the air, but they have a velocity greater
       //than zero, put them into the air.
-      if(this.players[i].hasJumped) {
+      if(this.players[i].hasJumped || this.start_time - (Date.now()/1000) > 5) {
         if(this.players[i].y < 1000 || this.players[i].velocity > 0) {
           this.players[i].velocity+=this.players[i].acceleration;
           this.players[i].y -= this.players[i].velocity*0.035;
@@ -1436,12 +1440,25 @@ function flappy_bird() {
       this.numberOfPlayersDead++;
       //this.clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
       sessions[this.session_id].clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
-      if(this.numberOfPlayersDead == 1) {
+      var eachPlayerIsDead = true;
+      for(let i in clients) {
+        if(this.players[i].isDead == false) {
+          eachPlayerIsDead = false;
+        }
+      }
+      if(eachPlayerIsDead) {
         var self = this;
-        setTimeout(function(){
-          sessions[self.session_id].broadcast("go_to_game_end_screen");
-          sessions[self.session_id].swap_current_state("game_end_screen");
-        }, 2000);
+        for (let i in this.players) {
+          this.game_result_json[String(i)] = {
+            "player_id" : i,
+            "coins_added": 30
+          }
+        }
+        setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen");}, 2000);
+            /*setTimeout(function(){
+              sessions[self.session_id].broadcast("go_to_game_end_screen");
+              sessions[self.session_id].swap_current_state("game_end_screen");
+            }, 2000);*/
       }
     } else if (flag == "debug") {
       console.log("client sent "+message);

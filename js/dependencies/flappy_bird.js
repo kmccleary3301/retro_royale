@@ -295,13 +295,7 @@ function flappy_bird() {
 		this.players[i].draw();
 		console.log("Player "+i+" is at : "+this.players[i].x+","+this.players[i].y);
 
-		if(this.players[i].y < 0) {
-			this.everPlayerIsDead = true;
-		}
-
-		if(this.players[i].isDead == false)
-			this.everyPlayerIsDead = false;
-		else {
+		if(this.players[i].isDead) {
 			this.players[i].update_anim("die");
 		}
 	  }
@@ -312,60 +306,6 @@ function flappy_bird() {
 	//   }
 
 	  this.players[this.main_player_index].playerIsInPipe = false;
-
-	  for(let p in this.pipesList) {
-		/*if(this.players[this.main_player_index].x > this.pipesList[p].x - 100-40 && this.players[this.main_player_index].x < this.pipesList[p].x+100+40) { 
-			if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
-				this.players[this.main_player_index].isDead = true;
-				send_data("death");
-				this.players[this.main_player_index].playerIsInPipe = true;
-				this.players[this.main_player_index].update_anim("die");
-			}
-			else if(this.players[this.main_player_index].y > this.pipesList[p].y+(this.pipesList[p].pipeWidth/2)-40) {
-				this.players[this.main_player_index].isDead = true;
-				send_data("death");
-				this.players[this.main_player_index].playerIsInPipe = true;
-				this.players[this.main_player_index].update_anim("die");
-			}
-		}*/
-		// if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
-		// 	this.players[this.main_player_index].isDead = true;
-		// 	send_data("death");
-		// 	this.players[this.main_player_index].playerIsInPipe = true;
-		// 	this.players[this.main_player_index].update_anim("die");
-		// }
-		// else if(this.pipesList[p].hasBeenPassed == false && 
-		// 		this.players[this.main_player_index].x > this.pipesList[p].x && 
-		// 		this.players[this.main_player_index].isDead == false) {
-		// 	//if the player hasn't passed the pipe and is ahead of it
-		// 	this.players[this.main_player_index].pipesPassed++;
-		// 	this.pipesList[p].hasBeenPassed = true;
-		// }
-	  }
-
-	  //collision loop for main player
-	//   if(this.players[this.main_player_index].y < height+40  || this.players[this.main_player_index].isDead == false){
-	// 	for(let p in this.pipesList) {
-	// 		if(this.players[this.main_player_index].x > this.pipesList[p].x-200-40 && this.players[this.main_player_index].x < this.pipesList[p].x+40) {
-	// 			console.log("Crash da game sis");
-	// 			if(this.players[this.main_player_index].y < this.pipesList[p].y-(this.pipesList[p].pipeWidth/2)+40) {
-	// 				//if player is in top pipe plus half of the height of their spreight
-	// 				this.players[main_player_index].isDead = true;
-	// 				//this.playerIsInPipe = false;
-	// 			}
-	// 			else if(this.players[this.main_player_index].y > this.pipesList[p].y+(this.pipesList[p].pipeWidth/2)-40) {
-	// 				//if player is in bottom pipe minus half of the height of their spreight
-	// 				this.players[main_player_index].isDead = true;
-	// 				//this.playerIsInPipe = false;
-	// 			}
-	// 		}
-	// 		else if(this.pipesList[p].hasBeenPassed == false && this.players[this.main_player_index].x > this.pipesList[p].x) {
-	// 			//if the player hasn't passed the pipe and is ahead of it
-	// 			this.players[this.main_player_index].pipesPassed++;
-	// 			this.pipesList[p].hasBeenPassed = true;
-	// 		}
-	// 	}
-	// }
 
 	  fill(200,0,0);
 	  text_make(0,20,0,2);
@@ -442,4 +382,4 @@ function flappy_bird() {
 			this.backGround2XPosition = this.backGround1XPosition + this.backGroundWidth-20;
 		}
 	}
-  }
+}
