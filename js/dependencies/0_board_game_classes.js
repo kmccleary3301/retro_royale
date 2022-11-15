@@ -27,6 +27,12 @@ class board_game_player {
 		this.previous_tile_index = 0;
 		this.last_update = millis()/1000;
 		this.name = "temp name";
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 	}
 	
 	draw() {
@@ -113,6 +119,12 @@ class board_game_tile {
 		this.y = 80 + 160*this.tile_y;
 		this.type = tile_type;
 		this.directions = tile_access_directions;
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 		this.connected_tiles = {
 			"right" : {
 				"connected" : 0,
@@ -146,22 +158,22 @@ class board_game_tile {
 
 		switch(this.type) {
 			case 'empty':
-				fill(0, 0, 125);
+				fill(this.cyan);
 				break;
 			case 'lose_coins':
-				fill(250, 0, 0);
+				fill(this.red);
 				break;
 			case 'gain_coins':
-				fill(0, 250, 0);
+				fill(this.yellow);
 				break;
 			case 'versus':
-				fill(180, 0, 180);
+				fill(this.purple);
 				break;
 			case 'trap':
-				fill(255, 78, 0);
+				fill(this.red);
 				break;
 			case 'star':
-				fill(255, 255, 0);
+				fill(this.yellow);
 				break;
 		}
 		/*
@@ -255,6 +267,12 @@ class message_display_element {
 		this.expire = expiration_time;
 		this.expired = false;
 		this.next_display_element = false;
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 	}
 
 	draw() {
@@ -264,7 +282,7 @@ class message_display_element {
 		var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_width = Math.max(350, 30*this.string.length), box_height = 100;
-		fill(255, 78, 0);
+		fill(this.blue);
 		rectMode(CENTER);
 		rect(box_position_x, height/2, box_width, box_height);
 		var r_color = rainbow_gradient(this.current_time);
@@ -293,6 +311,12 @@ class dice_display_element {
 		this.chosen_value = this.display_list[Math.round(this.display_list.length/4 + 1)];
 		this.next_display_element = false;
 		console.log("display list: "+str(this.display_list));
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
 	}
 	
 	update_elements() {
@@ -322,12 +346,12 @@ class dice_display_element {
 				text(this.display_list[i], width/2, text_y_pos);
 			}
 		} else {
-			fill(255, 78, 0);
+			fill(this.blue);
 			var frequency = 0.3;
 			var time_set = this.expire - breakpoint;
 			if (true) {
 				rectMode(CENTER);
-				fill(255, 78, 0);
+				fill(this.blue);
 				console.log("drawing button rectangle");
 				var factor_1 = Math.min(1, (this.current_time-breakpoint)*3/time_set);
 				var factor_2 = Math.min(1, 1+(breakpoint+time_set*2/3-this.current_time)*3/time_set);

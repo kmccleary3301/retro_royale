@@ -125,6 +125,7 @@ class button {
     this.box_height_in = height_in;
     this.box_width = width_in, this.box_height = height_in;
 
+    this.vid_font = loadFont('media/fonts/videogame.ttf');
     this.text = text.split('\n');
     this.color = color;
     this.text_color = text_color;
@@ -132,6 +133,7 @@ class button {
     this.radius = 5;
     this.max_text_length = this.text[0].length;
     this.text_size = 5;
+    this.cyan = [45, 226, 230];
 
     for (let i in this.text) { 
       if (this.text[i].length > this.max_text_length) { this.max_text_length = this.text[i].length; }
@@ -168,7 +170,7 @@ class button {
     push();
     
     if (this.proportion_definition) { this.reposition(); }
-
+    textFont(this.vid_font);
     fill(this.color);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
@@ -176,7 +178,8 @@ class button {
     strokeWeight(0);
     textAlign(CENTER, CENTER);
     text_make(0, this.text_size, 0, 0);
-    fill(this.text_color);
+    textFont(this.vid_font);
+    fill(this.cyan);
     for (let i in this.text) {
       text(this.text[i], this.x_cen, this.y_cen+this.text_size*(i - 0.5*(this.text.length-1)));
     }
