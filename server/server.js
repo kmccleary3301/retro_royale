@@ -324,9 +324,7 @@ class game_session {
     if (index == -1) { return; }
     if (flag == 'connected') { this.clients[index].send("connected"); } //This only constitutes a hello, establishes that the connection was made
     //if (flag == 'load_game') { this.clients[index].send("current_game:"+this.current_state_flag); }
-    if (flag == 'user_info') { this.clients_info[index].name = message; 
-                               this.clients_info[index].color = index
-                               return; }
+    if (flag == 'user_info') { this.clients_info[index].name = message;return; }
     //In the unique case that the server is issuing the current state, the current state doesn't deal with that.
     this.current_state.read_network_data(flag, message, index);
   }
@@ -337,6 +335,7 @@ class game_session {
     this.clients[this.clients.length-1].send("remove_inputs");
     this.clients[this.clients.length-1].send("current_game:"+this.current_state_flag);
     this.clients[this.clients.length-1].send("please work v0.5");
+    this.clients_info[this.clients_info.length-1].color = this.clients_info.length-1;
     client.send("Please work");
     this.broadcast("HELLO");
     this.current_state.user_loaded(this.clients.length-1);
@@ -1395,8 +1394,11 @@ function flappy_bird() {
       //this.clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
       sessions[this.session_id].clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
       if(this.numberOfPlayersDead == 1) {
-        sessions[this.session_id].swap_current_state("game_end_screen");
-        sessions[this.session_id].broadcast("go_to_game_end_screen");
+        var self = this;
+        setTimeout(function(){
+          sessions[self.session_id].broadcast("go_to_game_end_screen");
+          sessions[self.session_id].swap_current_state("game_end_screen");
+        }, 2000);
       }
     } else if (flag == "debug") {
       console.log("client sent "+message);

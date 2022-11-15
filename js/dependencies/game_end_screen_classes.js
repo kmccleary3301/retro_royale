@@ -1,33 +1,6 @@
 class game_end_screen_player {
 	constructor(spriteSheet, x, y, face) {
 		this.spriteSheet = spriteSheet;
-		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64,
-			{
-				// "left_right": {
-				// 	"row": 0,
-				// 	"row_length": 6
-				// },
-				// "down": {
-				// 	"row": 1,
-				// 	"row_length": 6
-				// },
-				// "up": {
-				// 	"row": 2,
-				// 	"row_length": 6
-				// },
-				"First": {
-					"row": 9*(this.color+1)-1,
-					"row_length": 1
-				},
-				"SecondAndThird": {
-					"row": 1*(this.color+1)-1,
-					"row_length": 1
-				},
-				"Fourth": {
-					"row": 8*(this.color+1)-1,
-					"row_length": 1
-				}
-			});
 
 		this.sx = 0;        //Frame counter for when the player is moving.
 		this.x = x;
@@ -42,6 +15,34 @@ class game_end_screen_player {
 		this.fruit_holding = 0;
 		this.fruit_held_id = 0;
 		this.bounds = [0, 2000, 0, 1000];
+
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64,
+			{
+				// "left_right": {
+				// 	"row": 0,
+				// 	"row_length": 6
+				// },
+				// "down": {
+				// 	"row": 1,
+				// 	"row_length": 6
+				// },
+				// "up": {
+				// 	"row": 2,
+				// 	"row_length": 6
+				// }, 10 rows
+				"First": {
+					"row": 10*(this.color)+8,
+					"row_length": 1
+				},
+				"SecondAndThird": {
+					"row": 10*(this.color),
+					"row_length": 1
+				},
+				"Fourth": {
+					"row": 10*(this.color)+7,
+					"row_length": 1
+				}
+			});
 	}
 
 	draw() {

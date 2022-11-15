@@ -173,6 +173,8 @@ function flappy_bird() {
       //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
 	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
 	  this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
+	  
+	  this.game_is_over = false;
 
 	  //1280x330 height/330
 	  this.backGroundOriginalHeight = 330;
@@ -255,22 +257,47 @@ function flappy_bird() {
         else {
           this.pipesList.shift;
         }
+		if(this.players[this.main_player_index].x > this.pipesList[i].x - 100-40 && this.players[this.main_player_index].x < this.pipesList[i].x+100+40) { 
+			if(this.players[this.main_player_index].y < this.pipesList[i].y-(this.pipesList[i].pipeWidth/2)+40) {
+				this.players[this.main_player_index].isDead = true;
+				send_data("death");
+				this.players[this.main_player_index].playerIsInPipe = true;
+				this.players[this.main_player_index].update_anim("die");
+			}
+			else if(this.players[this.main_player_index].y > this.pipesList[i].y+(this.pipesList[i].pipeWidth/2)-40) {
+				this.players[this.main_player_index].isDead = true;
+				send_data("death");
+				this.players[this.main_player_index].playerIsInPipe = true;
+				this.players[this.main_player_index].update_anim("die");
+			}
+		}
+		else if(this.pipesList[i].hasBeenPassed == false && 
+				this.players[this.main_player_index].x > this.pipesList[i].x && 
+				this.players[this.main_player_index].isDead == false) {
+			//if the player hasn't passed the pipe and is ahead of it
+			this.players[this.main_player_index].pipesPassed++;
+			this.pipesList[i].hasBeenPassed = true;
+	}
       }
 
 	  this.everyPlayerIsDead = true;
 
-	  if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
-		this.players[this.main_player_index].isDead = true;
-		send_data("death");
-		this.players[this.main_player_index].playerIsInPipe = true;
-		this.players[this.main_player_index].update_anim("die");
-	  }
+	//   if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
+	// 	this.players[this.main_player_index].isDead = true;
+	// 	send_data("death");
+	// 	this.players[this.main_player_index].playerIsInPipe = true;
+	// 	this.players[this.main_player_index].update_anim("die");
+	//   }
 
 	  //draws the players
 
       for (let i in this.players) {
 		this.players[i].draw();
 		console.log("Player "+i+" is at : "+this.players[i].x+","+this.players[i].y);
+
+		if(this.players[i].y < 0) {
+			this.everPlayerIsDead = true;
+		}
 
 		if(this.players[i].isDead == false)
 			this.everyPlayerIsDead = false;
@@ -301,19 +328,19 @@ function flappy_bird() {
 				this.players[this.main_player_index].update_anim("die");
 			}
 		}*/
-		if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
-			this.players[this.main_player_index].isDead = true;
-			send_data("death");
-			this.players[this.main_player_index].playerIsInPipe = true;
-			this.players[this.main_player_index].update_anim("die");
-		}
-		else if(this.pipesList[p].hasBeenPassed == false && 
-				this.players[this.main_player_index].x > this.pipesList[p].x && 
-				this.players[this.main_player_index].isDead == false) {
-			//if the player hasn't passed the pipe and is ahead of it
-			this.players[this.main_player_index].pipesPassed++;
-			this.pipesList[p].hasBeenPassed = true;
-		}
+		// if(this.players[this.main_player_index].y<0 && this.players[this.main_player_index].isDead == false) {
+		// 	this.players[this.main_player_index].isDead = true;
+		// 	send_data("death");
+		// 	this.players[this.main_player_index].playerIsInPipe = true;
+		// 	this.players[this.main_player_index].update_anim("die");
+		// }
+		// else if(this.pipesList[p].hasBeenPassed == false && 
+		// 		this.players[this.main_player_index].x > this.pipesList[p].x && 
+		// 		this.players[this.main_player_index].isDead == false) {
+		// 	//if the player hasn't passed the pipe and is ahead of it
+		// 	this.players[this.main_player_index].pipesPassed++;
+		// 	this.pipesList[p].hasBeenPassed = true;
+		// }
 	  }
 
 	  //collision loop for main player
@@ -346,6 +373,11 @@ function flappy_bird() {
 	  text("Player is in Pipe: "+this.players[this.main_player_index].playerIsInPipe, 20, 20);
       text("Player is dead: "+this.players[this.main_player_index].isDead,20,50);
       text("Pipes Passed: "+this.players[this.main_player_index].pipesPassed,20,80);
+
+	  if(this.game_is_over) {
+		text_make(0,80,0,2);
+		text("GAME OVER",width/2,height/2);
+	  }
     }
   
     this.read_network_data = function(flag, message) {
@@ -373,6 +405,7 @@ function flappy_bird() {
 	  } else if (flag == "death") {
 		this.players[message].isDead = true;
 	  } else if (flag == "go_to_game_end_screen") {
+		this.game_is_over == true;
 		swap_current_state("game_end_screen");
 	  }
     }

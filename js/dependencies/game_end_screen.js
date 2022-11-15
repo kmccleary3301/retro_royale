@@ -60,6 +60,8 @@ function game_end_screen() {
       
       j = 0;
       for (let i in this.players) {
+        console.log(this.players[i].name+"\'s color is "+this.players[i].color);
+        console.log(this.players[i].name+"\'s place is "+this.players[i].place);
         j++;
         // this.players[i].y = 100*j;
         // this.players[i].x = 500;
@@ -70,15 +72,17 @@ function game_end_screen() {
             this.players[i].x = width/2;
             this.players[i].update_anim("First")
           }
-          else if(this.players[i].place > 4){
-            this.players[i].y = 400;
-            this.players[i].x = width/2+(this.players[i].place-3)*250;
-            this.players[i].update_anim("SecondAndThird")
-          }
           else {
-            this.players[i].y = 400;
-            this.players[i].x = width/2+(this.players[i].place-3)*250;
-            this.players[i].update_anim("Fourth")
+            if(this.players[i].place > 4){
+              this.players[i].y = 400;
+              this.players[i].x = width/2+(this.players[i].place-3)*250;
+              this.players[i].update_anim("SecondAndThird")
+            }
+            else {
+              this.players[i].y = 400;
+              this.players[i].x = width/2+(this.players[i].place-3)*250;
+              this.players[i].update_anim("Fourth")
+            }
           }
         }
         else {
@@ -120,7 +124,8 @@ function game_end_screen() {
         
         this.players[p_vals[0]].place = p_vals[1];
         this.players[p_vals[0]].name = p_vals[2];
-        //this.players[this.p_vals[0]].color = this.p_vals[3];
+        this.players[p_vals[0]].color = p_vals[3];
+        
       }
     }
   
