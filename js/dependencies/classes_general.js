@@ -132,7 +132,8 @@ class button {
     this.pressed = 0;
     this.radius = 5;
     this.max_text_length = this.text[0].length;
-    this.text_size = 5;
+    this.text_size = 4;
+    this.cyan = [45, 226, 230];
 
     for (let i in this.text) { 
       if (this.text[i].length > this.max_text_length) { this.max_text_length = this.text[i].length; }
@@ -177,7 +178,8 @@ class button {
     strokeWeight(0);
     textAlign(CENTER, CENTER);
     text_make(0, this.text_size, 0, 0);
-    fill(this.text_color);
+    textFont(this.vid_font);
+    fill(this.cyan);
     for (let i in this.text) {
       text(this.text[i], this.x_cen, this.y_cen+this.text_size*(i - 0.5*(this.text.length-1)));
     }

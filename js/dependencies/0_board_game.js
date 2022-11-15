@@ -49,9 +49,9 @@ function board_game() {
 			"overlay" : []
 		};
 		this.current_button_menu = "overlay";
-		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "Center", true);
-		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "Scores", true);
-		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "Home", true);
+		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "center", true);
+		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "scores", true);
+		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "home", true);
 
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
