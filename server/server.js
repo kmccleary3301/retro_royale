@@ -268,6 +268,7 @@ class game_session {
 
   swap_current_state(state_flag) {
     console.log("session ("+this.session_id+") swapping state to "+state_flag);
+    if (this.current_state_flag == "board_game") { this.board_game = this.current_state; }
     this.clear_all_intervals();
     this.broadcast("current_game:"+state_flag);
     if (state_flag == "fruit_game") { this.current_state = new fruitGame(); }
@@ -441,7 +442,7 @@ function fruitGame() {
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 60;
+        this.game_length = 30;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
@@ -600,7 +601,7 @@ function load_room() {
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "left", i%4);
       }
     }
     this.host_id = 0;
@@ -631,7 +632,7 @@ function load_room() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -651,7 +652,7 @@ function load_room() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
@@ -667,16 +668,21 @@ function game_end_screen() {
     this.players = [];
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1, i%4);
+        this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "down", i%4);
+        sessions[this.session_id].clients[i].send(this.game_result_json_to_string());
       }
     }
     this.host_id = 0;
     this.start_message = "";
+    var self = this;
+    var int_id = setInterval(function(){ self.tick_function(); }, 200);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.tick_function = function() {
+    console.log("tick function, current_time -> "+this.current_time);
     this.current_time = Date.now()/1000 - this.start_time;
-    if (this.start_game && this.current_time >= 10) { 
+    if (this.current_time >= 10) { 
       sessions[this.session_id].swap_current_state("board_game");
     }
   }
@@ -698,10 +704,11 @@ function game_end_screen() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), 1, usr_id%4);
+    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].clients[usr_id].send(this.game_result_json_to_string());
     if (this.start_game) { sessions[this.session_id].clients[usr_id].send("host_started_game:"+this.current_time); }
     if (usr_id == this.host_id) { sessions[this.session_id].clients[usr_id].send("assigned_host"); }
   }
@@ -726,7 +733,7 @@ function game_end_screen() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
@@ -989,7 +996,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 1, 1]);
+				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 50, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         this.game_action_store = "swap_game:"+dice_make.chosen_value;
 				break;
