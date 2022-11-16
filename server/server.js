@@ -1016,9 +1016,23 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["flappy_bird", "fighting_game", "fruit_game", "ball_game"], [1, 1, 50, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl"], [1, 1, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
-        this.game_action_store = "swap_game:"+dice_make.chosen_value;
+        switch(dice_make.chosen_value) {
+          case 'Fruit Frenzy':
+            this.game_action_store = "swap_game:fruit_game";
+            break;
+          case 'Disco Dodgeball':
+            this.game_action_store = "swap_game:ball_game";
+            break;
+          case 'Sky Surprise':
+            this.game_action_store = "swap_game:flappy_bird";
+            break;
+          case 'Backroom Brawl':
+            this.game_action_store = "swap_game:fighting_game";
+            break;
+        }
+        
 				break;
 			case 'unlucky':
 				break;

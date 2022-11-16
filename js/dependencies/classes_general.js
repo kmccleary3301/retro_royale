@@ -85,7 +85,7 @@ class g_camera {
 }
 
 class button {
-  constructor(x_in, y_in, width_in, height_in, color, text_color, text, position_by_proportion, auto_adjust_text) {
+  constructor(x_in, y_in, width_in, height_in, color, text_color, text, font, position_by_proportion, auto_adjust_text) {
     /*
     x_in, y_in is center position of button.
     width_in, height_in is dimensions of button.
@@ -124,8 +124,7 @@ class button {
     this.box_width_in = width_in;
     this.box_height_in = height_in;
     this.box_width = width_in, this.box_height = height_in;
-
-    this.vid_font = loadFont('media/fonts/videogame.ttf');
+    this.font = font;
     this.text = text.split('\n');
     this.color = color;
     this.text_color = text_color;
@@ -133,7 +132,6 @@ class button {
     this.radius = 5;
     this.max_text_length = this.text[0].length;
     this.text_size = 5;
-    this.cyan = [45, 226, 230];
 
     for (let i in this.text) { 
       if (this.text[i].length > this.max_text_length) { this.max_text_length = this.text[i].length; }
@@ -149,7 +147,7 @@ class button {
 
   calculate_max_text_size() {
     if (this.proportion_definition) { this.reposition(); }
-    return Math.min(1.8*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
+    return Math.min(1.7*this.box_width / this.max_text_length, 0.9*this.box_height / this.text.length);
   }
 
   update_text_size(text_size_in) {
@@ -170,16 +168,14 @@ class button {
     push();
     
     if (this.proportion_definition) { this.reposition(); }
-    textFont(this.vid_font);
     fill(this.color);
     stroke(10);
     if (this.pressed) {strokeWeight(3);} else {strokeWeight(1);}
     rect(this.x_cen - this.box_width/2, this.y_cen - this.box_height/2, this.box_width, this.box_height, this.radius);
     strokeWeight(0);
     textAlign(CENTER, CENTER);
-    text_make(0, this.text_size, 0, 0);
-    textFont(this.vid_font);
-    fill(this.cyan);
+    text_make(this.font, this.text_size, 0, 0);
+    fill(this.text_color);
     for (let i in this.text) {
       text(this.text[i], this.x_cen, this.y_cen+this.text_size*(i - 0.5*(this.text.length-1)));
     }

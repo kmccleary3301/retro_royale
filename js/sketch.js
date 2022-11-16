@@ -34,8 +34,9 @@ function setup() {
   font_set =[loadFont("media/fonts/Inconsolata.ttf"),
                 loadFont("media/fonts/Alpharush.ttf"),
                 loadFont("media/fonts/PublicPixel.ttf"),
+              loadFont("media/fonts/videogame.ttf"),
               loadFont("media/fonts/videogame.ttf")];
-  font_size_scaling = [1, 1.2, 0.5, 1];
+  font_size_scaling = [1, 1.2, 0.5, 1, 0.8];
   make_socket();
   current_state.setup();
 }

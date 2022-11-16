@@ -22,7 +22,6 @@ function dev_room() {
 		this.current_menu = "overlay";
         this.global_games = ["ball_game", "fruit_game", "board_game", "load_room", "purgatory", "fighting_game", "flappy_bird"];
 
-		this.vid_font = loadFont('media/fonts/videogame.ttf');
 		this.background1 = [226,200,226];
 		this.blue = [3, 94, 232];
 		this.red = [229, 53, 100];
@@ -86,9 +85,8 @@ function dev_room() {
 		background(this.background1);
 		
 		fill(0, 0, 0);
-		text_make(0, 50, 0, 2);
+		text_make(4, 50, 0, 2);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font);
 		if (this.host_started_game) {
 			text("game starting in "+str(Math.max(0, int(10-this.current_time))), width/2, height/2);
 		} else {
@@ -134,7 +132,7 @@ function dev_room() {
         this.client_is_host = 1;
         for (let i in this.global_games) {
             this.buttons["overlay"][this.buttons["overlay"].length] = 
-            new button(width*(1+Math.floor(i/4))/6, height*(1+(i%4))/6, 150, 100, this.blue, [10, 10, 10], this.global_games[i]);
+            new button(width*(1+Math.floor(i/4))/6, height*(1+(i%4))/6, 150, 100, this.blue, [10, 10, 10], this.global_games[i], 4);
         }
     }
 

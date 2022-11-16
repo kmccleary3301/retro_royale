@@ -295,7 +295,7 @@ class message_display_element {
 }
 
 class dice_display_element {
-	constructor(expiration_time, elements, element_weights) {
+	constructor(expiration_time, elements, element_weights, font) {
 		var sum = 0;
 		for (let i in element_weights) {sum += element_weights[i]};
 		for (let i in element_weights) {element_weights[i] /= sum};
@@ -306,8 +306,10 @@ class dice_display_element {
 		this.start_time = millis()/1000;
 		this.current_time = 0; 
 		this.text_size = 50; //make this adaptable
+		this.font = font;
 		this.expire = expiration_time;
 		this.expired = false;
+		this.draw_offset = Math.random()-0.5;
 		this.chosen_value = this.display_list[Math.round(this.display_list.length/4 + 1)];
 		this.next_display_element = false;
 		console.log("display list: "+str(this.display_list));
@@ -317,33 +319,64 @@ class dice_display_element {
 		this.pink = [246, 1, 157];
 		this.cyan = [45, 226, 230];
 		this.purple = [151, 0, 204];
+		var eff_txt_size = 0.5*this.text_size*font_size_scaling[this.font];
+
+		this.max_list_size = eff_txt_size*str(this.display_list[0]).length;
+		for (let i in this.display_list) { 
+			if (eff_txt_size*str(this.display_list[i]).length > this.max_list_size) { 
+				this.max_list_size = eff_txt_size*str(this.display_list[i]).length; 
+			}
+		}
 	}
 	
 	update_elements() {
+		this.offset = arguments[0];
 		for (let i in arguments) {
-			this.display_list[i] = arguments[i];
+			if (i == 0) { continue; }
+			this.display_list[i-1] = arguments[i];
 		}
 		this.chosen_value = this.display_list[Math.round(this.display_list.length/4 + 1)];
+		var eff_txt_size = 0.5*this.text_size*font_size_scaling[this.font];
+		this.max_list_size = eff_txt_size*str(this.display_list[0]).length;
+		for (let i in this.display_list) { 
+			if (eff_txt_size*str(this.display_list[i]).length > this.max_list_size) { 
+				this.max_list_size = eff_txt_size*str(this.display_list[i]).length; 
+			}
+		}
 	}
 
 	draw() {
 		push();
 		this.current_time = millis()/1000 - this.start_time;
 		var dice_length = this.expire*0.985;
-		var breakpoint = dice_length*0.8;
-		text_make(1, 50,  0, 2);
+		var breakpoint = dice_length*0.9;
+		text_make(this.font, this.text_size,  0, 2);
+		stroke(0, 0, 0);
 		var r_color = rainbow_gradient(this.current_time);
-		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
 		if (this.current_time < breakpoint) {
+			var t_cen = width/2 - Math.max(100, this.max_list_size)/2 - 5 - 5;
+			fill(color(0, 0, 0));
+			triangle(t_cen + 5*Math.cos(0), height/2+5*Math.sin(0),
+					t_cen+5*Math.cos(Math.PI*2/3), height/2+5*Math.sin(Math.PI*2/3),
+					t_cen+5*Math.cos(Math.PI*4/3), height/2+5*Math.sin(Math.PI*4/3));
 			for (let i in this.display_list) {
 				var time_element = this.current_time-1+Math.max(1, Math.exp(0.2*(this.current_time)));
 				//if (this.current_time > dice_length-3) { x1 += (x1-(dice_length-3))^3; }
 				var position = Math.exp(-(6.5/breakpoint)*time_element+2);
 				var text_y_pos = height*(0.5+position)+2*height*(i-2)/this.display_list.length;
 				text_y_pos += (this.display_list.length%4)*height/(2*this.display_list.length);
+				text_y_pos += 2*height*this.draw_offset/this.display_list.length
 				text_y_pos = text_y_pos%(height*2)-height*0.5;
+				fill(r_color[0], r_color[1], r_color[2]);
+				stroke(0, 0, 0);
+				strokeWeight(1);
 				text(this.display_list[i], width/2, text_y_pos);
+				fill(color(0, 0, 0, 0));
+				rectMode(CENTER);
+				stroke(0, 0, 0);
+				strokeWeight(5);
+				rect(width/2, text_y_pos, Math.max(100, this.max_list_size), 2*height/this.display_list.length);
 			}
 		} else {
 			fill(this.blue);
@@ -352,14 +385,13 @@ class dice_display_element {
 			if (true) {
 				rectMode(CENTER);
 				fill(this.blue);
-				console.log("drawing button rectangle");
 				var factor_1 = Math.min(1, (this.current_time-breakpoint)*3/time_set);
 				var factor_2 = Math.min(1, 1+(breakpoint+time_set*2/3-this.current_time)*3/time_set);
 				factor_1 *= factor_2;
 				factor_1 = Math.pow(factor_1, 3);
 				factor_2 = Math.pow(factor_2, 3);
-				rect(width/2, height/2, Math.max(60, 30*str(this.chosen_value).length)*factor_1, 60*factor_1);
-				text_make(1, factor_2*50,  0, 2);
+				rect(width/2, height/2, Math.max(100, this.max_list_size)*factor_1, 60*factor_1);
+				text_make(this.font, factor_2*this.text_size,  0, 2);
 			}
 			fill(r_color[0], r_color[1], r_color[2]);
 			text(this.chosen_value, width/2, height/2);

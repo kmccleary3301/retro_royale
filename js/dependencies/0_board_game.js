@@ -50,9 +50,9 @@ function board_game() {
 			"leaderboard": []
 		};
 		this.current_button_menu = "overlay";
-		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "center", true);
-		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "scores", true);
-		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "home", true);
+		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "center", 4, true);
+		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "scores", 4, true);
+		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "home", 4, true);
 
 		this.blue = [3, 94, 232];
 		this.red = [229, 53, 100];
@@ -109,6 +109,9 @@ function board_game() {
 	}
 
 	this.adjust_current_menu = function() {
+		if (this.buttons[this.current_button_menu] === undefined || this.buttons[this.current_button_menu].length == 0) {
+			return;
+		}
 		var max_text_size = this.buttons[this.current_button_menu][0].calculate_max_text_size();
 		for (let i in this.buttons[this.current_button_menu]) {
 			var new_size = this.buttons[this.current_button_menu][i].calculate_max_text_size();
@@ -178,7 +181,7 @@ function board_game() {
 				this.turn_done = false;
 			}
 			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
-				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "roll", true);
+				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "roll", 4, true);
 			}
 		}
 
@@ -196,7 +199,8 @@ function board_game() {
 		rect(width/2, height/2, width*0.4, height*0.4);
 		text_make(2, 40, 0, 1);
 		fill(230, 50, 180);
-		text("leaderboard", width/2, height*(1-0.4)/2+20);
+		textAlign(CENTER, CENTER);
+		text("leaderboard", width/2, height*(1-0.4)/2);
 		text_make(0, 25, 0, 1);
 		fill(0, 0, 0);
 		textAlign(LEFT);
@@ -496,14 +500,14 @@ function board_game() {
 	}
 
 	this.read_in_dice_roll = function(data) {
-		p_vals = convert_data_string(data, [1], [], [0]);
-		if (p_vals[0] == 'ints') {p_vals = convert_data_string(data, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], [0]); }
+		p_vals = convert_data_string(data, [], [], [0]);
+		if (p_vals[0] == 'ints') {p_vals = convert_data_string(data, [2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [1], [0]); }
 		else if (p_vals[0] == 'strings') {
-			p_vals = convert_data_string(data, [], [], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+			p_vals = convert_data_string(data, [], [1], [0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 		}
-		this.animation_queue.splice(0, 0, new dice_display_element(15, [1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]));
+		this.animation_queue.splice(0, 0, new dice_display_element(15, [1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1], 1));
 		this.animation_queue[0].update_elements(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], 
-												p_vals[6], p_vals[7], p_vals[8], p_vals[9], p_vals[10]);
+												p_vals[6], p_vals[7], p_vals[8], p_vals[9], p_vals[10], p_vals[11]);
 	}
 
 	this.player_removed = function(data) {
