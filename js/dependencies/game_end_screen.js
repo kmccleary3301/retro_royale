@@ -71,14 +71,19 @@ function game_end_screen() {
 	this.draw = function() {
 		push();
 		this.current_time = Date.now()/1000 - this.start_time;
-		background(200, 200, 200);
+		background(255, 255, 255);
 		if (Object.keys(this.game_results_json).length > 0) {
 			var get_color = this.colors[this.game_results_json[this.winner_names[0]]["player_id"]];
-			background(get_color);
+			var background_position = sigmoid_array([0, width], [0, 2], [1.5], this.current_time);
+			strokeWeight(0);
+			rectMode(CORNERS);
+			fill(get_color);
+			rect(0, 0, background_position, height);
 			var text_position = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time);
 			text_make(1, 50, 0, 1);
 			stroke(0, 0, 0);
 			fill(color(255-get_color[0], 255-get_color[1], 255-get_color[2]));
+			textAlign(CENTER, CENTER);
 			text(this.game_message, text_position, height/2);
 			for (let i in this.winner_names) {
 				var x_position = width*(int(i)+1)/(this.winner_names.length+1),
@@ -123,11 +128,19 @@ function game_end_screen() {
 				fill(color(text_color[0], text_color[1], text_color[2], fade_2));
 				text("+"+this.game_results_json[w_name]["coins_added"]+" coins", x_position, y_position + height*0.18);
 			}
-			var rect_length = Math.max(0, ((this.timer_length-this.current_time)/this.timer_length)*width*0.7);
-			fill(color(255-get_color[0], 255-get_color[1], 255-get_color[2]));
-			strokeWeight(0);
-			rectMode(CORNER);
-			rect(width*0.15, height*0.9, rect_length, 5);
+			if (this.current_time > 2) {
+				if (this.current_time <= 4) {
+					var rect_length = sigmoid_array([0, width*0.7], [2, 4], [1.5, 1.5], this.current_time);
+				} else {
+					var rect_length = Math.max(0, ((this.timer_length-this.current_time)/(this.timer_length-4))*width*0.7);
+				}
+			
+
+				fill(color(Math.max(0, get_color[0]-15), Math.max(0, get_color[1]-15), Math.max(0, get_color[2]-15)));
+				strokeWeight(0);
+				rectMode(CORNER);
+				rect(width*0.15, height*0.9, rect_length, 5);
+			}
 		}
 		pop();
 	}
