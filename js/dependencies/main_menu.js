@@ -17,7 +17,6 @@ function main_menu() {
 		this.cyan = [45, 226, 230];
 		this.purple = [151, 0, 204];
 		//this.color_array = [this.red, this.cyan, this.purple, this.blue, this.yellow, this.pink];
-		this.vid_font = loadFont('media/fonts/videogame.ttf');
 		this.disco_ball = loadImage('media/misc/disco_ball_string.png');
 		this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
 		this.disco_sprites = loadImage(repo_address+"media/misc/disco_sprite.png");
@@ -52,18 +51,17 @@ function main_menu() {
 		this.user_info = user_info;
 
 		console.log("WINDOW DIMS : "+width+", "+height);
-		textFont(this.vid_font);
-		this.buttons["main"][0] = new button(810-100, 200+100, 150, 100, this.color_arrray[3], [10, 10, 10], "certify", true, false);
-		this.buttons["main"][1] = new button(1110+100, 200+100, 150, 100, this.color_arrray[3], [10, 10, 10], "connect", true, false);
-		this.buttons["main"][2] = new button(810-100, 350+100, 150, 100, this.color_arrray[3], [10, 10, 10], "server", true, false);
-		this.buttons["main"][3] = new button(1110+100, 350+100, 150, 100, this.color_arrray[3], [10, 10, 10], "test game", true, false);
-		this.buttons["main"][4] = new button(810-100, 500+100, 150, 100, this.color_arrray[3], [10, 10, 10], "board\ngame\ntime", true, false);
-		this.buttons["main"][5] = new button(1110+100, 500+100, 150, 100, this.color_arrray[3], [10, 10, 10], "info", true, false);
-		this.buttons["server"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "submit", true, false);
-		this.buttons["server"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "cancel", true, false);
-		this.buttons["certify"][0] = new button(960, 620, 150, 100, this.color_arrray[3], [10, 10, 10], "back", true, false);
-		this.buttons["info"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "submit", true, false);
-		this.buttons["info"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "cancel", true, false);
+		this.buttons["main"][0] = new button(810-200, 300+100, 240, 160, this.color_arrray[3], [10, 10, 10], "certify", 4, true, false);
+		this.buttons["main"][1] = new button(1110+200, 300+100, 240, 160, this.color_arrray[3], [10, 10, 10], "connect", 4, true, false);
+		this.buttons["main"][2] = new button(810-200, 550+100, 240, 160, this.color_arrray[3], [10, 10, 10], "server", 4, true, false);
+		//this.buttons["main"][3] = new button(1110+100, 350+100, 150, 100, this.color_arrray[3], [10, 10, 10], "test game", 4, true, false);
+		//this.buttons["main"][4] = new button(810-100, 500+100, 150, 100, this.color_arrray[3], [10, 10, 10], "board\ngame", 4, true, false);
+		this.buttons["main"][5] = new button(1110+200, 550+100, 240, 160, this.color_arrray[3], [10, 10, 10], "info", 4, true, false);
+		this.buttons["server"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "submit", 4, true, false);
+		this.buttons["server"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "cancel", 4, true, false);
+		this.buttons["certify"][0] = new button(960, 620, 150, 100, this.color_arrray[3], [10, 10, 10], "back", 4, true, false);
+		this.buttons["info"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "submit", 4, true, false);
+		this.buttons["info"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "cancel", 4, true, false);
 		g_cam.reset();
 	}
 
@@ -87,7 +85,6 @@ function main_menu() {
 		this.scroll_background_2.draw();
 		this.scroll_background_3.draw();
 		this.adjust_current_menu();
-		textFont(this.vid_font);
 		this.current_time = millis()/1000 - this.start_time;
 		if (this.current_time < 3) { this.draw_startup_animation(); return; }
 		if (this.current_menu == "main") { this.draw_menu_1(); }
@@ -108,35 +105,35 @@ function main_menu() {
 		//draw disco ball image
 		//image(this.disco_ball, width/2, 175, 50*2, 175*2);
 		stroke(this.blue);
-		line(width/2, 0, width/2, 200);
-		image(this.disco_sprites, width/2, 230, 96, 96, 128*this.sx, 0, 128, 128);
+		strokeWeight(5);
+		line(width/2, 0, width/2, 300);
+		image(this.disco_sprites, width/2, 300, 96, 96, 128*this.sx, 0, 128, 128);
 		//image(this.blue_line1, width/2, 175, 1, 175, this.blue_line1.width, this.blue_line1.length);
 		imageMode(CENTER);
-		image(this.sparkle, width/2+this.rando[2], 230+this.rando[0], abs(sin(frameCount/30))*30, abs(sin(frameCount/30))*30, 0, 0, this.sparkle.width, this.sparkle.height, CONTAIN, LEFT, CENTER);
-   		image(this.sparkle, width/2+this.rando[0], 230+this.rando[1], abs(sin(frameCount/25))*40, abs(sin(frameCount/25))*40, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
-   		image(this.sparkle, width/2+this.rando[1], 230+this.rando[2], abs(sin(frameCount/20))*50, abs(sin(frameCount/20))*50, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
+		image(this.sparkle, width/2+this.rando[2], 300+this.rando[0], abs(sin(frameCount/30))*30, abs(sin(frameCount/30))*30, 0, 0, this.sparkle.width, this.sparkle.height, CONTAIN, LEFT, CENTER);
+   		image(this.sparkle, width/2+this.rando[0], 300+this.rando[1], abs(sin(frameCount/25))*40, abs(sin(frameCount/25))*40, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
+   		image(this.sparkle, width/2+this.rando[1], 300+this.rando[2], abs(sin(frameCount/20))*50, abs(sin(frameCount/20))*50, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
 		var r_color = rainbow_gradient(2*this.current_time);
 		var r_color2 = rainbow_gradient(2*this.current_time+2);
 		textAlign(CENTER, CENTER);
-		text_make(2, Math.min(110*height/1080, 110*width/1920), 0, 2);
+		text_make(4, Math.min(200*height/1080, 200*width/1920), 0, 2);
 		//fill(r_color[0], r_color[1], r_color[2]);
 		fill(this.blue);
-		textFont(this.vid_font, 110);
 		
-		text("retro  royale", width/2+40, height/20);
+		text("retro  royale", width/2, height/10);
 		//fill(r_color2[0], r_color2[1], r_color2[2]);
 		fill(this.cyan);
-		text("retro  royale", width/2+6+40, height/20);
+		text("retro  royale", width/2+6, height/10);
 		for (let i in this.buttons["main"]) { this.buttons["main"][i].draw(); }
 		text_make(0, 10, 0, 1);
 		//stroke(11);
 		if (connected_to_server) {
 			fill(0, 255, 0);
-			textFont(this.vid_font, 10);
+			text_make(4, 10, 0, 0);
 			text("connected", width - 50, 10);
 		} else {
 			fill(this.red);
-			textFont(this.vid_font, 10);
+			text_make(4, 10, 0, 0);
 			text("not connected", width - 50, 10);
 		}
 	}
@@ -146,10 +143,9 @@ function main_menu() {
 		strokeWeight(5);
 		fill(200, 200, 255);
 		rect(width*4/10, height*3/10, width*2/10, height*4/10);
-		text_make(0, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font);
+		text_make(4, 20, 0, 0);
 		text("server address", width/2, height*415/1080);
 		text("server port", width/2, height*525/1080);
 		for (let i in this.buttons["server"]) { this.buttons["server"][i].draw(); }
@@ -159,10 +155,9 @@ function main_menu() {
 		strokeWeight(5);
 		fill(200, 200, 255);
 		rect(width*4/10, height*3/10, width*2/10, height*4/10);
-		text_make(0, Math.min(25*width/1920, 30*height/1080), 0, 0);
+		text_make(4, Math.min(25*width/1920, 30*height/1080), 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font, 15);
 		text("webSockets with self-signed\ncertificates are not accepted\nuntil you authorize them",
 								width/2, height*440/1080);
 		for (let i in this.buttons["certify"]) { this.buttons["certify"][i].draw(); }
@@ -173,10 +168,9 @@ function main_menu() {
 		strokeWeight(5);
 		fill(200, 200, 255);
 		rect(width*4/10, height*3/10, width*2/10, height*4/10);
-		text_make(0, 20, 0, 0);
+		text_make(4, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font);
 		text("Name", width/2, height*415/1080);
 		for (let i in this.buttons["info"]) { this.buttons["info"][i].draw(); }
 	}
@@ -191,7 +185,7 @@ function main_menu() {
 	}
 
 	this.draw_startup_animation = function() {
-		text_make(1, 50,  0, 2);
+		text_make(4, 50,  0, 2);
 		var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_width = 350, box_height = 100;
@@ -200,7 +194,6 @@ function main_menu() {
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
 		textAlign(CENTER, CENTER);
-		textFont(this.vid_font, 40);
 		text("retro royale", text_position_x, height/2);
 	}
 

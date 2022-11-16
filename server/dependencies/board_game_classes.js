@@ -126,6 +126,7 @@ class dice_element {
 		for (let i in element_weights) { sum += element_weights[i]; }
 		for (let i in element_weights) {element_weights[i] /= sum; }
 		this.display_list = [];
+		this.offset = Math.random()-0.5;
 		for (var i=0; i < 10; i++) {
 			this.display_list[i] = select_random_element(elements, element_weights);
 		}
@@ -134,6 +135,7 @@ class dice_element {
 
 	make_data() {
 		str_make = "";
+		str_make += String(this.offset)+",";
 		for (var i = 0; i < this.display_list.length-1; i++) {
 			str_make += this.display_list[i]+",";
 		}
