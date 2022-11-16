@@ -195,7 +195,7 @@ function main_menu() {
 		var text_position_x = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_position_x = sigmoid_array([-width, width/2, width*2], [0, 1.5, 3], [1.5, 3], this.current_time),
 				box_width = 350, box_height = 100;
-		fill(255, 78, 0);
+		fill(this.blue);
 		rect(box_position_x - box_width/2, height/2 - box_height/2, box_width, box_height);
 		var r_color = rainbow_gradient(this.current_time);
 		fill(r_color[0], r_color[1], r_color[2]);
