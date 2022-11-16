@@ -1,8 +1,9 @@
 class flappy_bird_pipe {
-	constructor(x_offset, pipe_width, pipe_gap_y_pos) {
+	constructor(x_offset, pipe_width, pipe_gap_y_pos, pipe_gap_width) {
 		this.x_offset = x_offset;
 		this.x;
 		this.pipe_width = pipe_width;
+		this.pipe_gap_width = pipe_gap_width;
 		this.pipe_gap_y_pos = pipe_gap_y_pos;
 		this.hasBeenPassed = false;
 
@@ -11,8 +12,8 @@ class flappy_bird_pipe {
 	draw() {
 		push();
 		//this.x = this.x_offset - 200*(Date.now()/1000 - this.last_update);
-		rect(this.x-100,0,200,this.pipe_gap_y_pos-this.pipe_width/2);//draws top half
-		rect(this.x-100,this.pipe_gap_y_pos+this.pipe_width/2,200,height-this.pipe_gap_y_pos-this.pipe_width/2); //draws bottom half
+		rect(this.x-100,0,200,this.pipe_gap_y_pos-this.pipe_gap_width/2);//draws top half
+		rect(this.x-100,this.pipe_gap_y_pos+this.pipe_width/2,200,height-this.pipe_gap_y_pos-this.pipe_gap_width/2); //draws bottom half
 		//-100 makes it so the rectangle is drawn centered with the pipe's x position,
 		//not left-aligned
 		this.x -= 200*(Date.now()/1000 - this.last_update);
@@ -39,158 +40,10 @@ class flappy_bird_pipe {
 		if (pipe_gap_y_pos != null) { this.pipe_gap_y_pos = pipe_gap_y_pos; }
 	}
 }
+
 class flappy_bird_player {
-	constructor(spriteSheet, x, y, face) {
-		this.spriteSheet = spriteSheet;
-
-		this.temp_sprite_sheet = spriteSheet;
-		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64,
-			{
-				// "left_right": {
-				// 	"row": 0,
-				// 	"row_length": 6
-				// },
-				// "down": {
-				// 	"row": 1,
-				// 	"row_length": 6
-				// },
-				// "up": {
-				// 	"row": 2,
-				// 	"row_length": 6
-				// },
-				"jump": {
-					"row": 5,
-					"row_length": 1
-				},
-				"die": {
-					"row": 7,
-					"row_length": 1
-				}
-			});
-		
-		this.sx = 0;        //Frame counter for when the player is moving.
-		this.x = x;
-		this.y = y;
-		this.velocity = 0;
-		this.acceleration = 0; //pixels per second per second
-		this.move = 0;      //Whether or not player is moving. Int is more convenient than boolean for network messages.
-		this.speed = 5;     // Player movement speed
-		this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for East West North South respectively
-		this.sprite_row = 0;
-		this.fruit_holding = 0;
-		this.fruit_held_id = 0;
-		this.bounds = [0, 2000, 0, 1000];
-		this.playerIsInPipe = false;
-		this.isDead = false;
-		this.pipesPassed = 0;
-
-		this.update_anim("jump");
-	}
-
-	draw() {
-		push();
-		// g_cam.translate(this.x, this.y);
-		// if (this.move == 1){
-		// 	if (this.facing < 2){
-		// 		scale(1-this.facing*2, 1);  
-		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx+1), 0, 80, 80);
-		// 		this.x = this.x + this.speed * (1-this.facing*2);
-		// 	} else if (this.facing == 2) {
-		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 80*(this.sx), 400, 80, 80);
-		// 		this.y = this.y - this.speed;
-		// 	} else if (this.facing == 3) {
-		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 480 + 80*(this.sx), 400, 80, 80);
-		// 		this.y = this.y + this.speed;
-		// 	}
-
-		// 	this.x = Math.min(this.bounds[1]-40, Math.max(this.bounds[0]+40, this.x));    //Prevents the player from leaving the game boundaries.
-		// 	this.y = Math.min(this.bounds[3]-40, Math.max(this.bounds[2]+40, this.y));   
-
-		// }
-		// else {
-		// 	if (this.facing < 2){
-		// 		scale(1-this.facing*2, 1);  
-		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 0, 80, 80);
-		// 	} else if (this.facing == 2) {
-		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 0, 400, 80, 80);
-		// 	} else if (this.facing == 3) {
-		// 		g_cam.image(this.spriteSheet, null, null, 100, 100, 480, 400, 80, 80);
-		// 	}
-		// }
-		
-		// if (frameCount % 6 == 0) {
-		// 	this.sx = (this.sx + 1) % 6;
-		// }
-		//send_data_debug("debug:velocity is "+this.velocity);
-		
-		//this.velocity += 0.1*this.acceleration;
-		//this.y += this.velocity;
-		//console.log("velocity -> "+this.velocity);
-		this.update_rotation(this.velocity);
-
-		this.sprite_anim.draw(this.x, this.y, true);
-
-		pop();
-	}
-
-	update_anim(animation) {
-		if (animation == this.current_animation) { return; }
-		//if (animation == "standing" || animation == "dead") { this.moving = 0; this.sprite_anim.stop(); }
-		else  { this.moving = 1; this.sprite_anim.start(); }
-		this.sprite_anim.change_animation(animation);
-		this.current_animation = animation;
-	}
-	update_rotation(velocity) {
-		this.sprite_anim.rotation_angle = -1*180*Math.atan(velocity/(2000));
-	}
-
-	//jump() {
-	//	this.velocity = 100;
-	//}
-
-	grab_fruit(fruit_id, size){
-		this.fruit_holding = 1;
-		this.fruit_held_id = fruit_id;
-		this.speed = 15/size;
-	}
-
-	drop_fruit(){
-		this.speed = 5;
-		this.fruit_holding = 0;
-	}
-
-	get_pos_string(){
-		var string_make = str(this.x)+","+str(this.y)+","+str(this.move)+","+str(this.facing);
-		return string_make;
-	}
-	
-	update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id, velocity){
-		//if (sprite != null) {this.spriteSheet = }
-		if (x != null) { this.x = x; }
-		if (y != null) { this.y = y; }
-		if (move != null) { this.move = move; }
-		if (speed != null) { this.speed = speed; }
-		if (facing != null) { this.facing = facing; }
-		if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
-		if (fruit_id != null) { this.fruit_held_id = fruit_id; }
-		if (velocity != null) {this.velocity = velocity; }
-	}
-
-	make_data_raw(){
-		return this.x+","+this.y+","+this.move+","+
-						this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
-	}
-
-	make_data(player_index){
-		var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
-											this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
-		return string_make;
-	}
-}
-
-class flappy_bird_player_2 {
 	constructor(sprite_sheet, x, y) {
-		this.sprite_anim = new sprite_animation_object(sprite_sheet, 100, 64, 64,
+		this.sprite_anim = new sprite_animation_object(sprite_sheet, 70, 64, 64,
 			{
 				"jump": {
 					"row": 5,
@@ -206,6 +59,7 @@ class flappy_bird_player_2 {
 		this.last_jump = Date.now()/1000;
 		this.y_on_last_jump = this.y;
 		this.acceleration = -20;
+		this.is_dead = 0;
 		//this.acceleration = 0;
 		this.hasJumped = false;
 	}
@@ -213,7 +67,7 @@ class flappy_bird_player_2 {
 	draw() {
 		push();
 		var slope = (Date.now()/1000 - this.last_jump - 1);
-		this.sprite_anim.rotation_angle = 180*Math.atan(slope)-90;
+		this.sprite_anim.rotation_angle = 180*Math.atan(slope)+90;
 		this.sprite_anim.draw(this.x, this.y, true);
 		this.update();
 		
@@ -221,6 +75,7 @@ class flappy_bird_player_2 {
 	}
 
 	jump() {
+		//if (this.is_dead) { return; }
 		this.y_on_last_jump = int(this.y);
 		this.last_jump = Date.now()/1000;
 	}
@@ -230,7 +85,7 @@ class flappy_bird_player_2 {
 	}
   
 	make_data_raw() {
-	  return this.x+","+this.y+","+this.last_jump+","+this.y_on_last_jump+","+this.acceleration;
+	  return this.x+","+this.y+","+this.last_jump+","+this.y_on_last_jump+","+this.acceleration+","+this.is_dead;
 	}
   
 	make_data(){
@@ -273,54 +128,29 @@ function flappy_bird() {
 	  this.backGround2XPosition = width/2+this.backGroundWidth-20;
 	  this.backGround2YPosition = height/2;
 
-      imageMode(CENTER);
-      //this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 0);
-
-	  this.players[0] = new flappy_bird_player_2(this.Sprite, 200, 200);
+	  this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 200);
       this.main_player_index = 0;
-	  //this.playerIsInPipe = false;
     }
   
     this.key_pressed = function(keycode) {
-      // for (i=0;i<4;i++){
-      //   if (keycode == this.arrow_keys[i]){
-      //     this.players[this.main_player_index].facing = i;
-      //     this.players[this.main_player_index].move = 1;
-      //     this.players[this.main_player_index].sx = 0;
-      //     send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-      //     return;
-      //   }
-      // }
-      if(keycode == this.space_bar) {
-		if (this.players[this.main_player_index].isDead) { return; }
-        this.players[this.main_player_index].jump();
-		send_data("jump_notice");
-		send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-      }
+		//if (this.players[this.main_player_index].is_dead) { return; }
+		if(keycode == this.space_bar) {
+			if (this.players[this.main_player_index].isDead) { return; }
+			this.players[this.main_player_index].jump();
+			send_data("jump_notice");
+			send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+		}
     }
   
     this.mouse_pressed = function() { return; }
     this.mouse_released = function() { return; }
   
     this.draw = function() {
-    //   g_cam.x = this.players[this.main_player_index].x;
-    //   g_cam.scale = 0.8;
 		background(200, 200, 200);
-
-		//image(this.backGround,width/2,height/2,width,height);
-		//drawing the first loop of the background
 		image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
 				this.backGroundWidth,this.backGroundHeight);
-		//drawing the second loop of the background
 		image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
 				this.backGroundWidth, this.backGroundHeight);
-
-		//   this.bilbo = 0;
-		//   for(let i in this.players) {
-		// 	this.bilbo++;
-		//   }
-		
-		//   console.log("Number Of Players:"+this.bilbo);
 
 		fill(0, 0, 0);
 		text_make(0, 200, 0, 2);
@@ -334,6 +164,7 @@ function flappy_bird() {
 		for (let i in this.players) {
 			this.players[i].draw();
 		}
+		this.check_collision();
     }
   
     this.read_network_data = function(flag, message) {
@@ -360,39 +191,51 @@ function flappy_bird() {
 		this.players[message].isDead = true;
 	  }
     }
-	
-	/*
-    this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id,velocity
-      p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7, 8], [1, 2, 4]);
-	  if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new flappy_bird_player(this.Sprite, 200, 200, 0)}
-      this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
-      //send_data("debug:"+p_vals[1]);
-    //   for(let i in this.pipesList) { //this activates on every tick
-    //     this.pipesList[i].x -= 400*0.035; //speed times tick interval
-    //   }
-    }
-	*/
-	
+
 	this.read_in_player_position = function(data) {
-		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
+		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5, 6]);
 		if (this.players[p_vals[0]] === undefined) {
 			this.players[p_vals[0]] = new flappy_bird_player_2(this.Sprite, 10, 10);
 		}
-		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5])
+		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6])
 	}
 
-	/*
-    this.read_in_pipe_position = function(data_string) { //format packet as pipe:x,y,pipeWidth
-      pipe_vals = convert_data_string(data_string, [0,1,2]);
-      this.pipesList[this.pipesList.length] = new flappy_bird_pipe(pipe_vals[0],pipe_vals[1],pipe_vals[2]); //I changed this from this.pipesList.push to what it is now. -Kyle
-      send_data("debug:new pipe "+this.pipesList[this.pipesList.length-1].make_data); //James, you had a bug here that I fixed. Referenced pipesList instead of this.pipesList
-    }
-	*/
 	this.read_in_pipe_position = function(data) { //format packet as pipe:x,y,pipeWidth
 		p_vals = convert_data_string(data, [0], [1, 2, 3, 4]);
 		if (this.pipes[p_vals[0]] === undefined) {
-			this.pipes[p_vals[0]] = new flappy_bird_pipe(10, 10, 10);
+			this.pipes[p_vals[0]] = new flappy_bird_pipe(10, 10, 10, 200);
 		}
 		this.pipes[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4])
+	}
+
+	this.check_collision = function() {
+		if (this.players[this.main_player_index].is_dead) { return; }
+		var pipe_index = false;
+		var player_draw_height = this.players[this.main_player_index].sprite_anim.draw_size;
+		var player_draw_width = player_draw_height*this.players[this.main_player_index].sprite_anim.w_h_ratio,
+			player_draw_angle = this.players[this.main_player_index].sprite_anim.rotation_angle*Math.PI/180;
+		var player_margin_width = Math.max(player_draw_height*Math.abs(Math.sin(player_draw_angle))/2, 
+											player_draw_width*Math.abs(Math.cos(player_draw_angle))/2);
+		for (let i in this.pipes) {
+			var distance = this.players[this.main_player_index].x - this.pipes[i].x + this.pipes[i].pipe_width/2;
+			if (distance > 0 && distance < this.pipes[i].pipe_width-player_draw_width) {
+				console.log ("ahead of pipe "+i);
+				pipe_index = i;
+				break;
+			}
+		}
+		if (pipe_index == false) { return; }
+		var player_margin_height = Math.max(player_draw_height*Math.abs(Math.cos(player_draw_angle))/2, 
+											player_draw_width*Math.abs(Math.cos(player_draw_angle))/2);
+		if (Math.abs(this.players[this.main_player_index].y - this.pipes[pipe_index].pipe_gap_y_pos) > 
+			this.pipes[pipe_index].pipe_gap_width/2-player_margin_height) {
+			this.kill(this.main_player_index);
+		}
+	}
+
+	this.kill = function(player_id) {
+		this.players[player_id].is_dead = 1;
+		this.players[player_id].sprite_anim.change_animation("die");
+		send_data("dead_notice");
 	}
   }

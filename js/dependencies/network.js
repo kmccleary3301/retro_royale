@@ -36,7 +36,7 @@ function socket_disconnected() {
 function process_message(data) {          //Event function to process data recieved from the server through the websocket.
   var lines = data.split("\n");
   for (let i in lines) {
-    console.log("line "+str(i)+": "+lines[i]);
+    //console.log("line "+str(i)+": "+lines[i]);
     var line_split = lines[i].split(":");
     var flag = line_split[0],
         message = null;
@@ -49,6 +49,6 @@ function process_message(data) {          //Event function to process data recie
 }
 
 function send_data(data) {  //Global function to send data to server.
-  console.log("sending -> "+data);
+  //console.log("sending -> "+data);
   if (connected_to_server) { socket.send(data); }
 }
