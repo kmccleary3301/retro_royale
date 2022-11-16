@@ -51,6 +51,7 @@ function keyPressed() { //Event function that triggers upon user pressing a key 
   if (current_state.key_pressed !== undefined) {
     current_state.key_pressed(keyCode); 
   }
+  windowResized()
 }
 
 function keyReleased() {  //Event function that triggers upon user releasing a key on their keyboard.

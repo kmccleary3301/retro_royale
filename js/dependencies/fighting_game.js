@@ -603,7 +603,7 @@ if (game_round == 4) {
 
   this.game_over = function() {
     //display text saying game over
-    text("GAME OVER", width/2, height/2);
+    text("game over", width/2, height/2);
 
 
   }
