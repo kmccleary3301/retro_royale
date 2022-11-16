@@ -25,6 +25,7 @@ function board_game() {
 		this.mouse_click_location = [0, 0];
 		this.pause_check = false;
 		this.user_roll = false;
+		this.tile_sprite = loadImage("media/sprites/tiles.png");
 		//this.arrow_keys = [39, 37, 38, 40];
 		this.arrow_keys = {
 			"left" : 37,
@@ -67,16 +68,16 @@ function board_game() {
 	}
 
 	this.make_board_layout_preset_1 = function() {
-		this.tiles[0] = new board_game_tile(0, 25, 0, [1]);
+		this.tiles[0] = new board_game_tile(this.tile_sprite, 0, 25, 0, [1]);
 		for (i = 1; i < 49; i++) {
-			this.tiles[i] = new board_game_tile(i, 25, 1+Math.floor(Math.random()*4), [1]);
+			this.tiles[i] = new board_game_tile(this.tile_sprite, i, 25, 1+Math.floor(Math.random()*4), [1]);
 			this.pair_tiles(i-1, i, "right");
 			this.pair_tiles(i, i-1, "left");
 		}
-		this.tiles[49] = new board_game_tile(49, 25, 5, [1]);
+		this.tiles[49] = new board_game_tile(this.tile_sprite, 49, 25, 5, [1]);
 		this.pair_tiles(48, 49, "right");
 		this.pair_tiles(49, 48, "left");
-		this.tiles[50] = new board_game_tile(2, 24, 4, [1]);
+		this.tiles[50] = new board_game_tile(this.tile_sprite, 2, 24, 4, [1]);
 		this.pair_tiles(2, 50, "up");
 		this.pair_tiles(50, 2, "down");
 	}
@@ -89,7 +90,7 @@ function board_game() {
 			else if (pixel_list[i].compare_rgb(255, 255, 0)) { type = 5; }
 			else if (pixel_list[i].compare_rgb(255, 0, 255)) { type = 3; }
 			else if (pixel_list[i].compare_rgb(255, 0, 0)) { type = 4; }
-			this.tiles[i] = new board_game_tile(pixel_list[i].x, pixel_list[i].y, type, [1]);
+			this.tiles[i] = new board_game_tile(this.tile_sprite, pixel_list[i].x, pixel_list[i].y, type, [1]);
 		}
 		for (let i in pixel_list) {
 			for (let j in pixel_list[i].connected) {
@@ -487,7 +488,7 @@ function board_game() {
 
 	this.read_in_tile_data = function(data) {
 		p_vals = convert_data_string(data, [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], [], [5]);
-		if (p_vals[0] >= this.tiles.length) { this.tiles[p_vals[0]] = new board_game_tile(p_vals[1], p_vals[2], p_vals[5], []); }
+		if (p_vals[0] >= this.tiles.length) { this.tiles[p_vals[0]] = new board_game_tile(this.tile_sprite, p_vals[1], p_vals[2], p_vals[5], []); }
 		this.tiles[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], 
 										p_vals[8], p_vals[9], p_vals[10], p_vals[11], p_vals[12], p_vals[13], p_vals[14], 
 										p_vals[15], p_vals[16], p_vals[17], p_vals[18], p_vals[19], p_vals[20], p_vals[21]);

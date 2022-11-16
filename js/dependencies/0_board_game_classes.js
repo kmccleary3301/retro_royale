@@ -112,7 +112,34 @@ class board_game_player {
 }
 
 class board_game_tile {
-	constructor(tile_x, tile_y, tile_type, tile_access_directions) {
+	constructor(sprite, tile_x, tile_y, tile_type, tile_access_directions) {
+		this.sprite_anim = new sprite_animation_object(sprite, 100, 40, 40,
+			{
+				"empty": {
+					"row": 0,
+					"row_length": 1
+				},
+				"gain_coins": {
+					"row": 1,
+					"row_length": 1
+				},
+				"lose_coins": {
+					"row": 2,
+					"row_length": 1
+				},
+				"versus": {
+					"row": 3,
+					"row_length": 1
+				},
+				"trap": {
+					"row": 4,
+					"row_length": 1
+				},
+				"star": {
+					"row": 5,
+					"row_length": 1
+				}
+			});
 		this.tile_x = tile_x;
 		this.tile_y = tile_y;
 		this.x = 80 + 160*this.tile_x;
@@ -151,64 +178,12 @@ class board_game_tile {
 				"tile_id": 0
 			},
 		};
+		this.sprite_anim.change_animation(this.type);
 	}
 
 	draw() {
 		push();
-
-		switch(this.type) {
-			case 'empty':
-				fill(this.cyan);
-				break;
-			case 'lose_coins':
-				fill(this.red);
-				break;
-			case 'gain_coins':
-				fill(this.yellow);
-				break;
-			case 'versus':
-				fill(this.purple);
-				break;
-			case 'trap':
-				fill(this.red);
-				break;
-			case 'star':
-				fill(this.yellow);
-				break;
-		}
-		/*
-		if (this.type == 0) { fill(0, 0, 125); }
-		else if (this.type == 1) { fill(250, 0, 0); }
-		else if (this.type == 2) { fill(0, 250, 0); }
-		else if (this.type == 3) { fill(180, 0, 180); }
-		else if (this.type == 4) { fill(255, 78, 0); }
-		else if (this.type == 5) { fill(255, 255, 0); }
-		*/
-		stroke(50);
-		strokeWeight(5);
-		g_cam.ellipse(this.x, this.y, 100, 100);
-
-		for (let i in Object.keys(this.connected_tiles)) {
-			var key = Object.keys(this.connected_tiles)[i];
-			//if (!(this.connected_tiles[key]["is_child"])) { continue; }
-
-			var angle;
-			if (key == "left") { angle = Math.PI*(1); }
-			else if (key == "right") { angle = 0; }
-			else if (key == "up") { angle = Math.PI/2; }
-			else if (key == "down") { angle = Math.PI*3/2; }
-
-			/*
-			var x1 = 110*Math.cos(angle), y1 = 110*Math.sin(angle);
-			var x2 = x1 + 20*Math.cos(angle+Math.pi/2), y2 = y1 + 20*Math.sin(angle + Math.pi/2);
-			var x3 = (x1+x2)/2 + 20*Math.cos(angle), y3 = (y1+y2)/2 + 20*Math.sin(angle);
-			x1 += this.x; x2 += this.x; x3 += this.x;
-			y1 += this.y; y2 += this.y; y3 += this.y;
-
-			fill(0, 0, 0);
-			g_cam.triangle(x1, y1, x2, y2, x3, y3);
-			*/
-		}
+		this.sprite_anim.draw(this.x, this.y, true);
 		pop();
 
 	}
