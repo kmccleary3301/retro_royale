@@ -53,15 +53,16 @@ class flappy_bird_pipe {
 }
 
 class flappy_bird_player {
-	constructor(sprite_sheet, x, y) {
+	constructor(sprite_sheet, x, y, sprite_color) {
+		this.sprite_color = sprite_color;
 		this.sprite_anim = new sprite_animation_object(sprite_sheet, 70, 64, 64,
 			{
-				"jump": {
-					"row": 5,
-					"row_length": 1
+				"flap": {
+					"row": 9+10*this.sprite_color,
+					"row_length": 6
 				},
 				"die": {
-					"row": 7,
+					"row": 7+10*this.sprite_color,
 					"row_length": 1
 				}
 			});
@@ -73,6 +74,8 @@ class flappy_bird_player {
 		this.is_dead = 0;
 		//this.acceleration = 0;
 		this.has_jumped = false;
+		this.sprite_anim.change_animation("flap");
+		this.sprite_anim.stop();
 	}
 	
 	draw() {
@@ -83,14 +86,22 @@ class flappy_bird_player {
 		} else {
 			this.sprite_anim.rotation_angle = 0;
 		}
+		fill(255, 0, 0);
+		ellipse(this.x, this.y, 10);
 		this.sprite_anim.draw(this.x, this.y, true);
+		console.log("sprite_anim ->"+this.sprite_anim.current_animation_row+", "+this.sprite_anim.sx);
+		console.log("this.sprite color ->"+this.sprite_color);
 		this.update();
+		if (this.sprite_anim.sx%6 == 5) {
+			this.sprite_anim.stop();
+		}
 		
 		pop();
 	}
 
 	jump() {
 		if (this.is_dead) { return; }
+		this.sprite_anim.start();
 		if (!this.has_jumped) { this.has_jumped = true; }
 		this.y_on_last_jump = int(this.y);
 		this.last_jump = Date.now()/1000;
@@ -120,7 +131,7 @@ class flappy_bird_player {
 	  if (y_on_last_jump != null) { this.y_on_last_jump = y_on_last_jump; }
 	  if (acceleration != null) { this.acceleration = acceleration; }
 	}
-  }
+}
 
 function flappy_bird() {
     this.setup = function() {
@@ -129,7 +140,7 @@ function flappy_bird() {
       this.main_player_index = 0;
       this.space_bar = 32; //space bar
       //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
-	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
+	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
 	  this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
 	  this.pipe_sprite = loadImage("media/sprites/pipe.png")
 	  this.game_is_over = false;
@@ -146,7 +157,7 @@ function flappy_bird() {
 	  this.backGround2XPosition = width/2+this.backGroundWidth-20;
 	  this.backGround2YPosition = height/2;
 
-	  this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 200);
+	  this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 0);
       this.main_player_index = 0;
     }
   
@@ -194,14 +205,14 @@ function flappy_bird() {
     this.read_network_data = function(flag, message) {
       if (flag == "player_count") {
         for (j=this.players.length; j < parseInt(message); j++){
-          this.players[j] = new flappy_bird_player(this.Sprite, 200, 200, 0);
+          this.players[j] = new flappy_bird_player(this.Sprite, 200, 200, j%4);
         }
       } else if (flag == "assigned_id") {
         this.main_player_index = parseInt(message);
       } else if (flag == "pos_player") {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
-        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, 0);
+        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, j%4);
 		console.log("New player connected");
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
@@ -274,11 +285,6 @@ function flappy_bird() {
 		
 		if (kill_player) {
 			this.kill(this.main_player_index);
-			var self = this;
-			setTimeout(function(){
-				self.players[self.main_player_index].is_dead = 0;
-				self.players[self.main_player_index].sprite_anim.change_animation("jump");
-			}, 1000);
 		}
 	}
 

@@ -1438,6 +1438,7 @@ function flappy_bird() {
     var self = this;
     var int_id = setInterval(function(){ self.tick_function(); }, 100);
     sessions[this.session_id].append_interval_id(int_id);
+    this.game_over = 0;
   }
 
   this.set_player_y_positions = function() {
@@ -1492,7 +1493,8 @@ function flappy_bird() {
         if (this.players[i].is_dead == 1) { this.players_alive--; }
       }
       console.log("player death; players alive: "+this.players_alive);
-      if (this.players_alive <= 0) {
+      if (this.players_alive <= 0 && !this.game_over) {
+        this.game_over = 1;
         broadcast("end_game");
         var self = this;
         setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen");}, 3000);
