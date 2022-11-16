@@ -1,21 +1,31 @@
 class flappy_bird_pipe {
-	constructor(x_offset, pipe_width, pipe_gap_y_pos, pipe_gap_width) {
+	constructor(sprite, x_offset, pipe_width, pipe_gap_y_pos, pipe_gap_width) {
+		this.sprite = sprite;
 		this.x_offset = x_offset;
 		this.x;
 		this.pipe_width = pipe_width;
 		this.pipe_gap_width = pipe_gap_width;
 		this.pipe_gap_y_pos = pipe_gap_y_pos;
-		this.hasBeenPassed = false;
-
 		this.last_update = Date.now()/1000;
 	}
 	draw() {
 		push();
-		//this.x = this.x_offset - 200*(Date.now()/1000 - this.last_update);
-		rect(this.x-100,0,200,this.pipe_gap_y_pos-this.pipe_gap_width/2);//draws top half
-		rect(this.x-100,this.pipe_gap_y_pos+this.pipe_width/2,200,height-this.pipe_gap_y_pos-this.pipe_gap_width/2); //draws bottom half
-		//-100 makes it so the rectangle is drawn centered with the pipe's x position,
-		//not left-aligned
+		tint(255, 255);
+		var rect_left_corner = this.x - this.pipe_width/2;
+		translate(rect_left_corner, this.pipe_gap_y_pos-this.pipe_gap_width/2);
+		scale(1, -1);
+		imageMode(CORNERS);
+		var image_height_1 = Math.floor(this.sprite.width*(this.pipe_gap_y_pos-this.pipe_gap_width/2)/this.pipe_width);
+		noSmooth();
+		image(this.sprite, 0, 0, this.pipe_width,this.pipe_gap_y_pos-this.pipe_gap_width/2, 0, 0, this.sprite.width, image_height_1);
+		pop();
+		push();
+		tint(255, 255);
+		var image_height_2 = Math.floor(this.sprite.width*(height-this.pipe_gap_y_pos+this.pipe_gap_width/2)/this.pipe_width);
+		translate(rect_left_corner, this.pipe_gap_y_pos+this.pipe_gap_width/2);
+		imageMode(CORNERS);
+		noSmooth();
+		image(this.sprite, 0, 0, this.pipe_width,height-this.pipe_gap_y_pos+this.pipe_gap_width/2, 0, 0, this.sprite.width, image_height_2);
 		this.x -= 200*(Date.now()/1000 - this.last_update);
 		this.last_update = Date.now()/1000;
 		pop();
@@ -23,7 +33,7 @@ class flappy_bird_pipe {
 
 	make_data_raw() {
 		return this.x+","+this.x_offset+","+this.pipe_width+","+this.pipe_gap_y_pos;
-	  }
+	}
 	
 	make_data() {
 		if (argument[0] === undefined) {
@@ -33,11 +43,12 @@ class flappy_bird_pipe {
 		}
 	}
 
-	update_data(x_offset, x, pipe_width, pipe_gap_y_pos) {
+	update_data(x_offset, x, pipe_width, pipe_gap_y_pos, pipe_gap_width) {
 		if (x_offset != null) { this.x_offset = x_offset; }
 		if (x != null) { this.x = x; }
 		if (pipe_width != null) { this.pipe_width = pipe_width; }
 		if (pipe_gap_y_pos != null) { this.pipe_gap_y_pos = pipe_gap_y_pos; }
+		if (pipe_gap_width != null) { this.pipe_gap_width = pipe_gap_width; }
 	}
 }
 
@@ -61,13 +72,17 @@ class flappy_bird_player {
 		this.acceleration = -20;
 		this.is_dead = 0;
 		//this.acceleration = 0;
-		this.hasJumped = false;
+		this.has_jumped = false;
 	}
 	
 	draw() {
 		push();
-		var slope = (Date.now()/1000 - this.last_jump - 1);
-		this.sprite_anim.rotation_angle = 180*Math.atan(slope)+90;
+		if (this.has_jumped) {
+			var slope = (Date.now()/1000 - this.last_jump - 1);
+			this.sprite_anim.rotation_angle = 180*Math.atan(slope)+90;
+		} else {
+			this.sprite_anim.rotation_angle = 0;
+		}
 		this.sprite_anim.draw(this.x, this.y, true);
 		this.update();
 		
@@ -75,12 +90,14 @@ class flappy_bird_player {
 	}
 
 	jump() {
-		//if (this.is_dead) { return; }
+		if (this.is_dead) { return; }
+		if (!this.has_jumped) { this.has_jumped = true; }
 		this.y_on_last_jump = int(this.y);
 		this.last_jump = Date.now()/1000;
 	}
   
 	update() {
+		if (!this.has_jumped) { return; }
 	  	this.y = float(this.y_on_last_jump) + (this.acceleration - this.acceleration*Math.pow((Date.now()/1000 - this.last_jump)*5-1, 2));
 	}
   
@@ -114,9 +131,10 @@ function flappy_bird() {
       //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
 	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
 	  this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
-	  
+	  this.pipe_sprite = loadImage("media/sprites/pipe.png")
 	  this.game_is_over = false;
-
+	  this.game_over_time;
+		
 	  //1280x330 height/330
 	  this.backGroundOriginalHeight = 330;
 	  this.backGroundOriginalWidth = 1280;
@@ -146,6 +164,7 @@ function flappy_bird() {
     this.mouse_released = function() { return; }
   
     this.draw = function() {
+		push();
 		background(200, 200, 200);
 		image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
 				this.backGroundWidth,this.backGroundHeight);
@@ -153,10 +172,14 @@ function flappy_bird() {
 				this.backGroundWidth, this.backGroundHeight);
 
 		fill(0, 0, 0);
-		text_make(0, 200, 0, 2);
+		text_make(4, 200, 0, 2);
 		textAlign(CENTER, CENTER);
-		text("FLAP!", width/2, height/2);
+		//text("FLAP!", width/2, height/2);
 		
+		if (this.game_is_over) {
+			var message_position = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 1.5], this.current_time-this.game_over_time);
+			text("game over", message_position, height/2);
+		}
 
 		for (let i in this.pipes) {
 			this.pipes[i].draw();
@@ -165,6 +188,7 @@ function flappy_bird() {
 			this.players[i].draw();
 		}
 		this.check_collision();
+		pop();
     }
   
     this.read_network_data = function(flag, message) {
@@ -188,7 +212,10 @@ function flappy_bird() {
       } else if (flag == "pipe_pos") {
         this.read_in_pipe_position(message);
 	  } else if (flag == "death") {
-		this.players[message].isDead = true;
+		this.kill(parseInt(message));
+	  } else if (flag == "end_game") {
+		this.game_is_over = 1;
+		this.game_over_time = Date.now()/1000;
 	  }
     }
 
@@ -197,39 +224,61 @@ function flappy_bird() {
 		if (this.players[p_vals[0]] === undefined) {
 			this.players[p_vals[0]] = new flappy_bird_player_2(this.Sprite, 10, 10);
 		}
-		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6])
+		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6]);
 	}
 
 	this.read_in_pipe_position = function(data) { //format packet as pipe:x,y,pipeWidth
-		p_vals = convert_data_string(data, [0], [1, 2, 3, 4]);
+		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
 		if (this.pipes[p_vals[0]] === undefined) {
-			this.pipes[p_vals[0]] = new flappy_bird_pipe(10, 10, 10, 200);
+			this.pipes[p_vals[0]] = new flappy_bird_pipe(this.pipe_sprite, 10, 10, 10, 200);
 		}
-		this.pipes[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4])
+		this.pipes[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
 	}
 
 	this.check_collision = function() {
 		if (this.players[this.main_player_index].is_dead) { return; }
-		var pipe_index = false;
+		var kill_player = false;
 		var player_draw_height = this.players[this.main_player_index].sprite_anim.draw_size;
 		var player_draw_width = player_draw_height*this.players[this.main_player_index].sprite_anim.w_h_ratio,
 			player_draw_angle = this.players[this.main_player_index].sprite_anim.rotation_angle*Math.PI/180;
 		var player_margin_width = Math.max(player_draw_height*Math.abs(Math.sin(player_draw_angle))/2, 
 											player_draw_width*Math.abs(Math.cos(player_draw_angle))/2);
-		for (let i in this.pipes) {
-			var distance = this.players[this.main_player_index].x - this.pipes[i].x + this.pipes[i].pipe_width/2;
-			if (distance > 0 && distance < this.pipes[i].pipe_width-player_draw_width) {
-				console.log ("ahead of pipe "+i);
-				pipe_index = i;
-				break;
-			}
-		}
-		if (pipe_index == false) { return; }
 		var player_margin_height = Math.max(player_draw_height*Math.abs(Math.cos(player_draw_angle))/2, 
 											player_draw_width*Math.abs(Math.cos(player_draw_angle))/2);
-		if (Math.abs(this.players[this.main_player_index].y - this.pipes[pipe_index].pipe_gap_y_pos) > 
-			this.pipes[pipe_index].pipe_gap_width/2-player_margin_height) {
+		for (let i in this.pipes) {
+			var lower_bound_x = this.pipes[i].x - this.pipes[i].pipe_width/2 - player_margin_width;
+			var upper_bound_x = this.pipes[i].x + this.pipes[i].pipe_width/2 + player_margin_width;
+			if (this.players[this.main_player_index].x > lower_bound_x && this.players[this.main_player_index].x < upper_bound_x) {
+				console.log ("ahead of pipe "+i);
+
+				var lower_bound_y = this.pipes[i].pipe_gap_y_pos - this.pipes[i].pipe_gap_width/2 + player_margin_height;
+				var upper_bound_y = this.pipes[i].pipe_gap_y_pos + this.pipes[i].pipe_gap_width/2 - player_margin_height;
+
+				/*
+				//show hitbox
+				rectMode(CORNER);
+				stroke(color(255, 0, 0));
+				strokeWeight(4);
+				fill(color(0, 0, 0, 0));
+				rect(lower_bound_x, lower_bound_y, (upper_bound_x-lower_bound_x), (upper_bound_y-lower_bound_y));
+				*/
+
+				if (this.players[this.main_player_index].y < lower_bound_y ||
+					this.players[this.main_player_index].y > upper_bound_y) {
+					kill_player = true;
+					break;
+				}
+			}
+		}
+		if (kill_player == false) { return; }
+		
+		if (kill_player) {
 			this.kill(this.main_player_index);
+			var self = this;
+			setTimeout(function(){
+				self.players[self.main_player_index].is_dead = 0;
+				self.players[self.main_player_index].sprite_anim.change_animation("jump");
+			}, 1000);
 		}
 	}
 

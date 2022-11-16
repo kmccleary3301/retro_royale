@@ -1,8 +1,9 @@
 class flappy_bird_pipe {
-  constructor(x_offset, pipe_width, pipe_gap_y_pos) {
+  constructor(x_offset, pipe_width, pipe_gap_y_pos, pipe_gap_width) {
     this.x = x_offset;
     this.x_offset = x_offset;
     this.pipe_width = pipe_width;
+    this.pipe_gap_width = pipe_gap_width;
     this.pipe_gap_y_pos = pipe_gap_y_pos;
     this.last_update = Date.now()/1000;
   }
@@ -13,7 +14,7 @@ class flappy_bird_pipe {
   }
 
   make_data_raw() {
-    return this.x_offset+","+this.x+","+this.pipe_width+","+this.pipe_gap_y_pos;
+    return this.x_offset+","+this.x+","+this.pipe_width+","+this.pipe_gap_y_pos+","+this.pipe_gap_width;
   }
 
   make_data() {
@@ -32,7 +33,7 @@ class flappy_bird_player {
     this.last_jump = Date.now()/1000;
     this.y_on_last_jump = this.y;
     this.acceleration = -100;
-    this.is_dead = 0
+    this.is_dead = 0;
   }
 
   make_data_raw() {

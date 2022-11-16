@@ -1016,7 +1016,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl"], [1, 1, 50, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl"], [50, 1, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':
@@ -1408,6 +1408,8 @@ function flappy_bird() {
     this.start_game_timer = 5;
     this.current_time = 0;
     this.players = [];
+    this.pipe_interval = 800; //pixels between pipes to spawn;
+    this.pipe_jump_gap_size = 250;
 
     this.game_result_json = {};
     this.numberOfPlayersDead = 0;
@@ -1415,7 +1417,8 @@ function flappy_bird() {
 
     this.pipes = [];
     for (i=0; i<10; i++) {
-      this.pipes[i] = new flappy_bird_pipe(1000+800*this.pipe_counter, 200, 200+Math.random()*300);
+      this.pipes[i] = new flappy_bird_pipe(1000+this.pipe_interval*this.pipe_counter, 200, 
+                                            200+Math.random()*300, this.pipe_jump_gap_size);
       this.pipe_counter++;
     }
 
@@ -1429,20 +1432,29 @@ function flappy_bird() {
           this.user_loaded(i);
         }
       }
+      this.players_alive = this.players.length; 
     }
+    this.set_player_y_positions;
     var self = this;
     var int_id = setInterval(function(){ self.tick_function(); }, 100);
     sessions[this.session_id].append_interval_id(int_id);
+  }
+
+  this.set_player_y_positions = function() {
+    var placement_gap = [100, 500];
+    for (let i in this.players) {
+      this.players[i].x = placement_gap[0] + (placement_gap[1]-placement_gap[0])*i/this.players.length;
+    }
   }
 
   this.tick_function = function() { 
     this.current_time = Date.now()/1000 - this.start_time;
 
     if (this.pipes[0].x < -200) {
-      console.log("adding new pip");
       this.pipes.splice(0, 1);
       this.pipes[this.pipes.length] = 
-          new flappy_bird_pipe(this.pipes[this.pipes.length-1].x+800, 200, 200+Math.random()*300);
+          new flappy_bird_pipe(this.pipes[this.pipes.length-1].x+this.pipe_interval, 200, 
+                                200+Math.random()*300, this.pipe_jump_gap_size);
       this.pipe_counter++;
       this.pipe_last_added = Date.now()/1000;
     }
@@ -1466,19 +1478,24 @@ function flappy_bird() {
     } else if (flag == "jump_notice") {
       //sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
       sessions[this.session_id].broadcast_exclusive("player_jump:"+usr_id, [usr_id]);
-    } else if (flag == "death") {
+    } else if (flag == "dead_notice") {
+      this.players[usr_id].is_dead = 1;
       this.game_result_json[sessions[this.session_id].clients_info[usr_id].name] = {
         "player_id" : usr_id,
         "coins_added" : 15+this.current_time
       }
-      sessions[this.session_id].broadcast("death:"+usr_id);
+      sessions[this.session_id].broadcast_exclusive("death:"+usr_id, [usr_id]);
       //sessions[this.session_id].broadcast("rmv_player:"+usr_id);
-      this.numberOfPlayersDead++;
-      //this.clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
-      sessions[this.session_id].clients_info[usr_id].placeInGame = this.numberOfPlayersDead;
-      if(this.numberOfPlayersDead == this.players.length) {
+      this.players_alive == this.players.length;
+      for (let i in this.players){
+        console.log("player "+i+" dead -> "+this.players[i].is_dead)
+        if (this.players[i].is_dead == 1) { this.players_alive--; }
+      }
+      console.log("player death; players alive: "+this.players_alive);
+      if (this.players_alive <= 0) {
+        broadcast("end_game");
         var self = this;
-        setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen");}, 2000);
+        setTimeout(function(){ sessions[self.session_id].swap_current_state("game_end_screen");}, 3000);
       }
     } else if (flag == "debug") {
       console.log("client sent "+message);
@@ -1489,7 +1506,9 @@ function flappy_bird() {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
     if (this.players[usr_id] === undefined) {
       this.players[usr_id] = new flappy_bird_player(500, 500, 1);
+      this.players_alive++;
     }
+    this.set_player_y_positions();
     //console.log("A player loaded into da game "+usr_id);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
@@ -1513,15 +1532,15 @@ function flappy_bird() {
 		if (this.players[p_vals[0]] === undefined) {
 			this.players[p_vals[0]] = new flappy_bird_player(this.Sprite, 10, 10);
 		}
-		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5])
+		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
 	}
 
 	this.read_in_pipe_position = function(data) { //format packet as pipe:x,y,pipeWidth
-		p_vals = convert_data_string(data, [0], [1, 2, 3, 4]);
+		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
 		if (this.pipes[p_vals[0]] === undefined) {
 			this.pipes[p_vals[0]] = new flappy_bird_pipe(10, 10, 10);
 		}
-		this.pipes[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4])
+		this.pipes[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
 	}
 }
 
