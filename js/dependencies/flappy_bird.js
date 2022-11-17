@@ -141,21 +141,28 @@ function flappy_bird() {
       this.space_bar = 32; //space bar
       //this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
 	  this.Sprite = loadImage(repo_address+"media/sprites/Spritesheet_64_update.png");
-	  this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
+	//   this.backGround = loadImage("media/background/loopable_city_background_upscaled.png")
 	  this.pipe_sprite = loadImage("media/sprites/pipe.png")
 	  this.game_is_over = false;
 	  this.game_over_time;
 		
 	  //1280x330 height/330
-	  this.backGroundOriginalHeight = 330;
-	  this.backGroundOriginalWidth = 1280;
+	//   this.backGroundOriginalHeight = 330;
+	//   this.backGroundOriginalWidth = 1280;
 
-	  this.backGroundHeight = height;
-	  this.backGroundWidth = height/this.backGroundOriginalHeight*width;
-	  this.backGround1XPosition = width/2;
-	  this.backGround1YPosition = height/2;
-	  this.backGround2XPosition = width/2+this.backGroundWidth-20;
-	  this.backGround2YPosition = height/2;
+	//   this.backGroundHeight = height;
+	//   this.backGroundWidth = height/this.backGroundOriginalHeight*width;
+	//   this.backGround1XPosition = width/2;
+	//   this.backGround1YPosition = height/2;
+	//   this.backGround2XPosition = width/2+this.backGroundWidth-20;
+	//   this.backGround2YPosition = height/2;
+
+	  this.test_background_1 = loadImage("media/backgrounds/city_layer_3.png");
+	  this.scroll_background_1 = new scroll_image(this.test_background_1, [1920, 1080], -20);
+	  this.test_background_2 = loadImage("media/backgrounds/city_layer_2.png");
+	  this.scroll_background_2 = new scroll_image(this.test_background_2, [1920, 1080], -7);
+	  this.test_background_3 = loadImage("media/backgrounds/city_layer_1.png");
+	  this.scroll_background_3 = new scroll_image(this.test_background_3, [1920, 1080], -80);
 
 	  this.players[0] = new flappy_bird_player(this.Sprite, 200, 200, 0);
       this.main_player_index = 0;
@@ -177,10 +184,13 @@ function flappy_bird() {
     this.draw = function() {
 		push();
 		background(200, 200, 200);
-		image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
-				this.backGroundWidth,this.backGroundHeight);
-		image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
-				this.backGroundWidth, this.backGroundHeight);
+		// image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
+		// 		this.backGroundWidth,this.backGroundHeight);
+		// image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
+		// 		this.backGroundWidth, this.backGroundHeight);
+		this.scroll_background_1.draw();
+		this.scroll_background_2.draw();
+		this.scroll_background_3.draw();
 
 		fill(0, 0, 0);
 		text_make(4, 200, 0, 2);
