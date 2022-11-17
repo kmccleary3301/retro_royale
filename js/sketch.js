@@ -26,6 +26,20 @@ function preload() {  //This is a default p5 function which executes on load. Si
 }
 
 function setup() {
+
+  var sound_test = new Tone.Player({
+    url: 'media/sounds/arp_2.wav',
+    loop: true,
+    autostart: true,
+    loopStart: 0,
+    loopEnd: 20,
+    fadeIn: 1,
+    fadeOut: 1
+  });
+  sound_test.toDestination();
+  //sound_test.start();
+  //sound_test.player("press").start();
+
   console.log(millis());
   createCanvas(windowWidth, windowHeight); //Enables the canvas size. These are stored in global variables named width and height.
   background(50, 50, 50); //Declares the background color via RGB.

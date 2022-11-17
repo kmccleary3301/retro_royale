@@ -34,7 +34,7 @@ function main_menu() {
 		this.scroll_background_3 = new scroll_image(this.test_background_3, [1920, 1080], 80);
 		
 		this.sounds = new Tone.Players({
-			"Hum" : 'media/sounds/synth_2.wav'
+			"press" : 'media/sounds/button_press.wav'
 		});
 		this.sounds.toDestination();
 
@@ -216,7 +216,7 @@ function main_menu() {
 			if (this.buttons[this.current_menu][i].pressed) { 
 				this.buttons[this.current_menu][i].pressed = 0;
 				this.button_press(i);
-				this.playSound('Hum');
+				this.playSound('press');
 				return;
 			}
 		}

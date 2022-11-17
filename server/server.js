@@ -680,6 +680,9 @@ function game_end_screen() {
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "down", i%4);
+      }
+      for (let i in sessions[this.session_id].clients) {
+        sessions[this.session_id].clients[i].send(this.make_everything());
         sessions[this.session_id].clients[i].send(this.game_result_json_to_string());
         sessions[this.session_id].clients[i].send("current_time:"+this.current_time);
       }
@@ -926,8 +929,10 @@ function board_game() {
 	}
 
   this.second_setup = function() {
+
     var self = this;
     var int_id = setInterval(function(){self.tick_function();}, 100);
+    if (this.players.length == 0) { return; }
     sessions[this.session_id].append_interval_id(int_id);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
   }
@@ -1271,12 +1276,22 @@ function fighting_game() {
     this.current_time = 0;
     this.floor = 570;
     this.players = [];
+    this.current_time = 0;
+    this.start_time = Date.now()/1000;
+    this.round_length = 30;
+    this.countdown_time = this.round_length;
+    this.game_round = 1;
+    this.game_over = 0;
     this.game_result_json = {};
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+        this.players[i] = new fighting_game_player(100+400*Math.random(), 0, 0, i);
       }
+      sessions[this.session_id].broadcast(this.make_everything());
     }
+    var self = this;
+    var int_id = setInterval(function(){self.tick_function();}, 200);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -1314,7 +1329,7 @@ function fighting_game() {
       if (this.players[i].isDead){
         dead.push(this.players[i]);
       }
-    }}
+  }}
 
 
   //make a function to declare a winner
@@ -1333,30 +1348,53 @@ function fighting_game() {
           //this.leaderboard();        //this is where the leaderboard function would be called to determine placement
         }
       }
-    }}
+    }
+  }
 
   this.end_game = function(winner_id) {
     for (let i in this.players) {
-      this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
-        "player_id": i,
-        "coins_added": 30
+      if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+        this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+          "player_id": i,
+          "coins_added": 30
+        }
       }
     }
-    this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 30;
+    if (winner_id !== undefined) {
+      this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 15;
+    }
     var self = this;
     setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
   }
 
   this.tick_function = function() {
-    for(let i in this.players) {
-      console.log("Y position is: " + this.players[i].make_data(i));
-      sessions[this.session_id].broadcast_exclusive(this.players[i].make_data(i),[i]);
+    //for(let i in this.players) {
+      //console.log("Y position is: " + this.players[i].make_data(i));
+      //sessions[this.session_id].broadcast_exclusive(this.players[i].make_data(i),[i]);
+    //}
+    this.current_time = Date.now()/1000 - this.start_time;
+    this.countdown_time = this.round_length - this.current_time;
+    if (this.countdown_time < 0) {
+      this.game_round++;
+      this.countdown_time = this.round_length;
+      this.start_time = Date.now()/1000;
     }
+    if (this.game_round == 4) {
+      this.end_game();
+    }
+    var players_alive = this.players.length;
+    var winner_id = 0;
+    for (let i in this.players) { 
+      if(this.players[i].health <= 0) { players_alive--; }
+      else {winner_id = i; }
+    }
+    if (players_alive <= 1) { this.end_game(winner_id); }
+    sessions[this.session_id].broadcast("game_timer_info:"+this.current_time+","+this.countdown_time+","+this.game_round);
   }
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, this.floor, 0, usr_id%4);
+    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, 0, 0, usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -1375,8 +1413,9 @@ function fighting_game() {
 
   this.read_in_player_position = function(data_string) 
   { //format packet as pos_player: id, x, y, dx, dy, facing, health, isAttacking, isDucking
-    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4]);
-    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]); //just removed null as first argument in update_data, not sure if it's right
+    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4], [9]);
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new fighting_game_player(100+Math.random()*400, 0, 0, p_vals[0]%4); }
+    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8], p_vals[9]); //just removed null as first argument in update_data, not sure if it's right
     return p_vals[0];
   }
 
@@ -1394,6 +1433,17 @@ function fighting_game() {
       if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
         this.players[i].health -= 5;
         sessions[this.session_id].broadcast("hit:"+i+","+this.players[i].health);
+        if (this.players[i].health <= 0) {
+          var players_dead = 0;
+          for (let i in this.players) {
+            if (this.players[i].health <= 0) { players_dead++; }
+          }
+
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+            "player_id": i,
+            "coins_added": 15 + players_dead*10
+          }
+        }
       }
     }
   }

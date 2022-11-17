@@ -13,7 +13,7 @@ function load_screen() {
 		this.current_time = millis()/1000 - this.start_time;
 		var menu_text, cycle_time = 15 - this.current_time;
 		if (connected_to_server) {
-			menu_text = "Connection successful";
+			menu_text = "connection successful";
 			if (!this.sent_load_flag) {
 				send_data("load_game");
 				send_data("game_connect");
@@ -21,11 +21,11 @@ function load_screen() {
 				this.sent_load_flag = true;
 			}
 		} else if (this.attempts == 0) {
-			menu_text = "Attempting to connect";
+			menu_text = "attempting to connect";
 			make_socket();
 			this.attempts++;
 		} else if (this.attempts == 1) {
-			menu_text = "Attempting to connect";
+			menu_text = "attempting to connect";
 			for (i = 0; i < (int(this.current_time) % 4); i++) {
 				menu_text += ".";
 			}
@@ -39,7 +39,7 @@ function load_screen() {
 				swap_current_state("main_menu");
 			}
 		} else if (cycle_time > 0) {
-			menu_text = "Retrying in " + str(int(Math.max(0, cycle_time)));
+			menu_text = "retrying in " + str(int(Math.max(0, cycle_time)));
 		} else if (cycle_time <= 0 && !(connected_to_server)) {
 			make_socket();
 			this.start_time = millis()/1000;

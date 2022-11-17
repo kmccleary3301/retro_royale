@@ -63,8 +63,15 @@ function board_game() {
 		this.purple = [151, 0, 204];
 		this.vid_font = loadFont('media/fonts/videogame.ttf');
 
+		this.background_image = loadImage("media/backgrounds/thumbnail_image005.png");
+		this.board_start_coords = [0, 0];
+		this.board_dims = [50, 50];
+
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
+
+		var self = this;
+		setTimeout(function(){self.set_board_dims(); }, 2000);
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -109,6 +116,21 @@ function board_game() {
 		}
 	}
 
+	this.set_board_dims = function() {
+		var min_x = this.tiles[0].x, min_y = this.tiles[0].y;
+		for (let i in this.tiles) {
+			if (this.tiles[i].x < min_x) {min_x = this.tiles[i].x;}
+			if (this.tiles[i].y < min_y) {min_y = this.tiles[i].y;}
+		}
+		this.board_start_coords = [min_x, min_y];
+		var max_x = this.tiles[0].x, max_y = this.tiles[0].y;
+		for (let i in this.tiles) {
+			if (this.tiles[i].x > max_x) {max_x = this.tiles[i].x;}
+			if (this.tiles[i].y > max_y) {max_y = this.tiles[i].y;}
+		}
+		this.board_dims = [(max_x-min_x), (max_y-min_y)];
+	}
+
 	this.adjust_current_menu = function() {
 		if (this.buttons[this.current_button_menu] === undefined || this.buttons[this.current_button_menu].length == 0) {
 			return;
@@ -125,6 +147,8 @@ function board_game() {
 
 	this.draw = function() {
 		push();
+		g_cam.image(this.background_image, this.board_start_coords[0], this.board_start_coords[1], this.board_dims[0], this.board_dims[1]);
+
 		this.adjust_current_menu();
 		translate(0, 0);
 		this.event_timer = millis()/1000 - this.event_timer_start;

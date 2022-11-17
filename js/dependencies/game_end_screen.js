@@ -109,7 +109,7 @@ function game_end_screen() {
 			}
 			for (let i in this.loser_names) {
 				var x_position = width*(int(i)+1)/(this.loser_names.length+1),
-					y_position = height*3/4, l_name = this.loser_names[i];
+					y_position = height*5/8, l_name = this.loser_names[i];
 				var player_i = this.game_results_json[l_name]["player_id"];	
 				this.players[player_i].sprite_anim.draw_size = Math.min(height, width)*0.15;
 				this.players[player_i].x = x_position;
@@ -117,10 +117,10 @@ function game_end_screen() {
 				var fade_player = int(Math.max(0, Math.min((this.current_time-8)/0.5, 1))*255);
 				tint(255, fade_player)
 				this.players[player_i].sprite_anim.draw(x_position, y_position, false);
-				stroke(0, 0, 0);
 				text_make(1, 20, 0, 1);
 				var text_color = this.colors[(this.game_results_json[this.winner_names[0]]["player_id"]+1)%4];
 				var fade_1 = int(Math.max(0, Math.min((this.current_time-9.5)/0.5, 1))*255);
+				stroke(color(0, 0, 0, fade_1));
 				fill(color(text_color[0], text_color[1], text_color[2], fade_1));
 				text(w_name, x_position, y_position+height*0.13);
 				var fade_2 = int(Math.max(0, Math.min((this.current_time-11)/0.5, 1))*255);
@@ -139,7 +139,7 @@ function game_end_screen() {
 				fill(color(Math.max(0, get_color[0]-15), Math.max(0, get_color[1]-15), Math.max(0, get_color[2]-15)));
 				strokeWeight(0);
 				rectMode(CORNER);
-				rect(width*0.15, height*0.9, rect_length, 5);
+				rect(width*0.15, height*0.95, rect_length, 5);
 			}
 		}
 		pop();
@@ -232,6 +232,7 @@ function game_end_screen() {
 
 	this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
 		p_vals = convert_data_string(data_string, [0, 3, 6, 7], [1, 2, 4], [5]);
+		if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new game_1_player(this.sprite, 300, 300, "left", p_vals[0]%4); }
 		this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
 	}
   }
