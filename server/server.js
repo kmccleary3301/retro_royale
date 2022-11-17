@@ -1549,7 +1549,7 @@ function flappy_bird() {
       for (let i in sessions[this.session_id].clients) {
         //for every player except usr_id=0, a new flappy bird player is probably being generated
         if(this.players[i] == undefined) {
-          this.players[i] = new flappy_bird_player(500, 500, 1);
+          this.players[i] = new flappy_bird_player(500, 250, 1);
           this.user_loaded(i);
         }
       }
@@ -1628,7 +1628,7 @@ function flappy_bird() {
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
     if (this.players[usr_id] === undefined) {
-      this.players[usr_id] = new flappy_bird_player(500, 500, 1);
+      this.players[usr_id] = new flappy_bird_player(500, 250, 1);
       this.players_alive++;
     }
     this.set_player_y_positions();
@@ -1653,7 +1653,7 @@ function flappy_bird() {
   this.read_in_player_position = function(data) {
 		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
 		if (this.players[p_vals[0]] === undefined) {
-			this.players[p_vals[0]] = new flappy_bird_player(this.Sprite, 10, 10);
+			this.players[p_vals[0]] = new flappy_bird_player(500, 250, 1);
 		}
 		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
 	}
