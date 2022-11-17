@@ -260,7 +260,7 @@ function purgatory() {
       this.read_in_game_state(message);
     } else if (flag == "index") {
       this.main_player_index = parseInt(message);
-      
+      console.log("This is my INDEX !:"+message+", I think I'm "+this.main_player_index);
     }
   }
 
