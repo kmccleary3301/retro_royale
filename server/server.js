@@ -544,7 +544,128 @@ function fruitGame() {
   }
 }
 
+class game_2_player {
+  constructor(x, y, face) {
+    this.sx = 0;
+    this.x = 200;//80;
+    this.y = 450 - y * 90;
+    this.move = 0;
+    this.speed = 5;
+    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+    this.fruit_holding = 0;
+    this.fruit_held_id = 0;
+
+    //data fields for MY players
+		//
+		//previous_key_pressed holds the previous key that the player pressed,
+		//in the form of the keycode [39,37] representing EW
+    //(at first, it holds the value 38 as a flag variable, so that
+    // the user can press left or right to start moving)
+		this.previous_key_pressed = 40;
+		//
+  }
+
+  make_data(player_index){
+    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+    return string_make;
+  }
+
+  update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (facing != null) { this.facing = facing; }
+    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
+    if (fruit_id != null) { this.fruit_held_id = fruit_id; }
+  }
+}
+
 function purgatory() {
+  this.setup = function() {
+    this.whoWon; //holds the index of the player that won the game
+
+    this.game_length = 30.000;
+    this.start_time = Date.now()/1000;
+    this.current_time = this.game_length;
+
+    this.current_time = 0;
+    this.players = [];
+    //for (i=0; i < clients.length; i++) {
+    //  console.log("client #"+i);
+    //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    //}
+
+    //data fields for MY game
+		//
+		//
+		//
+    this.numberOfPlayers = 0;
+  }
+
+  this.tick_function = function() { 
+    //this.current_time = Date.now()/1000 - this.start_time;
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    if(this.whoWon != null) {
+      broadcast("Won:"+whoWon);
+    }
+    this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
+    broadcast("game_state:"+this.current_time+","+this.game_length);
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "debug") {
+      console.log("Client sent: "+message);
+    } else if (flag == "get_index") {
+      clients[usr_id].send("index:"+usr_id);
+      clients[usr_id].send("player_count:" + clients.length);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    //upon construction, every player in my game is given the same x
+    //value. so i pass it as null to make things simpler.
+    //constructor for MY game players
+    this.players[usr_id] = new game_2_player(null, this.numberOfPlayers, 3);
+    this.numberOfPlayers++;
+    console.log("Client "+this.numberOfPlayers+" loaded:"+this.players[usr_id].make_data());
+    //
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+    this.numberOfPlayers--;
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]] = new game_2_player(null, this.numberOfPlayers, 3);}
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    if(p_vals[1] > 1700)
+      whoWon = p_vals[0];
+    return p_vals[0];
+  }
+}
+
+/*function purgatory() {
   this.setup = function(session_id) {
     this.session_id = session_id;
     console.log("purgatory session id ->"+this.session_id);
@@ -600,7 +721,7 @@ function purgatory() {
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
-}
+}*/
 
 function load_room() {
   this.setup = function(session_id) {
