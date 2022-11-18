@@ -1,0 +1,1 @@
+var AFDMouseLog;(function(){function n(){var n,i;if(typeof mouselog=="undefined"){if(n=sj_ce("script"),n.type="text/javascript",n.src="https://www.bing.com/mouselog1.16.min.js",i=_d.getElementsByTagName("body")[0],!i)return;i.appendChild(n);sj_be(n,"load",t)}}function t(){typeof mouselog!="undefined"&&mouselog.init()}sj_evt.bind("onP1",n,!0,8e3)})(AFDMouseLog||(AFDMouseLog={}))
