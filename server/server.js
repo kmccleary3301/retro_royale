@@ -622,7 +622,6 @@ function purgatory() {
     if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
-      //usr_id sent this message... we can't allow usr_id to modify other players
       this.read_in_player_position(usr_id+","+message);
       broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "debug") {
