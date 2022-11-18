@@ -324,7 +324,8 @@ function fighting_game() {
     this.players[0] = new fighting_game_player(this.Sprite, 400, 0, 0, 0); //starting location, direction facing, color
     this.main_player_index = 0;
     //send_data("load_game");
-    
+    stopAllSounds();
+		playSound("beat_angry", true);
   }
 
   this.window_resize = function() {

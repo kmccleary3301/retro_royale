@@ -426,6 +426,7 @@ function board_game() {
 					this.current_button_menu = "leaderboard";
 					break;
 				case 2:
+					send_data("leave_session");
 					socket.close();
 					swap_current_state("main_menu");
 					break;

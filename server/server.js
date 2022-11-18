@@ -125,6 +125,7 @@ server.on('connection', function connection(thisClient) {
     var index = clients.indexOf(thisClient);  //grabs the index of the client that sent it in
     var session_id = clients_info[index].session_id;
     for (let i in lines) {                    //Processes each individual command in the packet
+      console.log(lines[i]);
       var line_pieces = lines[i].split(":");  //Commands are formatted as flag:data, flag indicating what to activate.
       var flag = line_pieces[0],  
           message = null;
@@ -1123,16 +1124,19 @@ function ball_game() {
     console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.add_last_time = Date.now()/1000 - 5;
+    this.add_last_time = Date.now()/1000 + 50;
     this.players = [];
     this.balls = [];
-    this.game_bounds = [0, 1920, 0, 1080];
+    this.bounds = {"x":[0, 1536], "y":[0, 731]};
     // this.condition;
     this.game_over = false;
     if (sessions[this.session_id] !== undefined) {
       console.log("session found, making players");
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1, i);
+        this.players[i] = new ball_game_player(1536/2, 730/2, "down", sessions[this.session_id].clients_info[i].name, i%4);
+      }
+      for (let i in sessions[this.session_id].clients) {
+        this.user_loaded(i);
       }
     }
     this.random_seed = Math.floor(Math.random()*100000);
@@ -1151,9 +1155,8 @@ function ball_game() {
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if (Date.now()/1000 - this.add_last_time > 10) {
       this.add_last_time = Date.now()/1000;
-      this.balls[this.balls.length] = new game_2_ball();
+      this.balls[this.balls.length] = new game_2_ball(this.bounds);
       sessions[this.session_id].broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
-      console.log("added ball "+this.balls);
       //broadcast(this.make_everything());
     }
     for (let i in this.balls) { 
@@ -1161,6 +1164,10 @@ function ball_game() {
       this.balls[i].update(seed_random, random_seed); 
       sessions[this.session_id].broadcast(this.balls[i].make_data(i));
     }
+    var players_alive = 0;
+    for (let i in this.players) {if (this.players[i].isDead == 0) {players_alive++;}}
+    //console.log("players alive -> "+players_alive);
+
     //broadcast(this.make_everything());
   }
 
@@ -1211,7 +1218,10 @@ function ball_game() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+    if (usr_id >= this.players.length) {
+      this.players[usr_id] = new ball_game_player(1536/2, 730/2, "down", sessions[this.session_id].clients_info[usr_id].name, usr_id%4);
+    }
+    console.log("player count -> "+this.players.length);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
@@ -1230,9 +1240,10 @@ function ball_game() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
-    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1, p_vals[0]%4); }
-    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    p_vals = convert_data_string(data_string, [0, 3, 6], [1, 2, 4], [5, 7, 8]);
+    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = 
+      new ball_game_player(1536/2, 730/2, "down", sessions[this.session_id].clients_info[usr_id].name, p_vals[0]%4); }
+    this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
     return p_vals[0];
   }
 }

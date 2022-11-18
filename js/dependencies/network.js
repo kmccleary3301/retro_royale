@@ -49,6 +49,6 @@ function process_message(data) {          //Event function to process data recie
 }
 
 function send_data(data) {  //Global function to send data to server.
-  //console.log("sending -> "+data);
+  console.log("sending -> "+data);
   if (connected_to_server) { socket.send(data); }
 }

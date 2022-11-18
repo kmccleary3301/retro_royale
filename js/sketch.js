@@ -46,6 +46,7 @@ function preload() {  //This is a default p5 function which executes on load. Si
 function setup() {
   console.log(millis());
   createCanvas(windowWidth, windowHeight); //Enables the canvas size. These are stored in global variables named width and height.
+  console.log(windowWidth+", "+windowHeight);
   background(50, 50, 50); //Declares the background color via RGB.
   g_cam = new g_camera(width/2, height/2, 1);
   connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.

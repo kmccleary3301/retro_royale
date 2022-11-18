@@ -29,8 +29,7 @@ function dev_room() {
 		this.pink = [246, 1, 157];
 		this.cyan = [45, 226, 230];
 		this.purple = [151, 0, 204];
-		stopAllSounds();
-		playSound("beat_angry", true);
+		
 		Tone.Master.volume = -12;
 	}
 
