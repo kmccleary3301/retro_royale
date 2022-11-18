@@ -1,3 +1,4 @@
+
 class game_2_player {
 	constructor(spriteSheet, x, y, face) {
 		this.spriteSheet = spriteSheet;
@@ -109,6 +110,8 @@ function purgatory() {
     this.whoGotSecond;
     this.whoGotThird;
 
+    this.names = [];
+
 		this.game_length = 30.000;
 		this.start_time;
 		this.current_time = this.game_length;
@@ -117,6 +120,11 @@ function purgatory() {
     this.main_player_index;
     this.arrow_keys = [39, 37];
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
+    this.test_background = loadImage("media/backgrounds/pink_gradient_background.png");
+    this.checkerboard = loadImage("media/misc/checkerboard_2.jpg");
+    //this.checkerboard.resize(0,1500);
+
+		this.scroll_background = new scroll_image(this.test_background, [1920, 1080], 0);
     imageMode(CENTER);
     this.players[0] = new game_2_player(this.greenSprite, null, this.numberOfPlayers, 3);
     this.main_player_index = 0;
@@ -128,6 +136,7 @@ function purgatory() {
 		//this.numberOfPlayers = 1;
 		//
     send_data("get_index");
+    send_data("get_names");
   }
 
   this.key_pressed = function(keycode) {
@@ -187,17 +196,18 @@ function purgatory() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
-    background(200, 200, 200);
+    this.scroll_background.draw();
+    image(this.checkerboard,900+this.checkerboard.width/2,height/2);
     fill(0, 0, 0);
     text_make(0, 70, 0, 2);
     textAlign(CENTER, CENTER);
-    text("RUN!", width/2, height/2);
-    text("Time Remaining: "+this.current_time, width/2,40);
+    //text("RUN!", width/2, height/2);
+    //text("Time Remaining: "+this.current_time, width/2,40);
 
     fill(100,0,0);
-    rect(900,40,50,450);
+    //rect(900,40,50,450);
     for (let i in this.players) {
-      text_make(0, 70, 0, 2);
+      text_make(0, 20, 0, 2);
 
       this.players[i].y = 400-i * 90;
 
@@ -205,7 +215,7 @@ function purgatory() {
 
       this.playerNum = parseInt(i)+1;
 
-      text(""+this.playerNum,30,this.players[i].y);
+      text(""+this.names[parseInt(i)],this.players[i].x,this.players[i].y-50);
 
       if(this.players[i].x > 900) {
         if(this.whoGotFirst == null) {
@@ -225,11 +235,11 @@ function purgatory() {
         textAlign(LEFT, CENTER);
         text_make(0, 20, 0, 2);
 
-        text("Player "+this.whoGotFirst+" Got First!",15,15);
+        text(this.names[this.whoGotFirst-1]+" Got First!",15,15);
         if(this.whoGotSecond != null)
-          text("Player "+this.whoGotSecond+" Got Second!",15,35);
+          text(this.names[this.whoGotSecond-1]+" Got Second!",15,35);
         if(this.whoGotThird != null)
-          text("Player "+this.whoGotThird+" Got Third!",15,55);
+          text(this.names[this.whoGotThird-1]+" Got Third!",15,55);
       }
     }
   }
@@ -241,6 +251,7 @@ function purgatory() {
         numberOfPlayers++;
         send_data("debug:"+numberOfPlayers)
       }
+      send_data("get_names");
     } else if (flag == "assigned_id") {
       this.main_player_index = parseInt(message);
     } else if (flag == "pos_player") {
@@ -261,6 +272,11 @@ function purgatory() {
     } else if (flag == "index") {
       this.main_player_index = parseInt(message);
       console.log("This is my INDEX !:"+message+", I think I'm "+this.main_player_index);
+    } else if (flag == "Name of") {
+      if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]]=new game_2_player(this.greenSprite, null, numberOfPlayers, 3);}
+      p_vals = convert_data_string(message,[0],[],[1]);
+      console.log(message);
+      this.names[p_vals[0]]=p_vals[1];
     }
   }
 

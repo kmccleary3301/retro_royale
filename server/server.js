@@ -626,6 +626,8 @@ function purgatory() {
     } else if (flag == "get_index") {
       clients[usr_id].send("index:"+usr_id);
       clients[usr_id].send("player_count:" + clients.length);
+    } else if (flag == "get_names") {
+      broadcast("Name of:"+usr_id+","+clients_info[usr_id].name);
     }
   }
 
