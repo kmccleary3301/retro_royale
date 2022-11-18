@@ -602,6 +602,9 @@ function purgatory() {
 		//
 		//
     this.numberOfPlayers = 0;
+
+    // var int_id = setInterval(function(){ self.tick_function(); }, 100);
+    // sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.tick_function = function() { 
@@ -1347,6 +1350,8 @@ function ball_game() {
     else if (flag == "player_dead") {
       this.players[usr_id].isDead = 1;
       sessions[this.session_id].broadcast("player_dead:"+usr_id);
+    } else if (flag == "get_names") {
+      sessions[this.session_id].broadcast("Name of:"+usr_id+","+sessions[this.session_id].clients_info[usr_id].name);
     }
   //  for(let i in this.players)
    // {
@@ -1559,7 +1564,7 @@ function flappy_bird() {
     }
     this.set_player_y_positions;
     var self = this;
-    var int_id = setInterval(function(){ self.tick_function(); }, 100);
+    var int_id = setInterval(function(){ self.tick_function(); }, 35);
     sessions[this.session_id].append_interval_id(int_id);
     this.game_over = 0;
   }
