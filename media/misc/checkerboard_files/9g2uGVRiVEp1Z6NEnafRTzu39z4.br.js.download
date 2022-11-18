@@ -1,1 +1,0 @@
-_w.CarouselConfigRegistry&&CarouselConfigRegistry.setHandler(function(n,t){var i=function(){_w[n]&&_w[n].init(t)},r=_ge(t.DomId);typeof SmartRendering!="undefined"?SmartRendering.LoadElementWhenDisplayed(this,r,i,[]):i.apply(this,[])})
