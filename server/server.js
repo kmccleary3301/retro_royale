@@ -1149,7 +1149,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl"], [1, 1, 1, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':
@@ -1163,6 +1163,9 @@ function board_game() {
             break;
           case 'Backroom Brawl':
             this.game_action_store = "swap_game:fighting_game";
+            break;
+          case 'Keyboard Krawler':
+            this.game_action_store = "swap_game:purgatory";
             break;
         }
         
