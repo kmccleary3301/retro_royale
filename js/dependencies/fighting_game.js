@@ -47,6 +47,7 @@ class fighting_game_player  {
       "row_length": 1
   }
     });
+    this.sprite_anim.change_animation("standing");
     this.current_animation = "standing";
     this.moving = 0;
 		this.sx = 0;              //Frame counter for when the player is moving.
@@ -75,8 +76,6 @@ class fighting_game_player  {
 	}
 
 	draw() {
-    
-    
 		push();
     
     var sparkle = {
@@ -109,7 +108,8 @@ class fighting_game_player  {
     fill(this.red);
     rect(sparkle3.locationX, sparkle2.locationY, sparkle3.size, sparkle3.size);
 
-    
+    this.y += this.dy; //add gravity to y position
+    this.y = Math.min(this.y, 0);
 
     this.x = Math.max(bounds[0], Math.min(this.x, bounds[1]));
     
@@ -165,7 +165,7 @@ class fighting_game_player  {
     } else if (this.isAttacking == 1) { //if attacking, then update animation to attacking
       this.update_facing(this.facing);
       this.update_anim("attacking");
-    } else if (this.dy < 0) { //if jumping, then update animation to jumping
+    } else if (this.dy < 200) { //if jumping, then update animation to jumping
       this.update_anim("jumping");
     } else if (this.dx != 0) { //if moving, then update animation to left_right_walking
       this.update_facing(this.facing);
@@ -181,16 +181,15 @@ class fighting_game_player  {
     //   this.update_anim("standing");
     // }
     //gravity animation
-    this.y += this.dy; //add gravity to y position
-    this.y = Math.min(this.y, 0); //if y position is greater than floor, then set y position to floor
+     //if y position is greater than floor, then set y position to floor
     //this.y = Math.max(bounds[2], Math.min(this.y, bounds[3])); //if y position is less than bounds[2], then set y position to bounds[2]
 
     //draw rectangle respresenting health in top right corner
     
     fill(255, 0, 0);
-    rect(this.x-25, this.y-60, 50, 10);
+    rect(this.x-25, this.y+fgs_floor-60, 50, 10);
     fill(0, 255, 0);
-    rect(this.x-25, this.y-60, this.health/2, 10);
+    rect(this.x-25, this.y+fgs_floor-60, this.health/2, 10);
     
     /*
       fill(colors[4]);
@@ -206,7 +205,7 @@ class fighting_game_player  {
      // this.update_anim("dead");
      
     }
-    if(this.y < fgs_floor )  {         
+    if(this.y < -1 )  {     
       this.dy += gravity; 
     }
     
@@ -356,9 +355,9 @@ function fighting_game() {
       }
       else if (code == 38) //jumping
       {
-        if (this.players[this.main_player_index].y == fgs_floor) {
+        if (this.players[this.main_player_index].y == 0) {
           this.players[this.main_player_index].dy = -15;
-          //this.players[this.main_player_index].update_anim("jumping");
+          this.players[this.main_player_index].update_anim("jumping");
           //this.players[this.main_player_index].sprite_anim.stop();
           //this.players[this.main_player_index].moving = 0;
           //send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());

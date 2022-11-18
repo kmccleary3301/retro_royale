@@ -9,7 +9,7 @@ class game_2_ball {
 		this.y = 0;
 		this.dx = 1;
 		this.dy = 1;
-		this.speed = 100;
+		this.speed = 300;
 		this.last_update = Date.now()/1000;
 	}
 

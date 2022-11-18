@@ -33,10 +33,7 @@ function main_menu() {
 		this.test_background_3 = loadImage("media/backgrounds/city_layer_1.png");
 		this.scroll_background_3 = new scroll_image(this.test_background_3, [1920, 1080], 80);
 		
-		this.sounds = new Tone.Players({
-			"press" : 'media/sounds/button_press.wav'
-		});
-		this.sounds.toDestination();
+		this.loop_started = 0;
 
 
 		this.buttons = {
@@ -63,10 +60,6 @@ function main_menu() {
 		this.buttons["info"][0] = new button(860, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "submit", 4, true, false);
 		this.buttons["info"][1] = new button(1060, 680, 150, 100, this.color_arrray[3], [10, 10, 10], "cancel", 4, true, false);
 		g_cam.reset();
-	}
-
-	this.playSound = function(whichSound='Fail') {
-		this.sounds.player(whichSound).start();
 	}
 
 	this.adjust_current_menu = function() {
@@ -171,7 +164,7 @@ function main_menu() {
 		text_make(4, 20, 0, 0);
 		fill(0, 0, 0);
 		textAlign(CENTER, CENTER);
-		text("Name", width/2, height*415/1080);
+		text("name", width/2, height*415/1080);
 		for (let i in this.buttons["info"]) { this.buttons["info"][i].draw(); }
 	}
 
@@ -216,7 +209,7 @@ function main_menu() {
 			if (this.buttons[this.current_menu][i].pressed) { 
 				this.buttons[this.current_menu][i].pressed = 0;
 				this.button_press(i);
-				this.playSound('press');
+				playSound('press');
 				return;
 			}
 		}
@@ -239,6 +232,12 @@ function main_menu() {
 			if (code == 0) { this.update_user_info(); }
 			else if (code == 1) { this.info_menu_disable(); }
 		}
+		/*
+		if (this.loop_started == 0) {
+			this.sounds.player("arp").start();
+			this.loop_started = 1;
+		}
+		*/
 	}
 
 	this.read_network_data = function(flag, message) {

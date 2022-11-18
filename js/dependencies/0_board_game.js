@@ -54,6 +54,7 @@ function board_game() {
 		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "center", 4, true);
 		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "scores", 4, true);
 		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "home", 4, true);
+		this.buttons["leaderboard"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "back", 4, true);
 
 		this.blue = [3, 94, 232];
 		this.red = [229, 53, 100];
@@ -217,33 +218,34 @@ function board_game() {
 
 	this.draw_leaderboard = function() {
 		push();
+		var text_factor = Math.min(height/1080, width/1920);
 		fill(this.blue);
 		strokeWeight(5);
 		stroke(10);
 		rectMode(CENTER);
-		rect(width/2, height/2, width*0.4, height*0.4);
-		text_make(2, 40, 0, 1);
+		rect(width/2, height/2, width*0.5, height*0.4);
+		text_make(2, 80*text_factor, 0, 1);
 		fill(230, 50, 180);
 		textAlign(CENTER, CENTER);
-		text("leaderboard", width/2, height*(1-0.4)/2);
-		text_make(0, 25, 0, 1);
+		text("leaderboard", width/2, height*((1-0.4)/2+0.05));
+		text_make(0, 40*text_factor, 0, 1);
 		fill(0, 0, 0);
 		textAlign(LEFT);
-		var row_position = height*(1-0.4)/2+70,
-			x_pos_start = width*(1-0.4)/2+50;
-		text("name", x_pos_start+50, row_position);
-		text("coins", x_pos_start+200, row_position);
-		text("stars", x_pos_start+325, row_position);
+		var row_position = height*((1-0.4)/2+0.1),
+			x_pos_start = width*((1-0.5)/2+0.05);
+		text("name", x_pos_start+100*text_factor, row_position);
+		text("coins", x_pos_start+400*text_factor, row_position);
+		text("stars", x_pos_start+600*text_factor, row_position);
 		for (let i in this.players) {
-			row_position = (height*(1-0.4)/2) + 125 + i*55;
-			x_pos_start = width*(1-0.4)/2 + 50;
-			this.players[i].sprite_anim.draw_thumbnail(x_pos_start, row_position, 50);
-			text_make(0, 25, 0, 1);
+			row_position = height*((1-0.4)/2+0.15+i*0.05);
+			x_pos_start = width*((1-0.5)/2 + 0.05);
+			this.players[i].sprite_anim.draw_thumbnail(x_pos_start, row_position, 100*text_factor);
+			text_make(0, 40*text_factor, 0, 1);
 			fill(0, 0, 0);
 			textAlign(LEFT);
-			text(this.players[i].name, x_pos_start+50, row_position);
-			text(this.players[i].coins, x_pos_start+200, row_position);
-			text(this.players[i].stars, x_pos_start+325, row_position);
+			text(this.players[i].name, x_pos_start+100*text_factor, row_position);
+			text(this.players[i].coins, x_pos_start+400*text_factor, row_position);
+			text(this.players[i].stars, x_pos_start+600*text_factor, row_position);
 		}
 		pop();
 	}
@@ -409,7 +411,7 @@ function board_game() {
 	}
 
 	this.mouse_wheel = function(delta) {
-		this.camera_scale += 0.1*delta;
+		this.camera_scale += 0.001*delta;
 		this.camera_scale = Math.max(0.5, Math.min(this.camera_scale, 3));
 	}
 

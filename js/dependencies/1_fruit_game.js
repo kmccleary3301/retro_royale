@@ -244,7 +244,7 @@ function fruitGame() {
 		//console.log("Recieved:" + str(data_in));
 		if (flag == "player_count") {
 			for (j=this.players.length; j < parseInt(message); j++){
-				this.players[j] = new game_1_player(this.greenSprite, 300, 300, 1);
+				this.players[j] = new game_1_player(this.main_sprite, 300, 300, "left", j%4);
 			}
 		} else if (flag == "assigned_id") {
 			this.main_player_index = parseInt(message);

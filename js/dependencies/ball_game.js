@@ -7,14 +7,15 @@ function seed_random(seed) {
 }
 
 class game_2_ball {
-  constructor() {
+  constructor(bounds) {
       this.radius = 35;
       this.x = 0;
       this.y = 0;
       this.dx = 1;
       this.dy = 1;
-      this.speed = 110;
+      this.speed = 300;
       this.last_update = Date.now()/1000;
+      this.bounds = bounds;
     }
 
     draw() {
@@ -26,8 +27,8 @@ class game_2_ball {
       var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
       this.y += this.dy*this.speed*(Date.now()/1000 - this.last_update);
-      if (this.x < 0 || this.x >= 500) {
-        var adjust_factor = Math.max(0, Math.min(this.x, 500)) - this.x;
+      if (this.x < this.bounds["x"][0] || this.x >= this.bounds["x"][1]) {
+        var adjust_factor = Math.max(this.bounds["x"][0], Math.min(this.x, this.bounds["x"][1])) - this.x;
         adjust_factor /= this.dx;
         var mid_time = -adjust_factor/this.speed;
         this.x += this.dx*adjust_factor;
@@ -131,6 +132,7 @@ class ball_game_player {
 		g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, false);
     fill(255, 0, 0);
+    ellipse(this.x, this.y, 10);
 		pop();
 	}
 
@@ -277,6 +279,14 @@ function ball_game() {
     for (let i in this.balls) 
     { 
       this.balls[i].draw(); 
+      var d_x = Math.abs(this.players[this.main_player_index].x-this.balls[i].x);
+      if (d_x < this.balls[i].radius+this.players[this.main_player_index].sprite_anim.draw_size/2) {
+        var d_y = Math.abs(this.players[this.main_player_index].y-this.balls[i].y);
+        if (Math.sqrt(d_x*d_x+d_y*d_y) < this.balls[i].radius+10) {
+          this.kill_player(this.main_player_index);
+          send_data("player_dead");
+        }
+      }
     }
 
   }
@@ -306,13 +316,17 @@ function ball_game() {
      //make a flag for a dead player
     else if (flag == "player_dead") {
       console.log("dead player ->"+message);
-      this.players[parseInt(message)].isDead = 1;
-      this.players[parseInt(message)].update_anim("dead");
-      this.players[parseInt(message)].update_facing("dead");
+      this.kill_player(parseInt(message));
     }
     else if (flag == "go_to_game_end_screen") {
 		swap_current_state("game_end_screen");
 	  }
+  }
+
+  this.kill_player = function(player_id) {
+    this.players[player_id].isDead = 1;
+    this.players[player_id].update_anim("dead");
+    //this.players[player_id].update_facing("dead");
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id

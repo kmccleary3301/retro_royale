@@ -259,8 +259,7 @@ class game_session {
     this.current_state.setup(this.session_id);
   }
 
-  tick_function() { 
-    console.log("session_tick_function called");
+  tick_function() {
     try {
       if (this.current_state.tick_function !== undefined) {
         this.current_state.tick_function();
@@ -408,6 +407,8 @@ function fruitGame() {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new game_1_player(this.endzones[i%2].x, this.endzones[i%2].y, "down", i%4);
       }
+      for (let i in sessions[this.session_id].clients)
+      this.user_loaded(i);
     }
     var p = new PoissonDiskSampling({
       shape: [this.game_dimensions[0], this.game_dimensions[1]],
@@ -501,7 +502,7 @@ function fruitGame() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
+    this.players[usr_id] = new game_1_player(this.endzones[usr_id%2].x, this.endzones[usr_id%2].y, "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -1122,9 +1123,10 @@ function ball_game() {
     console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.add_last_time = Date.now()/1000;
+    this.add_last_time = Date.now()/1000 - 5;
     this.players = [];
     this.balls = [];
+    this.game_bounds = [0, 1920, 0, 1080];
     // this.condition;
     this.game_over = false;
     if (sessions[this.session_id] !== undefined) {
@@ -1169,40 +1171,6 @@ function ball_game() {
       sessions[this.session_id].broadcast(this.balls[i].make_data(i));
     }
     var str_make = "";
-    //console.log("ball_tick_function 2" + this.balls);
-    /*
-    for (let i in this.balls) { 
-      //console.log("data for ball "+i);
-      //console.log(this.balls[i].make_data(i)); 
-      str_make += this.balls[i].make_data(i) + "\n";
-    }*/
-    for (let i in this.players){
-      console.log("player "+i+" coords -> "+Math.floor(this.players[i].x)+", "+Math.floor(this.players[i].y));
-
-      if (this.players[i].isDead) { continue; }
-      for (let j in this.balls) {
-        var dx= Math.abs(this.players[i].x-this.balls[j].x);
-        var dy= Math.abs(this.players[i].y-this.balls[j].y);
-        var distance = Math.sqrt(dx*dx + dy*dy);
-        console.log("distance: "+distance);
-          if (distance <= this.balls[j].radius+50){
-            console.log("Player "+i+" is dead");
-            this.players[i].isDead = 1;
-            //send player dead message
-            //sessions[this.session_id].clients[i].send("player_dead:"+i);
-            sessions[this.session_id].broadcast("player_dead:"+i);
-            var all_dead = true;
-            for (let q in this.players) {
-              if (this.players[q].isDead == 0) { all_dead = false; }
-            }
-            if (all_dead && !this.game_over) {
-              this.game_over = true;
-              this.end_game(i);
-            }
-
-          }
-      }
-    }
     sessions[this.session_id].broadcast(str_make);
   }
 
@@ -1288,6 +1256,9 @@ function fighting_game() {
         this.players[i] = new fighting_game_player(100+400*Math.random(), 0, 0, i);
       }
       sessions[this.session_id].broadcast(this.make_everything());
+      for (let i in sessions[this.session_id].clients) {
+        sessions[this.session_id].clients[i].send("assigned_id:"+i);
+      }
     }
     var self = this;
     var int_id = setInterval(function(){self.tick_function();}, 200);
@@ -1352,19 +1323,22 @@ function fighting_game() {
   }
 
   this.end_game = function(winner_id) {
-    for (let i in this.players) {
-      if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
-        this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
-          "player_id": i,
-          "coins_added": 30
+    if (this.game_over == 0) {
+      for (let i in this.players) {
+        if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+            "player_id": i,
+            "coins_added": 30
+          }
         }
       }
+      if (winner_id !== undefined) {
+        this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 15;
+      }
+      var self = this;
+      setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+      this.game_over = 1;
     }
-    if (winner_id !== undefined) {
-      this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 15;
-    }
-    var self = this;
-    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
   }
 
   this.tick_function = function() {
