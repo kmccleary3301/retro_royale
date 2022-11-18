@@ -125,6 +125,7 @@ server.on('connection', function connection(thisClient) {
     var index = clients.indexOf(thisClient);  //grabs the index of the client that sent it in
     var session_id = clients_info[index].session_id;
     for (let i in lines) {                    //Processes each individual command in the packet
+      console.log(lines[i]);
       var line_pieces = lines[i].split(":");  //Commands are formatted as flag:data, flag indicating what to activate.
       var flag = line_pieces[0],  
           message = null;
@@ -259,8 +260,7 @@ class game_session {
     this.current_state.setup(this.session_id);
   }
 
-  tick_function() { 
-    console.log("session_tick_function called");
+  tick_function() {
     try {
       if (this.current_state.tick_function !== undefined) {
         this.current_state.tick_function();
@@ -408,6 +408,8 @@ function fruitGame() {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new game_1_player(this.endzones[i%2].x, this.endzones[i%2].y, "down", i%4);
       }
+      for (let i in sessions[this.session_id].clients)
+      this.user_loaded(i);
     }
     var p = new PoissonDiskSampling({
       shape: [this.game_dimensions[0], this.game_dimensions[1]],
@@ -501,7 +503,7 @@ function fruitGame() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new game_1_player(600*Math.random(), 600*Math.random(), "down", usr_id%4);
+    this.players[usr_id] = new game_1_player(this.endzones[usr_id%2].x, this.endzones[usr_id%2].y, "down", usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + this.players.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -544,7 +546,133 @@ function fruitGame() {
   }
 }
 
+class game_2_player {
+  constructor(x, y, face) {
+    this.sx = 0;
+    this.x = 200;//80;
+    this.y = 450 - y * 90;
+    this.move = 0;
+    this.speed = 5;
+    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+    this.fruit_holding = 0;
+    this.fruit_held_id = 0;
+
+    //data fields for MY players
+		//
+		//previous_key_pressed holds the previous key that the player pressed,
+		//in the form of the keycode [39,37] representing EW
+    //(at first, it holds the value 38 as a flag variable, so that
+    // the user can press left or right to start moving)
+		this.previous_key_pressed = 40;
+		//
+  }
+
+  make_data(player_index){
+    var string_make = "pos_player:"+player_index+","+this.x+","+this.y+","+this.move+","+
+                      this.speed+","+this.facing+","+this.fruit_holding+","+this.fruit_held_id;
+    return string_make;
+  }
+
+  update_data(sprite, x, y, move, speed, facing, fruit_holding, fruit_id){
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (facing != null) { this.facing = facing; }
+    if (fruit_holding != null) { this.fruit_holding = fruit_holding; }
+    if (fruit_id != null) { this.fruit_held_id = fruit_id; }
+  }
+}
+
 function purgatory() {
+  this.setup = function() {
+    this.whoWon; //holds the index of the player that won the game
+
+    this.game_length = 30.000;
+    this.start_time = Date.now()/1000;
+    this.current_time = this.game_length;
+
+    this.current_time = 0;
+    this.players = [];
+    //for (i=0; i < clients.length; i++) {
+    //  console.log("client #"+i);
+    //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
+    //}
+
+    //data fields for MY game
+		//
+		//
+		//
+    this.numberOfPlayers = 0;
+
+    // var int_id = setInterval(function(){ self.tick_function(); }, 100);
+    // sessions[this.session_id].append_interval_id(int_id);
+  }
+
+  this.tick_function = function() { 
+    //this.current_time = Date.now()/1000 - this.start_time;
+    //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
+    if(this.whoWon != null) {
+      broadcast("Won:"+whoWon);
+    }
+    this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
+    broadcast("game_state:"+this.current_time+","+this.game_length);
+  }
+
+  this.read_network_data = function(flag, message, usr_id) {
+    console.log(flag+":"+message);
+    if (flag == "load_game") {
+      this.user_loaded(usr_id);
+    } else if (flag == "my_pos") {
+      this.read_in_player_position(usr_id+","+message);
+      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+    } else if (flag == "debug") {
+      console.log("Client sent: "+message);
+    } else if (flag == "get_index") {
+      clients[usr_id].send("index:"+usr_id);
+      clients[usr_id].send("player_count:" + clients.length);
+    } else if (flag == "get_names") {
+      broadcast("Name of:"+usr_id+","+clients_info[usr_id].name);
+    }
+  }
+
+  this.user_loaded = function(usr_id) {
+    clients[usr_id].send("load_recieved");
+    //upon construction, every player in my game is given the same x
+    //value. so i pass it as null to make things simpler.
+    //constructor for MY game players
+    this.players[usr_id] = new game_2_player(null, this.numberOfPlayers, 3);
+    this.numberOfPlayers++;
+    console.log("Client "+this.numberOfPlayers+" loaded:"+this.players[usr_id].make_data());
+    //
+    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    clients[usr_id].send(this.make_everything());
+  }
+
+  this.user_disconnected = function(usr_id) {
+    broadcast("rmv_player:"+usr_id);
+    this.players.splice(usr_id, 1);
+    this.numberOfPlayers--;
+  }
+
+  this.make_everything = function() {
+    str_make = "";
+    for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    return str_make;
+  }
+
+  this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
+    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
+    if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]] = new game_2_player(null, this.numberOfPlayers, 3);}
+    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    if(p_vals[1] > 1700)
+      whoWon = p_vals[0];
+    return p_vals[0];
+  }
+}
+
+/*function purgatory() {
   this.setup = function(session_id) {
     this.session_id = session_id;
     console.log("purgatory session id ->"+this.session_id);
@@ -600,7 +728,7 @@ function purgatory() {
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
     return p_vals[0];
   }
-}
+}*/
 
 function load_room() {
   this.setup = function(session_id) {
@@ -680,6 +808,9 @@ function game_end_screen() {
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), "down", i%4);
+      }
+      for (let i in sessions[this.session_id].clients) {
+        sessions[this.session_id].clients[i].send(this.make_everything());
         sessions[this.session_id].clients[i].send(this.game_result_json_to_string());
         sessions[this.session_id].clients[i].send("current_time:"+this.current_time);
       }
@@ -926,8 +1057,10 @@ function board_game() {
 	}
 
   this.second_setup = function() {
+
     var self = this;
     var int_id = setInterval(function(){self.tick_function();}, 100);
+    if (this.players.length == 0) { return; }
     sessions[this.session_id].append_interval_id(int_id);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
   }
@@ -1016,7 +1149,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl"], [50, 1, 1, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':
@@ -1030,6 +1163,9 @@ function board_game() {
             break;
           case 'Backroom Brawl':
             this.game_action_store = "swap_game:fighting_game";
+            break;
+          case 'Keyboard Krawler':
+            this.game_action_store = "swap_game:purgatory";
             break;
         }
         
@@ -1117,15 +1253,19 @@ function ball_game() {
     console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.add_last_time = Date.now()/1000;
+    this.add_last_time = Date.now()/1000 + 50;
     this.players = [];
     this.balls = [];
+    this.bounds = {"x":[0, 1536], "y":[0, 731]};
     // this.condition;
     this.game_over = false;
     if (sessions[this.session_id] !== undefined) {
       console.log("session found, making players");
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new ball_game_player(600*Math.random(), 600*Math.random(), 1, i);
+        this.players[i] = new ball_game_player(1536/2, 730/2, "down", sessions[this.session_id].clients_info[i].name, i%4);
+      }
+      for (let i in sessions[this.session_id].clients) {
+        this.user_loaded(i);
       }
     }
     this.random_seed = Math.floor(Math.random()*100000);
@@ -1144,9 +1284,8 @@ function ball_game() {
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if (Date.now()/1000 - this.add_last_time > 10) {
       this.add_last_time = Date.now()/1000;
-      this.balls[this.balls.length] = new game_2_ball();
+      this.balls[this.balls.length] = new game_2_ball(this.bounds);
       sessions[this.session_id].broadcast(this.balls[this.balls.length-1].make_data(this.balls.length-1));
-      console.log("added ball "+this.balls);
       //broadcast(this.make_everything());
     }
     for (let i in this.balls) { 
@@ -1154,6 +1293,23 @@ function ball_game() {
       this.balls[i].update(seed_random, random_seed); 
       sessions[this.session_id].broadcast(this.balls[i].make_data(i));
     }
+    var players_alive = 0;
+    for (let i in this.players) {if (this.players[i].isDead == 0) {players_alive++;}}
+    if (players_alive <= 0) {
+      for (let i in this.players) {
+        if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+            "player_id": i,
+            "coins_added": this.current_time
+          }
+        }
+      }
+      var self = this;
+      setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+    }
+
+    //console.log("players alive -> "+players_alive);
+
     //broadcast(this.make_everything());
   }
 
@@ -1164,40 +1320,6 @@ function ball_game() {
       sessions[this.session_id].broadcast(this.balls[i].make_data(i));
     }
     var str_make = "";
-    //console.log("ball_tick_function 2" + this.balls);
-    /*
-    for (let i in this.balls) { 
-      //console.log("data for ball "+i);
-      //console.log(this.balls[i].make_data(i)); 
-      str_make += this.balls[i].make_data(i) + "\n";
-    }*/
-    for (let i in this.players){
-      console.log("player "+i+" coords -> "+Math.floor(this.players[i].x)+", "+Math.floor(this.players[i].y));
-
-      if (this.players[i].isDead) { continue; }
-      for (let j in this.balls) {
-        var dx= Math.abs(this.players[i].x-this.balls[j].x);
-        var dy= Math.abs(this.players[i].y-this.balls[j].y);
-        var distance = Math.sqrt(dx*dx + dy*dy);
-        console.log("distance: "+distance);
-          if (distance <= this.balls[j].radius+50){
-            console.log("Player "+i+" is dead");
-            this.players[i].isDead = 1;
-            //send player dead message
-            //sessions[this.session_id].clients[i].send("player_dead:"+i);
-            sessions[this.session_id].broadcast("player_dead:"+i);
-            var all_dead = true;
-            for (let q in this.players) {
-              if (this.players[q].isDead == 0) { all_dead = false; }
-            }
-            if (all_dead && !this.game_over) {
-              this.game_over = true;
-              this.end_game(i);
-            }
-
-          }
-      }
-    }
     sessions[this.session_id].broadcast(str_make);
   }
 
@@ -1224,6 +1346,10 @@ function ball_game() {
     else if (flag == "player_dead") {
       this.players[usr_id].isDead = 1;
       sessions[this.session_id].broadcast("player_dead:"+usr_id);
+      this.game_result_json[sessions[this.session_id].clients_info[usr_id].name] = {
+        "player_id": usr_id,
+        "coins_added": this.current_time
+      }
     }
   //  for(let i in this.players)
    // {
@@ -1238,7 +1364,10 @@ function ball_game() {
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new ball_game_player(600*Math.random(), 600*Math.random(), 1);
+    if (usr_id >= this.players.length) {
+      this.players[usr_id] = new ball_game_player(1536/2, 730/2, "down", sessions[this.session_id].clients_info[usr_id].name, usr_id%4);
+    }
+    console.log("player count -> "+this.players.length);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything()+"random_seed:"+random_seed);
@@ -1257,9 +1386,10 @@ function ball_game() {
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
-    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = new game_1_player(0, 0, 1, p_vals[0]%4); }
-    this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
+    p_vals = convert_data_string(data_string, [0, 3, 6], [1, 2, 4], [5, 7, 8]);
+    if (p_vals[0] >= this.players.length) {this.players[p_vals[0]] = 
+      new ball_game_player(1536/2, 730/2, "down", sessions[this.session_id].clients_info[usr_id].name, p_vals[0]%4); }
+    this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
     return p_vals[0];
   }
 }
@@ -1271,12 +1401,25 @@ function fighting_game() {
     this.current_time = 0;
     this.floor = 570;
     this.players = [];
+    this.current_time = 0;
+    this.start_time = Date.now()/1000;
+    this.round_length = 30;
+    this.countdown_time = this.round_length;
+    this.game_round = 1;
+    this.game_over = 0;
     this.game_result_json = {};
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
-        this.players[i] = new fighting_game_player(100+400*Math.random(), this.floor, 0, i);
+        this.players[i] = new fighting_game_player(100+400*Math.random(), 0, 0, i);
+      }
+      sessions[this.session_id].broadcast(this.make_everything());
+      for (let i in sessions[this.session_id].clients) {
+        sessions[this.session_id].clients[i].send("assigned_id:"+i);
       }
     }
+    var self = this;
+    var int_id = setInterval(function(){self.tick_function();}, 200);
+    sessions[this.session_id].append_interval_id(int_id);
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -1314,7 +1457,7 @@ function fighting_game() {
       if (this.players[i].isDead){
         dead.push(this.players[i]);
       }
-    }}
+  }}
 
 
   //make a function to declare a winner
@@ -1333,30 +1476,56 @@ function fighting_game() {
           //this.leaderboard();        //this is where the leaderboard function would be called to determine placement
         }
       }
-    }}
+    }
+  }
 
   this.end_game = function(winner_id) {
-    for (let i in this.players) {
-      this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
-        "player_id": i,
-        "coins_added": 30
+    if (this.game_over == 0) {
+      for (let i in this.players) {
+        if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+            "player_id": i,
+            "coins_added": 30
+          }
+        }
       }
+      if (winner_id !== undefined) {
+        this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 15;
+      }
+      var self = this;
+      setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+      this.game_over = 1;
     }
-    this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 30;
-    var self = this;
-    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
   }
 
   this.tick_function = function() {
-    for(let i in this.players) {
-      console.log("Y position is: " + this.players[i].make_data(i));
-      sessions[this.session_id].broadcast_exclusive(this.players[i].make_data(i),[i]);
+    //for(let i in this.players) {
+      //console.log("Y position is: " + this.players[i].make_data(i));
+      //sessions[this.session_id].broadcast_exclusive(this.players[i].make_data(i),[i]);
+    //}
+    this.current_time = Date.now()/1000 - this.start_time;
+    this.countdown_time = this.round_length - this.current_time;
+    if (this.countdown_time < 0) {
+      this.game_round++;
+      this.countdown_time = this.round_length;
+      this.start_time = Date.now()/1000;
     }
+    if (this.game_round == 4) {
+      this.end_game();
+    }
+    var players_alive = this.players.length;
+    var winner_id = 0;
+    for (let i in this.players) { 
+      if(this.players[i].health <= 0) { players_alive--; }
+      else {winner_id = i; }
+    }
+    if (players_alive <= 1) { this.end_game(winner_id); }
+    sessions[this.session_id].broadcast("game_timer_info:"+this.current_time+","+this.countdown_time+","+this.game_round);
   }
 
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
-    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, this.floor, 0, usr_id%4);
+    this.players[usr_id] = new fighting_game_player(100+Math.random()*400, 0, 0, usr_id%4);
     sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
     sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
     sessions[this.session_id].clients[usr_id].send(this.make_everything());
@@ -1375,8 +1544,9 @@ function fighting_game() {
 
   this.read_in_player_position = function(data_string) 
   { //format packet as pos_player: id, x, y, dx, dy, facing, health, isAttacking, isDucking
-    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4]);
-    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]); //just removed null as first argument in update_data, not sure if it's right
+    p_vals = convert_data_string(data_string, [0, 5, 6, 7, 8], [1, 2, 3, 4], [9]);
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new fighting_game_player(100+Math.random()*400, 0, 0, p_vals[0]%4); }
+    this.players[p_vals[0]].update_data( p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8], p_vals[9]); //just removed null as first argument in update_data, not sure if it's right
     return p_vals[0];
   }
 
@@ -1394,6 +1564,17 @@ function fighting_game() {
       if (Math.sqrt(x_dist*x_dist + y_dist*y_dist) < hit_radius) {
         this.players[i].health -= 5;
         sessions[this.session_id].broadcast("hit:"+i+","+this.players[i].health);
+        if (this.players[i].health <= 0) {
+          var players_dead = 0;
+          for (let i in this.players) {
+            if (this.players[i].health <= 0) { players_dead++; }
+          }
+
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+            "player_id": i,
+            "coins_added": 15 + players_dead*10
+          }
+        }
       }
     }
   }
@@ -1428,7 +1609,7 @@ function flappy_bird() {
       for (let i in sessions[this.session_id].clients) {
         //for every player except usr_id=0, a new flappy bird player is probably being generated
         if(this.players[i] == undefined) {
-          this.players[i] = new flappy_bird_player(500, 500, 1);
+          this.players[i] = new flappy_bird_player(500, 250, 1);
           this.user_loaded(i);
         }
       }
@@ -1436,7 +1617,7 @@ function flappy_bird() {
     }
     this.set_player_y_positions;
     var self = this;
-    var int_id = setInterval(function(){ self.tick_function(); }, 100);
+    var int_id = setInterval(function(){ self.tick_function(); }, 35);
     sessions[this.session_id].append_interval_id(int_id);
     this.game_over = 0;
   }
@@ -1507,7 +1688,7 @@ function flappy_bird() {
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
     if (this.players[usr_id] === undefined) {
-      this.players[usr_id] = new flappy_bird_player(500, 500, 1);
+      this.players[usr_id] = new flappy_bird_player(500, 250, 1);
       this.players_alive++;
     }
     this.set_player_y_positions();
@@ -1532,7 +1713,7 @@ function flappy_bird() {
   this.read_in_player_position = function(data) {
 		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
 		if (this.players[p_vals[0]] === undefined) {
-			this.players[p_vals[0]] = new flappy_bird_player(this.Sprite, 10, 10);
+			this.players[p_vals[0]] = new flappy_bird_player(500, 250, 1);
 		}
 		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
 	}

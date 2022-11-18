@@ -3,13 +3,14 @@ function seed_random(seed) {
 	return x - Math.floor(x);
 }
 class game_2_ball {
-	constructor() {
+	constructor(bounds) {
 		this.radius = 50;
 		this.x = 0;
 		this.y = 0;
 		this.dx = 1;
 		this.dy = 1;
-		this.speed = 100;
+		this.speed = 300;
+    this.bounds = bounds;
 		this.last_update = Date.now()/1000;
 	}
 
@@ -17,8 +18,8 @@ class game_2_ball {
 		var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
       this.y += this.dy*this.speed*(Date.now()/1000 - this.last_update);
-      if (this.x < 0 || this.x >= 500) {
-        var adjust_factor = Math.max(0, Math.min(this.x, 500)) - this.x;
+      if (this.x < this.bounds["x"][0] || this.x >= this.bounds["x"][1]) {
+        var adjust_factor = Math.max(this.bounds["x"][0], Math.min(this.x, this.bounds["x"][1])) - this.x;
         adjust_factor /= this.dx;
         var mid_time = -adjust_factor/this.speed;
         this.x += this.dx*adjust_factor;
@@ -28,8 +29,8 @@ class game_2_ball {
         this.dx -= 0.3*seed_random(random_seed+this.dx)-0.15;
         bounce_flag = true;
       }
-      if (this.y < 0 || this.y >= 500) {
-        var adjust_factor = Math.max(0, Math.min(this.y, 500)) - this.y;
+      if (this.y < this.bounds["y"][0] || this.y >= this.bounds["y"][1]) {
+        var adjust_factor = Math.max(this.bounds["y"][0], Math.min(this.y, this.bounds["y"][1])) - this.y;
         adjust_factor /= this.dy;
         var mid_time = -adjust_factor/this.speed;
         this.x += this.dx*adjust_factor;
@@ -59,33 +60,33 @@ class game_2_ball {
 }
 
 class ball_game_player {
-  constructor(x, y, face, color) {
-  this.spriteColor = color;
-	this.sx = 0;
-  this.x = x;
-  this.y = y;
-	this.move = 0;
-	this.speed = 300;
-  this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
-  this.isDead = 0;
-	this.spriteColor = color;
-	this.current_animation = "left_right";
+  constructor(x, y, face, name, color) {
+    this.sx = 0;
+    this.x = x;
+    this.y = y;
+    this.move = 0;
+    this.speed = 300;
+    this.facing = face; // use 4, maybe 8 later. 0, 1, 2, 3 for EWNS respectively
+    this.isDead = 0;
+    this.spriteColor = color;
+    this.current_animation = "down";
+    this.name = name;
   }
 
   update_data(x, y, move, speed, facing, is_dead, animation, name){
 	//if (sprite != null) {this.spriteSheet = }
-	if (x != null) { this.x = x; }
-	if (y != null) { this.y = y; }
-	if (move != null) { this.move = move; }
-	if (speed != null) { this.speed = speed; }
-  //if (is_dead != null) {this.isDead = this.is_dead; }
-	if (facing != null) { this.facing = facing; }
-	if (name != null) { this.name = name; }
-	if (animation != null) {this.animation = animation;}
+    if (x != null) { this.x = x; }
+    if (y != null) { this.y = y; }
+    if (move != null) { this.move = move; }
+    if (speed != null) { this.speed = speed; }
+    if (is_dead != null) {this.isDead = this.is_dead; }
+    if (facing != null) { this.facing = facing; }
+    if (name != null) { this.name = name; }
+    if (animation != null) {this.current_animation = animation;}
   }
 
   make_data_raw(){
-	return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.isDead+","+this.animation+","+this.name;
+    return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.isDead+","+this.current_animation+","+this.name;
   }
 
   make_data(player_index){

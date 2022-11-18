@@ -5,7 +5,26 @@ var repo_address = "";
 var current_state = new main_menu(), current_state_flag = "main_menu";
 var font_set, font_size_scaling, connected_to_server;
 var game_bounds, g_cam;
+var tone_started = 0;
 
+var sound_ids = {
+  "press" : 'media/sounds/button_press.wav',
+  "arp" : 'media/sounds/arp_2.wav',
+  "beat_angry" : 'media/sounds/beat_angry.wav',
+  "beat_groovy" : 'media/sounds/beat_groovy.wav'
+};
+
+var sound_id_flags = {};
+for (let key in sound_ids) { sound_id_flags[key] = false; }
+
+var sound_set = new Tone.Players(sound_ids).toDestination();
+
+/*
+sound_set.forEach(tune => {
+  const now = Tone.now()
+  synth.triggerAttackRelease(tune.note, tune.duration, now + tune.timing)
+})
+*/
 /*
 P5 has several default functions.
 These include, but are not limited to:
@@ -20,7 +39,6 @@ Since the current game is stored in the variable current_state, the actual defau
 listed below can simply call current_state's respective function (i.e. current_state.setup()).
 */
 
-
 function preload() {  //This is a default p5 function which executes on load. Since games are written as functions, I've given each
   return;
 }
@@ -28,6 +46,7 @@ function preload() {  //This is a default p5 function which executes on load. Si
 function setup() {
   console.log(millis());
   createCanvas(windowWidth, windowHeight); //Enables the canvas size. These are stored in global variables named width and height.
+  console.log(windowWidth+", "+windowHeight);
   background(50, 50, 50); //Declares the background color via RGB.
   g_cam = new g_camera(width/2, height/2, 1);
   connected_to_server = false;      //This variable is for referencing if the server is connected or no. We'll add features like auto-reconnect.
@@ -62,8 +81,27 @@ function keyReleased() {  //Event function that triggers upon user releasing a k
 }
 
 function mousePressed() {
+  if (tone_started == 0) { start_tone_trigger_function(); }
   if (current_state.mouse_pressed !== undefined) {
-   current_state.mouse_pressed(); 
+    current_state.mouse_pressed();
+  }
+}
+
+var start_tone_trigger_function = function() {
+  if (millis()/1000 < 1) { return; }
+  if (tone_started == 0) {
+    try {
+      Tone.start();
+      tone_started = 1;
+      Tone.Transport.bpm.value = 120;
+      Tone.Transport.start();
+      Tone.mute = true;
+      if (current_state_flag == "main_menu" || current_state_flag == "session_menu") {
+        playSound("beat_groovy", true);
+      }
+    } catch (error) {
+      tone_started = 0;
+    }
   }
 }
 
@@ -77,6 +115,33 @@ function mouseWheel(event) {
   console.log("mouse_wheel called; delta -> "+event.delta);
   if (current_state.mouse_wheel !== undefined) {
     current_state.mouse_wheel(event.delta);
+  }
+}
+
+function playSound(sound_name, loop) {
+  if(loop === undefined) {
+    loop = false;
+  }
+  if (loop) { sound_set.player(sound_name).loop = true; }
+  try { 
+    sound_id_flags[sound_name] = true;
+    console.log("sound_id_flags["+sound_name+"] -> "+sound_id_flags[sound_name]);
+    sound_set.player(sound_name).start();
+  } catch (error) {
+    console.log("buffer failed, retrying -> "+error);
+    setTimeout(function(){ playSound(sound_name, loop); }, 100);
+  }
+}
+
+function stopSound(sound_name) {
+  sound_set.player(sound_name).stop();
+  sound_set.player(sound_name).loop = false;
+  sound_id_flags[sound_name] = false;
+}
+
+function stopAllSounds() {
+  for (let key in sound_id_flags) {
+    if (sound_id_flags[key]) { console.log("stopping sound ->"+key); stopSound(key); }
   }
 }
 

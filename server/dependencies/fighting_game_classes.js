@@ -10,6 +10,7 @@ class fighting_game_player {
 		this.health = 100;
 		this.isAttacking = 0;
 		this.isDucking = 0;
+		this.current_animation = "standing";
 	}
 
 	make_data_raw() {
@@ -21,7 +22,7 @@ class fighting_game_player {
 		return string_make;
 	}
 
-	update_data(x, y, dx, dy, facing, health, isAttacking, isDucking) {
+	update_data(x, y, dx, dy, facing, health, isAttacking, isDucking, animation) {
 		if (x != null) { this.x = x; }
 		if (y != null) { this.y = y; }
 		if (dx != null) { this.dx = dx; } //copilot changed this to += from =, not sure if it's right
@@ -30,6 +31,7 @@ class fighting_game_player {
 		if (health != null) { this.health = health; }
 		if (isAttacking != null) { this.isAttacking = isAttacking; }
 		if (isDucking != null) { this.isDucking = isDucking; } 
+		if (animation != null) { this.current_animation = animation; }
 	}
 }
 

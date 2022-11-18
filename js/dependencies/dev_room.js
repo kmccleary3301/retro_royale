@@ -29,6 +29,8 @@ function dev_room() {
 		this.pink = [246, 1, 157];
 		this.cyan = [45, 226, 230];
 		this.purple = [151, 0, 204];
+		
+		Tone.Master.volume = -12;
 	}
 
 	this.key_pressed = function(keycode) {

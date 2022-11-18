@@ -7,14 +7,15 @@ function seed_random(seed) {
 }
 
 class game_2_ball {
-  constructor() {
+  constructor(bounds) {
       this.radius = 35;
       this.x = 0;
       this.y = 0;
       this.dx = 1;
       this.dy = 1;
-      this.speed = 110;
+      this.speed = 300;
       this.last_update = Date.now()/1000;
+      this.bounds = bounds;
     }
 
     draw() {
@@ -26,8 +27,8 @@ class game_2_ball {
       var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
       this.y += this.dy*this.speed*(Date.now()/1000 - this.last_update);
-      if (this.x < 0 || this.x >= 500) {
-        var adjust_factor = Math.max(0, Math.min(this.x, 500)) - this.x;
+      if (this.x < this.bounds["x"][0] || this.x >= this.bounds["x"][1]) {
+        var adjust_factor = Math.max(this.bounds["x"][0], Math.min(this.x, this.bounds["x"][1])) - this.x;
         adjust_factor /= this.dx;
         var mid_time = -adjust_factor/this.speed;
         this.x += this.dx*adjust_factor;
@@ -37,8 +38,8 @@ class game_2_ball {
         this.dx -= 0.3*seed_random(seed_get+this.dx)-0.15;
         bounce_flag = true;
       }
-      if (this.y < 0 || this.y >= 500) {
-        var adjust_factor = Math.max(0, Math.min(this.y, 500)) - this.y;
+      if (this.y < this.bounds["y"][0] || this.y >= this.bounds["y"][1]) {
+        var adjust_factor = Math.max(this.bounds["y"][0], Math.min(this.y, this.bounds["y"][1])) - this.y;
         adjust_factor /= this.dy;
         var mid_time = -adjust_factor/this.speed;
         this.x += this.dx*adjust_factor;
@@ -99,7 +100,9 @@ class ball_game_player {
           "row_length": 1
         }
 			});
-  
+    this.sprite_anim.change_animation("down");
+    this.sprite_anim.stop();
+    this.current_animation = "down";
 		this.x = x;
 		this.y = y;
 		this.move = 0;
@@ -124,13 +127,13 @@ class ball_game_player {
 			else if (this.facing == "up") { this.y -= this.speed * (millis()/1000 - this.last_update); }
 			else if (this.facing == "down") { this.y += this.speed * (millis()/1000 - this.last_update); }
 			this.last_update = millis()/1000;
-		} 
-    console.log("player coords -> "+this.x+", "+this.y);
+		}
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, false);
     fill(255, 0, 0);
+    ellipse(this.x, this.y, 10);
 		pop();
 	}
 
@@ -142,9 +145,10 @@ class ball_game_player {
       this.sprite_anim.stop(); 
     }
     else {this.move = 1; this.sprite_anim.start(); }
+    console.log("animation -> "+animation);
     this.sprite_anim.change_animation(animation);
     this.current_animation = animation;
-    }
+  }
 	
 	update_facing(facing) {
 		if (facing == this.facing) { return; }
@@ -190,7 +194,7 @@ class ball_game_player {
 	}
 
   make_data_raw(){
-    return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.isDead+","+this.animation+","+this.name;
+    return this.x+","+this.y+","+this.move+","+this.speed+","+this.facing+","+this.isDead+","+this.current_animation+","+this.name;
   }
   
   make_data(player_index){
@@ -215,27 +219,30 @@ function ball_game() {
 			"up" : 38,
 			"down" : 40
 		};
+    this.bounds = {"x":[0, 1536], "y":[0, 731]};
     this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
     this.font = loadFont('media/fonts/Alpharush.ttf');
     imageMode(CENTER);
-    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0, 0);
+    this.players[0] = new ball_game_player(this.greenSprite, 200, 200, "left", 0);
     this.main_player_index = 0;
   }
 
   this.key_pressed = function(keycode) {
+    if (this.players[this.main_player_index].isDead == 1) { return; }
     for (let i in this.arrow_keys){
-      if (this.players[this.main_player_index].isDead) { return; }
       if (keycode == this.arrow_keys[i]){
         this.players[this.main_player_index].update_facing(i);
         this.players[this.main_player_index].update_moving(true);
         this.players[this.main_player_index].move = 1;
-        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-        return;
+
+        break;
       }
     }
+    send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
   }
 
   this.key_released = function(keycode) {
+    if (this.players[this.main_player_index].isDead == 1) { return; }
     for (let i in this.arrow_keys){
       if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
         this.players[this.main_player_index].dx = 0;
@@ -277,6 +284,14 @@ function ball_game() {
     for (let i in this.balls) 
     { 
       this.balls[i].draw(); 
+      var d_x = Math.abs(this.players[this.main_player_index].x-this.balls[i].x);
+      if (d_x < this.balls[i].radius+this.players[this.main_player_index].sprite_anim.draw_size/2) {
+        var d_y = Math.abs(this.players[this.main_player_index].y-this.balls[i].y);
+        if (Math.sqrt(d_x*d_x+d_y*d_y) < this.balls[i].radius+10) {
+          this.kill_player(this.main_player_index);
+          send_data("player_dead");
+        }
+      }
     }
 
   }
@@ -306,26 +321,30 @@ function ball_game() {
      //make a flag for a dead player
     else if (flag == "player_dead") {
       console.log("dead player ->"+message);
-      this.players[parseInt(message)].isDead = 1;
-      this.players[parseInt(message)].update_anim("dead");
-      this.players[parseInt(message)].update_facing("dead");
+      this.kill_player(parseInt(message));
     }
     else if (flag == "go_to_game_end_screen") {
 		swap_current_state("game_end_screen");
 	  }
   }
 
+  this.kill_player = function(player_id) {
+    this.players[player_id].isDead = 1;
+    this.players[player_id].update_anim("dead");
+    //this.players[player_id].update_facing("dead");
+  }
+
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     p_vals = convert_data_string(data_string,  [0, 3, 6], [1, 2, 4], [5, 7, 8]);
-    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, 0, (p_vals[0]%4)); }
+    if (p_vals[0] >= this.players.length) { this.players[p_vals[0]] = new ball_game_player(this.greenSprite, 300, 200, "left", (p_vals[0]%4)); }
     this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
   }
 
   this.read_in_ball_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
-    p_vals = convert_data_string(data_string, [0], [1, 2, 3, 4, 5]);
+    p_vals = convert_data_string(data_string, [0, 6], [1, 2, 3, 4], [5, 7, 8]);
     console.log ("reading in ball pos -> "+data_string);
-    if (p_vals[0] >= this.balls.length && this.balls.length < 10) { this.balls[p_vals[0]] = new game_2_ball(); }
-    this.balls[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
+    if (p_vals[0] >= this.balls.length && this.balls.length < 10) { this.balls[p_vals[0]] = new game_2_ball(this.bounds); }
+    this.balls[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], p_vals[8]);
   }
 
 }

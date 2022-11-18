@@ -54,6 +54,7 @@ function board_game() {
 		this.buttons["overlay"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "center", 4, true);
 		this.buttons["overlay"][1] = new button(75, 125, 100, 50, this.blue, [10, 10, 10], "scores", 4, true);
 		this.buttons["overlay"][2] = new button(75, 200, 100, 50, this.blue, [10, 10, 10], "home", 4, true);
+		this.buttons["leaderboard"][0] = new button(75, 50, 100, 50, this.blue, [10, 10, 10], "back", 4, true);
 
 		this.blue = [3, 94, 232];
 		this.red = [229, 53, 100];
@@ -63,8 +64,15 @@ function board_game() {
 		this.purple = [151, 0, 204];
 		this.vid_font = loadFont('media/fonts/videogame.ttf');
 
+		this.background_image = loadImage("media/backgrounds/thumbnail_image005.png");
+		this.board_start_coords = [0, 0];
+		this.board_dims = [50, 50];
+
 		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
+
+		var self = this;
+		setTimeout(function(){self.set_board_dims(); }, 2000);
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -109,6 +117,21 @@ function board_game() {
 		}
 	}
 
+	this.set_board_dims = function() {
+		var min_x = this.tiles[0].x, min_y = this.tiles[0].y;
+		for (let i in this.tiles) {
+			if (this.tiles[i].x < min_x) {min_x = this.tiles[i].x;}
+			if (this.tiles[i].y < min_y) {min_y = this.tiles[i].y;}
+		}
+		this.board_start_coords = [min_x, min_y];
+		var max_x = this.tiles[0].x, max_y = this.tiles[0].y;
+		for (let i in this.tiles) {
+			if (this.tiles[i].x > max_x) {max_x = this.tiles[i].x;}
+			if (this.tiles[i].y > max_y) {max_y = this.tiles[i].y;}
+		}
+		this.board_dims = [(max_x-min_x), (max_y-min_y)];
+	}
+
 	this.adjust_current_menu = function() {
 		if (this.buttons[this.current_button_menu] === undefined || this.buttons[this.current_button_menu].length == 0) {
 			return;
@@ -125,6 +148,8 @@ function board_game() {
 
 	this.draw = function() {
 		push();
+		g_cam.image(this.background_image, this.board_start_coords[0], this.board_start_coords[1], this.board_dims[0], this.board_dims[1]);
+
 		this.adjust_current_menu();
 		translate(0, 0);
 		this.event_timer = millis()/1000 - this.event_timer_start;
@@ -193,33 +218,34 @@ function board_game() {
 
 	this.draw_leaderboard = function() {
 		push();
+		var text_factor = Math.min(height/1080, width/1920);
 		fill(this.blue);
 		strokeWeight(5);
 		stroke(10);
 		rectMode(CENTER);
-		rect(width/2, height/2, width*0.4, height*0.4);
-		text_make(2, 40, 0, 1);
+		rect(width/2, height/2, width*0.5, height*0.4);
+		text_make(2, 80*text_factor, 0, 1);
 		fill(230, 50, 180);
 		textAlign(CENTER, CENTER);
-		text("leaderboard", width/2, height*(1-0.4)/2);
-		text_make(0, 25, 0, 1);
+		text("leaderboard", width/2, height*((1-0.4)/2+0.05));
+		text_make(0, 40*text_factor, 0, 1);
 		fill(0, 0, 0);
 		textAlign(LEFT);
-		var row_position = height*(1-0.4)/2+70,
-			x_pos_start = width*(1-0.4)/2+50;
-		text("name", x_pos_start+50, row_position);
-		text("coins", x_pos_start+200, row_position);
-		text("stars", x_pos_start+325, row_position);
+		var row_position = height*((1-0.4)/2+0.1),
+			x_pos_start = width*((1-0.5)/2+0.05);
+		text("name", x_pos_start+100*text_factor, row_position);
+		text("coins", x_pos_start+400*text_factor, row_position);
+		text("stars", x_pos_start+600*text_factor, row_position);
 		for (let i in this.players) {
-			row_position = (height*(1-0.4)/2) + 125 + i*55;
-			x_pos_start = width*(1-0.4)/2 + 50;
-			this.players[i].sprite_anim.draw_thumbnail(x_pos_start, row_position, 50);
-			text_make(0, 25, 0, 1);
+			row_position = height*((1-0.4)/2+0.15+i*0.05);
+			x_pos_start = width*((1-0.5)/2 + 0.05);
+			this.players[i].sprite_anim.draw_thumbnail(x_pos_start, row_position, 100*text_factor);
+			text_make(0, 40*text_factor, 0, 1);
 			fill(0, 0, 0);
 			textAlign(LEFT);
-			text(this.players[i].name, x_pos_start+50, row_position);
-			text(this.players[i].coins, x_pos_start+200, row_position);
-			text(this.players[i].stars, x_pos_start+325, row_position);
+			text(this.players[i].name, x_pos_start+100*text_factor, row_position);
+			text(this.players[i].coins, x_pos_start+400*text_factor, row_position);
+			text(this.players[i].stars, x_pos_start+600*text_factor, row_position);
 		}
 		pop();
 	}
@@ -385,7 +411,7 @@ function board_game() {
 	}
 
 	this.mouse_wheel = function(delta) {
-		this.camera_scale += 0.1*delta;
+		this.camera_scale += 0.001*delta;
 		this.camera_scale = Math.max(0.5, Math.min(this.camera_scale, 3));
 	}
 
@@ -400,6 +426,7 @@ function board_game() {
 					this.current_button_menu = "leaderboard";
 					break;
 				case 2:
+					send_data("leave_session");
 					socket.close();
 					swap_current_state("main_menu");
 					break;

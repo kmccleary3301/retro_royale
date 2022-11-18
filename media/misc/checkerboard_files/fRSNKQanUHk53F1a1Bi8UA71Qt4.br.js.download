@@ -1,0 +1,1 @@
+(function(){if("BroadcastChannel"in window){var t=1,n=new BroadcastChannel("tabCountBroadCastChannel");n.onmessage=function(i){i.data=="newTab"&&n.postMessage("existingTab");i.data=="existingTab"&&t++};n.postMessage("newTab");sb_st(function(){Log.Log("Tab","count",t.toString())},200)}})()
