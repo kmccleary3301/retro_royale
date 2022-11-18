@@ -122,6 +122,7 @@ function purgatory() {
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     this.test_background = loadImage("media/backgrounds/pink_gradient_background.png");
     this.checkerboard = loadImage("media/misc/checkerboard_2.jpg");
+    this.font = loadFont('media/fonts/Alpharush.ttf');
     //this.checkerboard.resize(0,1500);
 
 		this.scroll_background = new scroll_image(this.test_background, [1920, 1080], 0);
@@ -200,46 +201,51 @@ function purgatory() {
     image(this.checkerboard,900+this.checkerboard.width/2,height/2);
     fill(0, 0, 0);
     text_make(0, 70, 0, 2);
+    textFont(this.font);
     textAlign(CENTER, CENTER);
     //text("RUN!", width/2, height/2);
-    //text("Time Remaining: "+this.current_time, width/2,40);
+    text("Time Remaining: "+this.current_time, width/2,40);
 
     fill(100,0,0);
+    text_make(0, 20, 0, 2);
+    textFont(this.font);
     //rect(900,40,50,450);
     for (let i in this.players) {
-      text_make(0, 20, 0, 2);
+      if(this.names[i] !== undefined) {
+        //text_make(0, 20, 0, 2);
 
-      this.players[i].y = 400-i * 90;
+        this.players[i].y = 400-i * 90;
 
-      this.players[i].draw();
+        this.players[i].draw();
 
-      this.playerNum = parseInt(i)+1;
+        this.playerNum = parseInt(i)+1;
 
-      text(""+this.names[parseInt(i)],this.players[i].x,this.players[i].y-50);
+        text(""+this.names[parseInt(i)],this.players[i].x,this.players[i].y-50);
 
-      if(this.players[i].x > 900) {
-        if(this.whoGotFirst == null) {
-          this.whoGotFirst = this.playerNum;
-        } 
-        else {
-          if(this.whoGotFirst != this.playerNum && this.whoGotSecond == null) {
-            this.whoGotSecond = this.playerNum;
-          }
+        if(this.players[i].x > 900) {
+          if(this.whoGotFirst == null) {
+            this.whoGotFirst = this.playerNum;
+          } 
           else {
-            if(this.whoGotFirst!= this.playerNum && this.whoGotSecond != this.playerNum && this.whoGotThird == null) {
-              this.whoGotThird = this.playerNum;
+            if(this.whoGotFirst != this.playerNum && this.whoGotSecond == null) {
+              this.whoGotSecond = this.playerNum;
+            }
+            else {
+              if(this.whoGotFirst!= this.playerNum && this.whoGotSecond != this.playerNum && this.whoGotThird == null) {
+                this.whoGotThird = this.playerNum;
+              }
             }
           }
+
+          textAlign(LEFT, CENTER);
+          text_make(0, 20, 0, 2);
+
+          text(this.names[this.whoGotFirst-1]+" Got First!",15,15);
+          if(this.whoGotSecond != null)
+            text(this.names[this.whoGotSecond-1]+" Got Second!",15,35);
+          if(this.whoGotThird != null)
+            text(this.names[this.whoGotThird-1]+" Got Third!",15,55);
         }
-
-        textAlign(LEFT, CENTER);
-        text_make(0, 20, 0, 2);
-
-        text(this.names[this.whoGotFirst-1]+" Got First!",15,15);
-        if(this.whoGotSecond != null)
-          text(this.names[this.whoGotSecond-1]+" Got Second!",15,35);
-        if(this.whoGotThird != null)
-          text(this.names[this.whoGotThird-1]+" Got Third!",15,55);
       }
     }
   }

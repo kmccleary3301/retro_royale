@@ -7,7 +7,8 @@ function seed_random(seed) {
 }
 
 class game_2_ball {
-  constructor() {
+  constructor(ball_sprite) {
+      this.discoBall = ball_sprite;
       this.radius = 35;
       this.x = 0;
       this.y = 0;
@@ -21,7 +22,8 @@ class game_2_ball {
       //console.log("drawing ball");
       fill(colors[4]);
       stroke(255);
-      ellipse(this.x, this.y, this.radius);
+      //ellipse(this.x, this.y, this.radius);
+      image(this.discoBall,this.x,this.y);
       //console.log("drawing - "+str(this.x)+","+str(this.y));
       var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
@@ -128,7 +130,7 @@ class ball_game_player {
     console.log("player coords -> "+this.x+", "+this.y);
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
-		g_cam.text(this.name, this.x, this.y+60);
+		//g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, false);
     fill(255, 0, 0);
 		pop();
@@ -205,7 +207,10 @@ var timelimit = 20; //20 seconds
 function ball_game() {
   this.setup = function() {
     this.background1 = loadImage(repo_address+"media/backgrounds/disco_blitz_background.png");
+    this.ball_sprite = loadImage("media/misc/disco_ball_resized.png");
+
     this.result;
+    this.names = [];
     this.players = [];
     this.balls = [];
     this.main_player_index;
@@ -220,6 +225,7 @@ function ball_game() {
     imageMode(CENTER);
     this.players[0] = new ball_game_player(this.greenSprite, 200, 200, 0, 0);
     this.main_player_index = 0;
+    send_data("get_names");
   }
 
   this.key_pressed = function(keycode) {
@@ -266,12 +272,16 @@ function ball_game() {
       fill(colors[4]);
       text("DISCO BLITZ", width/2, height/2);
     }
+    
+    text_make(0, 20, 0, 2);
+    textFont(this.font);
 
     for (let i in this.players) {
       this.players[i].draw();
     //  if(this.players[i].isDead == 1){
     //    this.players[i].update_anim("dead");
     //   }
+      g_cam.text(this.names[i], this.players[i].x, this.players[i].y+60);
     }
 
     for (let i in this.balls) 
@@ -286,6 +296,7 @@ function ball_game() {
       for (j=this.players.length; j < parseInt(message); j++){
         this.players[j] = new ball_game_player(this.greenSprite, 300, 300, 1);
       }
+      send_data("get_names");
     } else if (flag == "assigned_id") {
       this.main_player_index = parseInt(message);
     } else if (flag == "pos_player") {
@@ -309,10 +320,14 @@ function ball_game() {
       this.players[parseInt(message)].isDead = 1;
       this.players[parseInt(message)].update_anim("dead");
       this.players[parseInt(message)].update_facing("dead");
+    } else if (flag == "go_to_game_end_screen") {
+		  swap_current_state("game_end_screen");
+	  } else if (flag == "Name of") {
+      if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]]=new game_2_player(this.greenSprite, null, numberOfPlayers, 3);}
+      p_vals = convert_data_string(message,[0],[],[1]);
+      console.log(message);
+      this.names[p_vals[0]]=p_vals[1];
     }
-    else if (flag == "go_to_game_end_screen") {
-		swap_current_state("game_end_screen");
-	  }
   }
 
   this.read_in_player_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
@@ -324,7 +339,7 @@ function ball_game() {
   this.read_in_ball_position = function(data_string) { //format packet as pos_player:id,x,y,move,speed,facing,fruit_holding,fruit_id
     p_vals = convert_data_string(data_string, [0], [1, 2, 3, 4, 5]);
     console.log ("reading in ball pos -> "+data_string);
-    if (p_vals[0] >= this.balls.length && this.balls.length < 10) { this.balls[p_vals[0]] = new game_2_ball(); }
+    if (p_vals[0] >= this.balls.length && this.balls.length < 10) { this.balls[p_vals[0]] = new game_2_ball(this.ball_sprite); }
     this.balls[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
   }
 
