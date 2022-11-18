@@ -1166,6 +1166,19 @@ function ball_game() {
     }
     var players_alive = 0;
     for (let i in this.players) {if (this.players[i].isDead == 0) {players_alive++;}}
+    if (players_alive <= 0) {
+      for (let i in this.players) {
+        if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+            "player_id": i,
+            "coins_added": this.current_time
+          }
+        }
+      }
+      var self = this;
+      setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+    }
+
     //console.log("players alive -> "+players_alive);
 
     //broadcast(this.make_everything());
@@ -1204,6 +1217,10 @@ function ball_game() {
     else if (flag == "player_dead") {
       this.players[usr_id].isDead = 1;
       sessions[this.session_id].broadcast("player_dead:"+usr_id);
+      this.game_result_json[sessions[this.session_id].clients_info[usr_id].name] = {
+        "player_id": usr_id,
+        "coins_added": this.current_time
+      }
     }
   //  for(let i in this.players)
    // {
