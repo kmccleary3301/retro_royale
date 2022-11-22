@@ -130,7 +130,7 @@ class ball_game_player {
 		}
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
-		g_cam.text(this.name, this.x, this.y+60);
+		text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, false);
     fill(255, 0, 0);
     ellipse(this.x, this.y, 10);
@@ -187,7 +187,7 @@ class ball_game_player {
 	  if (y != null) { this.y = y; }
 	  if (move != null) { this.update_moving(move); }
 	  if (speed != null) { this.speed = speed; }
-    if (is_dead != null) {this.isDead = this.is_dead; }
+    if (is_dead != null) {this.isDead = is_dead; }
 	  if (facing != null) { this.update_facing(facing); }
 		if (name != null) { this.name = name; }
     if (animation != null) { this.update_anim(animation); }
@@ -299,14 +299,14 @@ function ball_game() {
   this.read_network_data = function(flag, message) {
     if (flag == "player_count") {
       for (j=this.players.length; j < parseInt(message); j++){
-        this.players[j] = new ball_game_player(this.greenSprite, 300, 300, 1);
+        this.players[j] = new ball_game_player(this.greenSprite, 200, 200, "left", (j%4));
       }
     } else if (flag == "assigned_id") {
       this.main_player_index = parseInt(message);
     } else if (flag == "pos_player") {
       this.read_in_player_position(message);
     } else if (flag == "new_player") {
-      this.players[parseInt(message)] = new ball_game_player(this.greenSprite, 300, 300, 0, (parseInt(message)%4));
+      this.players[parseInt(message)] = new ball_game_player(this.greenSprite, 200, 200, "left", (parseInt(message)%4));
     } else if (flag == "rmv_player") {
       var player_index = parseInt(message);
       this.players.splice(player_index, 1);
