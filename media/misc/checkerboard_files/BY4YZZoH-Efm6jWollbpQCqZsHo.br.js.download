@@ -1,1 +1,0 @@
-var sj_logToAES=function(n){var i,t;if(!(n.length<1)){for(i=[],t=0;t<n.length;t++)i.push(n[t].split("-")[2]);(new Image).src="/aes/c.gif?type=mv&tids="+i.join()+"&rg="+n[0].split("-")[1]+"&reqver=1.0"}}

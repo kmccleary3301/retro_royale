@@ -1,1 +1,0 @@
-var SBIImgsHelper;(function(){function i(){SbiUtil.oncop(SbiUtil.rt,r)}function r(i){var r=i.target||i.srcElement,u;r&&r.tagName==="IMG"&&r.classList.contains(n)&&r.src&&(u=r.getAttribute(t),u&&sj_evt&&sj_evt.fire&&sj_evt.fire("sbi_searchimgurl",SbiUtil.gimg(r),u,null,SbiUtil.gaps(r)))}var n="sbiable",t="data-sbiid";i()})(SBIImgsHelper||(SBIImgsHelper={}))
