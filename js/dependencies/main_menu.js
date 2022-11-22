@@ -1,3 +1,66 @@
+let z = 0;
+class beam {
+	constructor(origin_x, origin_y, angle){
+		this.x = origin_x;
+		this.y = origin_y;
+		this.size = 2;
+		this.speed = 5;
+		this.angle = angle;
+		this.direction = 0;
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+		
+	}
+	setup(){
+	
+	}
+
+	draw(){
+		//this.size += 0.5;
+		//this.speed += 0.5;
+		this.x += this.speed * Math.cos(this.angle);
+		this.y += this.speed * Math.sin(this.angle);
+		//fill(255, 255, 200);
+		//image(this.beam_img, this.x, this.y, 50, 50);
+		
+			//translate(this.speed * Math.cos(this.angle), this.speed * Math.sin(this.angle));
+			translate(0,0);
+			push();
+			drawingContext.shadowBlur = 16;
+			drawingContext.shadowColor = color (this.yellow)
+			fill(this.cyan, 60);
+			
+			this.d = 500
+			//rotate(this.angle);
+			for (let i = 0; i < this.d; i++){
+				//rotate(this.angle);
+				drawingContext.shadowBlur = 16/this.d * i;
+				//drawingContext.shadowColor = color (this.yellow)
+				fill(45, 226, 250, .2*i/255);
+				
+				noStroke();
+				ellipse(this.x, this.y, this.d/10 - i/10, this.d/10 - i/10);
+			}
+			//ellipse(this.x, this.y, 10, 10);	
+			//rotate(-this.angle);
+			pop();
+		
+		
+		
+		//rect(this.x, this.y, 20, 20);
+		//fill(this.blue);
+		//rect(this.x+20*Math.cos(this.angle), this.y+20*Math.sin(this.angle), 20, 20);
+		//console.log(this.x, this.y);
+	}
+}
+
+
+
+
 function main_menu() {
 	this.setup = function() {
 		this.start_time = millis()/1000;
@@ -32,6 +95,8 @@ function main_menu() {
 		this.scroll_background_2 = new scroll_image(this.test_background_2, [1920, 1080], 10);
 		this.test_background_3 = loadImage("media/backgrounds/city_layer_1.png");
 		this.scroll_background_3 = new scroll_image(this.test_background_3, [1920, 1080], 80);
+		this.beamy = [];
+		this.randAngle;
 		
 		this.loop_started = 0;
 
@@ -95,8 +160,39 @@ function main_menu() {
 		}
 		if(frameCount % 10 == 0){
 			this.s7x = (this.s7x + 1) % 5;}
+
+		//initiate beam generator
+		
+		if (frameCount % 20 == 0)
+		{
+			randAngle = random(0, 2*PI);
+			//rotate(randAngle);
+			this.beamy[z] = new beam(width/2, 300, randAngle);
+			//rotate(-randAngle);
+			z++;
+			
+		}
+			
+		for (let i in this.beamy)
+		{
+			
+			//rotate(this.beamy[i].angle);
+			//push();
+			//translate(this.beamy[i].x, this.beamy[i].y);
+			//translate(width/2, 300);
+			//rotate(this.beamy[i].angle);
+			this.beamy[i].draw();
+			//rotate(-this.beamy[i].angle);
+
+			//pop();
+			
+			//drawingContext.shadowBlur = 0;
+			//drawingContext.shadowColor = color (207, 7, 99, 0)
+			
+		}
+		
+
 		//draw disco ball image
-		//image(this.disco_ball, width/2, 175, 50*2, 175*2);
 		stroke(this.blue);
 		strokeWeight(5);
 		line(width/2, 0, width/2, 300);
