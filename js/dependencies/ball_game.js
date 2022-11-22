@@ -225,6 +225,23 @@ function ball_game() {
     imageMode(CENTER);
     this.players[0] = new ball_game_player(this.greenSprite, 200, 200, "left", 0);
     this.main_player_index = 0;
+
+    this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+		//this.color_array = [this.red, this.cyan, this.purple, this.blue, this.yellow, this.pink];
+		this.disco_ball = loadImage('media/misc/disco_ball_string.png');
+		this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
+		this.disco_sprites = loadImage(repo_address+"media/misc/disco_sprite.png");
+		this.disco_sprites_2 = loadImage(repo_address+"media/misc/disco_sprite_7i.png");
+		this.disco_sprites_3 = loadImage(repo_address+"media/misc/disco_sprite_5i.png");
+		this.sx = 0;
+		this.s5x = 0;
+		this.s7x = 0;
+		this.rando = [-20, 25, 6];
   }
 
   this.key_pressed = function(keycode) {
@@ -257,13 +274,28 @@ function ball_game() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
+    if(frameCount % 10 == 0){
+			this.sx = (this.sx + 1) % 6;
+		}
+
     image(this.background1, width/2, height/2, width, height);
     fill(0, 0, 0);
     let current_time = int(millis() / 1000);
     countdown = timelimit - current_time;
 
-    text_make(0, 200, 0, 2);
+    text_make(0, 100, 0, 2);
     textFont(this.font);
+
+    //draw disco ball image
+		stroke(this.blue);
+		strokeWeight(5);
+		line(width/2, 0, width/2, 300);
+		image(this.disco_sprites, width/2, 300, 96, 96, 128*this.sx, 0, 128, 128);
+		//image(this.blue_line1, width/2, 175, 1, 175, this.blue_line1.width, this.blue_line1.length);
+		imageMode(CENTER);
+		image(this.sparkle, width/2+this.rando[2], 300+this.rando[0], abs(sin(frameCount/30))*30, abs(sin(frameCount/30))*30, 0, 0, this.sparkle.width, this.sparkle.height, CONTAIN, LEFT, CENTER);
+   		image(this.sparkle, width/2+this.rando[0], 300+this.rando[1], abs(sin(frameCount/25))*40, abs(sin(frameCount/25))*40, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
+   		image(this.sparkle, width/2+this.rando[1], 300+this.rando[2], abs(sin(frameCount/20))*50, abs(sin(frameCount/20))*50, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
     
     if(countdown > 0){
       fill(colors[4]);
@@ -271,7 +303,7 @@ function ball_game() {
     }
     else {
       fill(colors[4]);
-      text("DISCO BLITZ", width/2, height/2);
+      text("DISCO BLITZ", width/2, height-200);
     }
 
     for (let i in this.players) {

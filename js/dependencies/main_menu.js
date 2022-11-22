@@ -28,32 +28,30 @@ class beam {
 		//image(this.beam_img, this.x, this.y, 50, 50);
 		
 			//translate(this.speed * Math.cos(this.angle), this.speed * Math.sin(this.angle));
-			translate(0,0);
+			let o = 50;
+			let q = 10;
 			push();
 			drawingContext.shadowBlur = 16;
-			drawingContext.shadowColor = color (this.yellow)
-			fill(this.cyan, 60);
-			
-			this.d = 500
+			drawingContext.shadowColor = color (this.cyan)
+			fill(color(this.cyan[0], this.cyan[1], this.cyan[2], o*255));
+			rect(this.x, this.y, q, q);
+			fill(color(this.blue[0], this.blue[1], this.blue[2], o*255));
+			rect(this.x+q*Math.cos(this.angle), this.y+q*Math.sin(this.angle), q, q);
+			fill(color(this.cyan[0], this.cyan[1], this.cyan[2], o*255));
+			rect(this.x+2*q*Math.cos(this.angle), this.y+2*q*Math.sin(this.angle), q, q);
+			fill(color(this.blue[0], this.blue[1], this.blue[2], o*255));
+			rect(this.x-q*Math.cos(this.angle), this.y-q*Math.sin(this.angle), q, q);
 			//rotate(this.angle);
-			for (let i = 0; i < this.d; i++){
-				//rotate(this.angle);
-				drawingContext.shadowBlur = 16/this.d * i;
-				//drawingContext.shadowColor = color (this.yellow)
-				fill(45, 226, 250, .2*i/255);
-				
-				noStroke();
-				ellipse(this.x, this.y, this.d/10 - i/10, this.d/10 - i/10);
-			}
-			//ellipse(this.x, this.y, 10, 10);	
+			// fill(this.cyan);
+			// translate(this.x, this.y);
+			// rotate(this.angle+Math.PI/2);
+			// ellipse(0, 0, 10, 80);	
 			//rotate(-this.angle);
 			pop();
 		
 		
 		
-		//rect(this.x, this.y, 20, 20);
-		//fill(this.blue);
-		//rect(this.x+20*Math.cos(this.angle), this.y+20*Math.sin(this.angle), 20, 20);
+		
 		//console.log(this.x, this.y);
 	}
 }
