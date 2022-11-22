@@ -79,7 +79,7 @@ class ball_game_player {
     if (y != null) { this.y = y; }
     if (move != null) { this.move = move; }
     if (speed != null) { this.speed = speed; }
-    if (is_dead != null) {this.isDead = this.is_dead; }
+    if (is_dead != null) {this.isDead = is_dead; }
     if (facing != null) { this.facing = facing; }
     if (name != null) { this.name = name; }
     if (animation != null) {this.current_animation = animation;}

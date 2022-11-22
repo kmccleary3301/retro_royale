@@ -1253,9 +1253,10 @@ function ball_game() {
     console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.add_last_time = Date.now()/1000 + 50;
+    this.add_last_time = Date.now()/1000;
     this.players = [];
     this.balls = [];
+    this.game_over = 0;
     this.bounds = {"x":[0, 1536], "y":[0, 731]};
     // this.condition;
     this.game_over = false;
@@ -1295,15 +1296,17 @@ function ball_game() {
     }
     var players_alive = 0;
     for (let i in this.players) {if (this.players[i].isDead == 0) {players_alive++;}}
-    if (players_alive <= 0) {
+    if (players_alive <= 1 && !this.game_over) {
+      console.log("game_over trigger called; players_alive -> "+players_alive);
       for (let i in this.players) {
         if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
           this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
             "player_id": i,
-            "coins_added": this.current_time
+            "coins_added": Math.floor(this.current_time)
           }
         }
       }
+      this.game_over = 1;
       var self = this;
       setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
     }

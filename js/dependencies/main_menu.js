@@ -137,6 +137,8 @@ function main_menu() {
 	}
 
 	this.draw = function() {
+		
+
 		this.scroll_background_1.draw();
 		this.scroll_background_2.draw();
 		this.scroll_background_3.draw();
@@ -147,6 +149,19 @@ function main_menu() {
 		else if (this.current_menu == "server") { this.draw_menu_2(); }
 		else if (this.current_menu == "certify") { this.draw_menu_3(); }
 		else if (this.current_menu == "info") { this.draw_menu_4(); }
+		/*
+		//laser effect
+		push();
+		var time_get = millis()*10 / 1000
+		offset_x = Math.max(0, time_get%20-10);
+		offset_width = Math.min(time_get%20, 10);
+		rectMode(CORNERS);
+		fill(255, 0, 0);
+		translate(width/2, height/2);
+		rotate(millis()/1000);
+		rect(20*offset_x, -10, 20*offset_width, 20)
+		pop();
+		*/
 	}
 
 	this.draw_menu_1 = function() {
