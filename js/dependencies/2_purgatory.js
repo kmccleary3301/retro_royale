@@ -1,4 +1,3 @@
-
 class game_2_player {
 	constructor(spriteSheet, x, y, face) {
 		this.spriteSheet = spriteSheet;
@@ -122,6 +121,23 @@ function purgatory() {
     this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
     this.test_background = loadImage("media/backgrounds/pink_gradient_background.png");
     this.checkerboard = loadImage("media/misc/checkerboard_2.jpg");
+    this.chosen_sentence = "";
+    this.normal_chars = "abcdefghijklmnopqrstuvwxyz1234567890,.\'-~ ";
+    this.shift_chars =  "ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()<>\"_` ";
+    this.key_held = {
+      "shift": 0,
+      "caps_lock": 0
+    };
+    this.unique_key_map = {
+      "188": ",",
+      "190": ".",
+      "191": "/",
+      "222": "'",
+      "192": "`"
+    };
+    this.current_letter_index = 0;
+    this.finish_line_x = 900;
+
     //this.checkerboard.resize(0,1500);
 
 		this.scroll_background = new scroll_image(this.test_background, [1920, 1080], 0);
@@ -130,6 +146,7 @@ function purgatory() {
     this.main_player_index = 0;
     this.alphabet = "abcdefghijklmnopqrstuvwxyz";
     this.current_letter = "g"
+    this.player_latest_typed = "";
     //data fields for MY game
 		//
 		//stores the current number of players in the game
@@ -140,50 +157,32 @@ function purgatory() {
   }
 
   this.key_pressed = function(keycode) {
-    if (keycode == this.arrow_keys[0]) { //if the client presses "right"
-      if(this.players[this.main_player_index].previous_key_pressed == this.arrow_keys[1]) {
-        //if client previously pressed the "left" key
-        this.players[this.main_player_index].facing = 0;
-        this.players[this.main_player_index].move = 1;
-        this.players[this.main_player_index].sx = 0;
-        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-        this.players[this.main_player_index].previous_key_pressed = keycode;
-        this.players[this.main_player_index].timePlayerStartedMoving = Date.now();
-        return;
-      } else if(this.players[this.main_player_index].previous_key_pressed == 40) {
-        //if this is the first key the client pressed
-        this.players[this.main_player_index].facing = 0;
-        this.players[this.main_player_index].move = 1;
-        this.players[this.main_player_index].sx = 0;
-        send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-        this.players[this.main_player_index].previous_key_pressed = keycode;
-        this.players[this.main_player_index].timePlayerStartedMoving = Date.now();
-        return;
-      }
-    } else if (keycode == this.arrow_keys[1]) { //if the client presses "left"
-        if(this.players[this.main_player_index].previous_key_pressed == this.arrow_keys[0]) {
-          //if client previously pressed the "right" key
-          this.players[this.main_player_index].facing = 0;
-          this.players[this.main_player_index].move = 1;
-          this.players[this.main_player_index].sx = 0;
-          send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-          this.players[this.main_player_index].previous_key_pressed = keycode;
-          this.players[this.main_player_index].timePlayerStartedMoving = Date.now();
-          return;
-        } else if(this.players[this.main_player_index].previous_key_pressed == 40) {
-          //if this is the first key the client pressed
-          this.players[this.main_player_index].facing = 0;
-          this.players[this.main_player_index].move = 1;
-          this.players[this.main_player_index].sx = 0;
-          send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-          this.players[this.main_player_index].previous_key_pressed = keycode;
-          this.players[this.main_player_index].timePlayerStartedMoving = Date.now();
-          return;
-        }
+    var prechar = "", true_char = "";
+    if (keycode == 16) { this.key_held["shift"] = 1; return; }
+    else if (keycode == 20) {this.key_held["caps_lock"] = 1-this.key_held["caps_lock"]; return; }
+    if (keycode == 32) { prechar = " "; }
+    else if (this.unique_key_map[str(keycode)] !== undefined) { prechar = this.unique_key_map[str(keycode)]; console.log("prechar1:"+prechar); }
+    else { prechar = String.fromCharCode((96 <= keycode && keycode <= 105) ? keycode-48 : keycode).toLowerCase(); console.log("prechar2:"+prechar); }
+    var case_state = (this.key_held["shift"]+this.key_held["caps_lock"]) % 2;
+    if (case_state) {
+      true_char = this.shift_chars[this.normal_chars.indexOf(prechar)];
+    } else {
+      true_char = prechar;
+    }
+    this.player_latest_typed = true_char;
+
+    if (true_char == this.chosen_sentence[this.current_letter_index]) {
+      this.current_letter_index += 1;
+    
+      this.players[this.main_player_index].facing = 0;
+      this.players[this.main_player_index].move = 1;
+      this.players[this.main_player_index].sx = 0;
+      this.target_x = 100 + (this.finish_line_x-100)*this.current_letter_index/(this.chosen_sentence.length-1);
     }
   }
 
   this.key_released = function(keycode) {
+    if (keycode == 16) { this.key_held["shift"] = 0; return; }
     for (i=0;i<4;i++){
       if(keycode == this.arrow_keys[i] && this.players[this.main_player_index].facing == i) {
         this.players[this.main_player_index].move = 0;
@@ -196,6 +195,7 @@ function purgatory() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
+    push();
     this.scroll_background.draw();
     image(this.checkerboard,900+this.checkerboard.width/2,height/2);
     fill(0, 0, 0);
@@ -215,7 +215,7 @@ function purgatory() {
 
       this.playerNum = parseInt(i)+1;
 
-      text(""+this.names[parseInt(i)],this.players[i].x,this.players[i].y-50);
+      //text(""+this.names[parseInt(i)],this.players[i].x,this.players[i].y-50);
 
       if(this.players[i].x > 900) {
         if(this.whoGotFirst == null) {
@@ -242,6 +242,25 @@ function purgatory() {
           text(this.names[this.whoGotThird-1]+" Got Third!",15,55);
       }
     }
+
+    if (this.players[this.main_player_index].move == 1 && this.players[this.main_player_index].x >= this.target_x) {
+      if (this.players[this.main_player_index].x < this.finish_line_x) {
+        this.players[this.main_player_index].move = 0;
+      } else {
+        send_data("finished_sentence");
+      }
+      send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+    }
+
+    textAlign(CENTER, CENTER);
+    text_make(0, 20, 0, 0);
+    strokeWeight(2);
+    stroke(0, 0, 0);
+    fill(255, 0, 0);
+    text(this.chosen_sentence, width/2, height*1/5);
+    fill(0, 255, 0);
+    text(this.chosen_sentence.substring(0, this.current_letter_index), width/2, height*3/10);
+    pop();
   }
 
   this.read_network_data = function(flag, message) {
@@ -277,6 +296,8 @@ function purgatory() {
       p_vals = convert_data_string(message,[0],[],[1]);
       console.log(message);
       this.names[p_vals[0]]=p_vals[1];
+    } else if (flag == "keyboard_sentence") {
+      this.chosen_sentence = message;
     }
   }
 
@@ -285,6 +306,7 @@ function purgatory() {
     if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]]=new game_2_player(this.greenSprite, null, numberOfPlayers, 3);}
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
   }
+
   this.read_in_game_state = function(data_string) {
 		p_vals = convert_data_string(data_string, [0, 1]);
     this.current_time = Math.max(p_vals[0],0);

@@ -21,6 +21,7 @@ function board_game() {
 		this.center_on_player = true;
 		this.starting_camera_coordinates = [0, 0];
 		this.camera_center_coordinates = [0, 0];
+		this.board_bounds = {"x":[0, 2000], "y":[0, 2000], "center": [0, 0], "dims": [100, 100]};
 		this.mouse_held = false;
 		this.mouse_click_location = [0, 0];
 		this.pause_check = false;
@@ -148,7 +149,7 @@ function board_game() {
 
 	this.draw = function() {
 		push();
-		g_cam.image(this.background_image, this.board_start_coords[0], this.board_start_coords[1], this.board_dims[0], this.board_dims[1]);
+		
 
 		this.adjust_current_menu();
 		translate(0, 0);
@@ -160,9 +161,21 @@ function board_game() {
 			this.camera_center_coordinates[1] = this.starting_camera_coordinates[1] - (mouseY - this.mouse_click_location[1])*g_cam.scale;
 			this.mouse_click_location = [mouseX, mouseY];
 		}
+		this.camera_center_coordinates[0] = Math.max(this.board_bounds["center"][0]-this.board_bounds["dims"][0]*0.75+width*g_cam.scale/2, 
+											Math.min(this.camera_center_coordinates[0], 
+													this.board_bounds["center"][0]+this.board_bounds["dims"][0]*0.75-width*g_cam.scale/2));
+		this.camera_center_coordinates[1] = Math.max(this.board_bounds["center"][1]-this.board_bounds["dims"][1]*0.75+height*g_cam.scale/2, 
+											Math.min(this.camera_center_coordinates[1], 
+													this.board_bounds["center"][1]+this.board_bounds["dims"][1]*0.75-height*g_cam.scale/2));
 		g_cam.x = this.camera_center_coordinates[0];
 		g_cam.y = this.camera_center_coordinates[1];
 		g_cam.scale = this.camera_scale;
+
+		if (this.board_bounds["dims"] !== undefined) {
+			g_cam.image(this.background_image, this.board_bounds["center"][0], this.board_bounds["center"][1], this.board_bounds["dims"][0]*1.5, this.board_bounds["dims"][1]*1.5,
+						0, 0, this.background_image.width, this.background_image.height);
+		}
+
 		for (let i in this.tiles) {
 			this.tiles[i].draw();
 		}
@@ -472,6 +485,7 @@ function board_game() {
 				break;
 			case 'reset_tiles':
 				this.tiles = [];
+				this.board_bounds = {"x":[10000000,-10000000], "y":[10000000,-10000000], "center": [0, 0], "dims": [100, 100]};
 				break;
 			case 'current_turn':
 				this.update_turn(parseInt(message));
@@ -514,11 +528,22 @@ function board_game() {
 	}
 
 	this.read_in_tile_data = function(data) {
+
 		p_vals = convert_data_string(data, [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21], [], [5]);
 		if (p_vals[0] >= this.tiles.length) { this.tiles[p_vals[0]] = new board_game_tile(this.tile_sprite, p_vals[1], p_vals[2], p_vals[5], []); }
 		this.tiles[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7], 
 										p_vals[8], p_vals[9], p_vals[10], p_vals[11], p_vals[12], p_vals[13], p_vals[14], 
 										p_vals[15], p_vals[16], p_vals[17], p_vals[18], p_vals[19], p_vals[20], p_vals[21]);
+		var t_x = this.tiles[p_vals[0]].x, t_y = this.tiles[p_vals[0]].y;
+		if (t_x < this.board_bounds["x"][0]) { this.board_bounds["x"][0] = t_x; }
+		if (t_x > this.board_bounds["x"][1]) { this.board_bounds["x"][1] = t_x; }
+		if (t_y < this.board_bounds["y"][0]) { this.board_bounds["y"][0] = t_y; }
+		if (t_y > this.board_bounds["y"][1]) { this.board_bounds["y"][1] = t_y; }
+		this.board_bounds["dims"] = [(this.board_bounds["x"][1]-this.board_bounds["x"][0]), 
+										(this.board_bounds["y"][1]-this.board_bounds["y"][0])];
+		this.board_bounds["center"] = [(this.board_bounds["x"][1]+this.board_bounds["x"][0])/2, 
+										(this.board_bounds["y"][1]+this.board_bounds["y"][0])/2];
+		console.log("board_bounds:"+JSON.stringify(this.board_bounds));
 	}
 
 	this.read_in_player_data = function(data) {

@@ -39,10 +39,11 @@ class g_camera {
     translate(this.new_x(x), this.new_y(y));
   }
 
-  image(img, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight) {
+  image(img, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight, image_mode) {
     push();
+    if (image_mode === undefined) { image_mode = CENTER; }
     if (dx != null || dy != null) { this.translate(dx, dy); }
-    imageMode(CENTER);
+    imageMode(image_mode);
     image(img, 0, 0, this.new_size(dWidth), this.new_size(dHeight), sx, sy, sWidth, sHeight);
     pop();
   }

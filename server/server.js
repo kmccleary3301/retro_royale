@@ -585,7 +585,8 @@ class game_2_player {
 }
 
 function purgatory() {
-  this.setup = function() {
+  this.setup = function(session_id) {
+    this.session_id = session_id;
     this.whoWon; //holds the index of the player that won the game
 
     this.game_length = 30.000;
@@ -594,6 +595,14 @@ function purgatory() {
 
     this.current_time = 0;
     this.players = [];
+    this.game_result_json = {};
+    this.game_over = 0;
+
+    var sentence_data = fs.readFileSync('./data/sentence_data.txt', 'utf8');
+    sentence_data = sentence_data.split("\n");
+    this.chosen_sentence = sentence_data[Math.round(Math.random()*(sentence_data.length-1))];
+    console.log("chosen sentence:"+this.chosen_sentence);
+
     //for (i=0; i < clients.length; i++) {
     //  console.log("client #"+i);
     //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
@@ -603,6 +612,15 @@ function purgatory() {
 		//
 		//
 		//
+    if (sessions[this.session_id] !== undefined) {
+      console.log("session found, making players");
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_2_player(null, this.numberOfPlayers, 3);
+      }
+      for (let i in sessions[this.session_id].clients) {
+        this.user_loaded(i);
+      }
+    }
     this.numberOfPlayers = 0;
 
     // var int_id = setInterval(function(){ self.tick_function(); }, 100);
@@ -613,10 +631,10 @@ function purgatory() {
     //this.current_time = Date.now()/1000 - this.start_time;
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if(this.whoWon != null) {
-      broadcast("Won:"+whoWon);
+      sessions[this.session_id].broadcast("Won:"+whoWon);
     }
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
-    broadcast("game_state:"+this.current_time+","+this.game_length);
+    sessions[this.session_id].broadcast("game_state:"+this.current_time+","+this.game_length);
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -625,33 +643,67 @@ function purgatory() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "debug") {
       console.log("Client sent: "+message);
     } else if (flag == "get_index") {
-      clients[usr_id].send("index:"+usr_id);
-      clients[usr_id].send("player_count:" + clients.length);
+      sessions[this.session_id].clients[usr_id].send("index:"+usr_id);
+      sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length);
     } else if (flag == "get_names") {
-      broadcast("Name of:"+usr_id+","+clients_info[usr_id].name);
+      sessions[this.session_id].broadcast("Name of:"+usr_id+","+clients_info[usr_id].name);
+    } else if (flag == "finished_sentence") {
+      this.player_finished(usr_id);
+    }
+  }
+
+  this.player_finished = function(player_id) {
+    var place = 1 + Object.keys(this.game_result_json).length;
+    this.game_result_json[sessions[this.session_id].clients_info[player_id].name] = {
+      "player_id": player_id,
+      "coins_added": 65 - 15*place
+    }
+    if (place == 1) {
+      var self = this;
+      setTimeout(function(){self.end_game(); }, 15000);
+    }
+    else if (Object.keys(this.game_result_json).length == this.players.length) {
+      var self = this;
+      setTimeout(function(){self.end_game(); }, 2000);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     //upon construction, every player in my game is given the same x
     //value. so i pass it as null to make things simpler.
     //constructor for MY game players
-    this.players[usr_id] = new game_2_player(null, this.numberOfPlayers, 3);
+    this.players[usr_id] = new game_2_player(null, this.players.length, 3);
     this.numberOfPlayers++;
-    console.log("Client "+this.numberOfPlayers+" loaded:"+this.players[usr_id].make_data());
+    console.log("Client "+usr_id+" loaded:"+this.players[usr_id].make_data());
     //
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
+  }
+
+  this.end_game = function() {
+    if (this.game_over) { return; }
+    for (let i in this.players) {
+      if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+        var place = 1 + Object.keys(this.game_result_json).length;
+        this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+          "player_id": i,
+          "coins_added": 65 - 15*place
+        }
+      }
+    }
+    var self = this;
+    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+    this.game_over = 1;
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
     this.numberOfPlayers--;
   }
@@ -659,6 +711,7 @@ function purgatory() {
   this.make_everything = function() {
     str_make = "";
     for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    str_make += "keyboard_sentence:"+this.chosen_sentence+"\n";
     return str_make;
   }
 
@@ -666,8 +719,9 @@ function purgatory() {
     p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
     if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]] = new game_2_player(null, this.numberOfPlayers, 3);}
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
-    if(p_vals[1] > 1700)
+    if(p_vals[1] > 1700) {
       whoWon = p_vals[0];
+    }
     return p_vals[0];
   }
 }
@@ -1149,7 +1203,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 1, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 50, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':
@@ -1253,11 +1307,12 @@ function ball_game() {
     console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.add_last_time = Date.now()/1000;
+    this.add_last_time = Date.now()/1000-5;
     this.players = [];
     this.balls = [];
     this.game_over = 0;
     this.bounds = {"x":[0, 1536], "y":[0, 731]};
+    this.bounds["center"] = [(this.bounds["x"][0]+this.bounds["x"][1])/2, (this.bounds["y"][0]+this.bounds["y"][1])/2];
     // this.condition;
     this.game_over = false;
     if (sessions[this.session_id] !== undefined) {

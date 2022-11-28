@@ -222,7 +222,7 @@ function flappy_bird() {
       } else if (flag == "pos_player") {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
-        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, j%4);
+        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, parseInt(message)%4);
 		console.log("New player connected");
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
