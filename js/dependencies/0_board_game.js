@@ -68,7 +68,7 @@ function board_game() {
 		this.board_start_coords = [0, 0];
 		this.board_dims = [50, 50];
 
-		image_process("media/board_templates/test_template_1.png", parse_board_from_image);
+		//image_process("media/board_templates/test_template_1.png", parse_board_from_image);
 		this.make_board_layout_preset_1();
 
 		var self = this;

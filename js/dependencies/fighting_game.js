@@ -7,27 +7,53 @@ const gravity = .5;
 var fgs_floor = 570;
 
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
-
-class spaceship {
-  constructor(x, y, width, height, color, speed, health) {
+class laser {
+  constructor(x, y, color) {
     this.x = x;
     this.y = y;
     this.width = width;
     this.height = height;
     this.color = color;
+    this.laser_beam = loadImage(repo_address+"media/misc/laser.png");
+  }
+  draw() {
+    //ctx.fillStyle = this.color;
+    //ctx.fillRect(this.x, this.y, this.width, this.height);
+    image(this.laser_beam, this.x, this.y, this.width, this.height);
+  }
+  update() {
+    this.draw();
+    this.y += 10;
+  }
+}
+
+class spaceship {
+  constructor(x, y, color, speed) {
+    this.x = x;
+    this.y = y;
+    
+    this.color = color;
     this.speed = speed;
-    this.health = health;
+    
     this.video_game_font = loadFont('media/fonts/videogame.ttf');
+    
   }
 
   draw() {
+
+    translate(this.x, this.y);
     fill(this.color);
     textFont(this.video_game_font, 30);
     text("A")
+    if (frameCount % 60 == 0) {
+      //this.move();
+      laser_beam_1 = new laser(this.x, this.y, this.color);
+    }
+    this.move();
   }
 
   move() {
-    this.y += this.speed;
+    this.x += this.speed;
   }
 
   hit() {
@@ -46,8 +72,7 @@ class fighting_game_player  {
       },
       "standing" : {
         "row" : 1+10*this.spriteColor,
-        "row_length": 1,
-        "first_tile": 1
+        "row_length": 1
       },
       "attacking" : {
         "row" : 3+10*this.spriteColor,
@@ -317,6 +342,15 @@ function fighting_game() {
     this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
     this.disco_ball_string = loadImage(repo_address+"media/misc/disco_ball_string.png");
 
+    this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+
+    this.spaceshippy = [];
+
     this.gameOver = 0; //game over variable
     this.game_round = 1; //game round variable
    
@@ -485,6 +519,10 @@ function fighting_game() {
       textFont(this.video_game_font, 40);
       text("round "+this.game_round, width/2, height-120);
 
+
+      for (let i in this.players) {
+        this.spaceshippy[i] = new spaceship(this.players[i].x, this.players[i].y-300, this.blue, 1);
+      }
       /*
       //DISCO DISCO HEAVEN
       image(this.disco_ball_string, width/2, 50, 50*2, 175*2);
