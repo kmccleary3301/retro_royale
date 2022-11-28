@@ -1,4 +1,4 @@
-//const { text } = require("stream/consumers");
+
 
 var GOtimer = 5;
 var video_game_font; //font for the game
@@ -7,6 +7,33 @@ const gravity = .5;
 var fgs_floor = 570;
 
 var colors = ['#E53564', '#2DE2E6', '#9700CC', '#035EE8', '#F3C752', '#F6019D']; //color array containing red, cyan, purple, blue, yellow, pink
+
+class spaceship {
+  constructor(x, y, width, height, color, speed, health) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.color = color;
+    this.speed = speed;
+    this.health = health;
+    this.video_game_font = loadFont('media/fonts/videogame.ttf');
+  }
+
+  draw() {
+    fill(this.color);
+    textFont(this.video_game_font, 30);
+    text("A")
+  }
+
+  move() {
+    this.y += this.speed;
+  }
+
+  hit() {
+    this.health -= 1;
+  }
+}
 
 class fighting_game_player  {
 	constructor(spriteSheet, x, y, face, color) {
