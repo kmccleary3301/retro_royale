@@ -14,7 +14,7 @@ function board_game() {
 		this.camera_scale = 1;
 		this.players = [];
 		this.greenSprite = loadImage(repo_address+"media/sprites/Green.png");
-		this.green_sprite_2 = loadImage("media/sprites/spelunky_simple.png");
+		this.green_sprite_2 = loadImage("media/sprites/Spritesheet_64_update.png");
 		this.tiles = [];
 		this.event_timer_start = millis()/1000;
 		this.event_timer = 0;
@@ -207,7 +207,7 @@ function board_game() {
 				this.turn_done = false;
 			}
 			if (this.user_roll && this.buttons["overlay"][3] === undefined) {
-				this.buttons["overlay"][3] = new button(960, 440, 100, 100, [255, 78, 0], [10, 10, 10], "roll", 4, true);
+				this.buttons["overlay"][3] = new button(960, 440, 100, 100, this.red, [10, 10, 10], "roll", 4, true);
 			}
 		}
 
