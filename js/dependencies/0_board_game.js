@@ -45,6 +45,8 @@ function board_game() {
 		this.animation_queue = [];
 		this.current_turn = 1;
 		this.current_turn_moves = 0;
+		this.reset_player_to_beginning_flag = 0;
+		this.max_turns = 50;
 		this.buttons = {
 			"overlay" : [],
 			"leaderboard": []
@@ -208,6 +210,7 @@ function board_game() {
 				if (this.animation_queue[1] === undefined) {
 					this.animation_queue = [];
 					if (this.turning_player_index == this.user_player_index && this.current_turn_moves <= 0 && this.turn_done) {
+
 						send_data("end_turn");
 						this.turn_done = false;
 					}
@@ -215,6 +218,13 @@ function board_game() {
 				} else {
 					this.animation_queue.splice(0, 1);
 					this.animation_queue[0].start_time = millis()/1000; 
+				}
+				if (this.reset_player_to_beginning_flag) {
+					this.players[this.turning_player_index].current_tile_index = 0;
+					this.players[this.turning_player_index].previous_tile_index = 0;
+					this.players[this.turning_player_index].x = this.tiles[0].x;
+					this.players[this.turning_player_index].y = this.tiles[0].y;
+					this.reset_player_to_beginning_flag = 0;
 				}
 			}
 		} else { 
@@ -352,6 +362,7 @@ function board_game() {
 				break;
 			case 'star':
 				this.animation_queue.splice(0, 0, new message_display_element("Star", 5));
+				this.reset_player_to_beginning_flag = 1;
 				break;
 		}
 		var self = this;
@@ -513,16 +524,23 @@ function board_game() {
 			case 'tile_event_trigger':
 				this.tile_event_trigger(message);
 				break;
+			case 'max_turns':
+				this.max_turns = parseInt(message);
+				break;
 		}
 	}
 
 	this.update_turn = function(turn) {
 		if (turn != this.current_turn || this.current_turn == 1) {
 			console.log("New turn, adding animation element");
-			//var turns_remaining = this.max_turns
-			//this.animation_queue.push(new message_display_element("Turn "+turn, 3));
+			this.current_turn = turn;
+			var remaining_turns = this.max_turns - this.current_turn;
+			if (remaining_turns <= 5) {
+				this.animation_queue.push(new message_display_element(remaining_turns+" turns remaining", 3));
+			}
 		}
-		this.current_turn = turn;
+		
+
 	}
 
 	this.update_turning_player = function(player_id) {

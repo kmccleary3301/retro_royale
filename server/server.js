@@ -1150,6 +1150,7 @@ function board_game() {
     for (let i in this.tiles) { str_make += this.tiles[i].make_data(i)+"\n"; }
     for (let i in this.players) { str_make += this.players[i].make_data(i)+"\n"; }
     str_make += "turning_player:"+this.turning_player_index+"\ncurrent_turn:"+this.current_turn+"\n";
+    str_make += "max_turns:"+this.max_turns+"\n";
     return str_make;
   }
 
@@ -1179,17 +1180,11 @@ function board_game() {
     if (this.turning_player_index == 0) {
       this.current_turn += 1;
       sessions[this.session_id].broadcast("current_turn:"+this.current_turn);
-      if (this.current_turn == this.max_turns) {
-        sessions[this.session_id].broadcast("GAME_OVER");
+      if (this.current_turn >= this.max_turns) {
+        sessions[this.session_id].broadcast("game_over");
       }
     }
-    if (this.tiles[this.players[this.turning_player_index].current_tile_index].type == 'star') {
-      this.players[this.turning_player_index].current_tile_index = 0;
-      this.players[this.turning_player_index].previous_tile_index = 0;
-      this.players[this.turning_player_index].x = this.tiles[this.players[this.turning_player_index].current_tile_index].x;
-      this.players[this.turning_player_index].y = this.tiles[this.players[this.turning_player_index].current_tile_index].y;
-      sessions[this.session_id].broadcast(this.players[this.turning_player_index].make_data(this.turning_player_index));
-    }
+    
     sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
     console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
@@ -1284,6 +1279,11 @@ function board_game() {
           this.players[p_id].current_tile_index = 0;
           this.players[p_id].previous_tile_index = 0;
           sessions[this.session_id].broadcast(this.players[p_id].make_data(p_id));
+          this.players[p_id].current_tile_index = 0;
+          this.players[p_id].previous_tile_index = 0;
+          this.players[p_id].x = this.tiles[0].x;
+          this.players[p_id].y = this.tiles[0].y;
+          sessions[this.session_id].broadcast(this.players[this.turning_player_index].make_data(this.turning_player_index));
           break;
       }
     }
