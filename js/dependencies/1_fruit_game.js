@@ -1,5 +1,14 @@
 function fruitGame() {
 	this.setup = function() {
+
+		//colors
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+
 		this.fruits_count = 15;
 		this.players = [];
 		this.fruits = [];
@@ -9,6 +18,7 @@ function fruitGame() {
 		this.start_time;
 		this.current_time = this.game_length;
 		this.main_player_index;
+		this.background1 = loadImage(repo_address+"media/backgrounds/diner_background.png");
 		this.arrow_keys = {
 			"left" : 37,
 			"right" : 39,
@@ -27,7 +37,7 @@ function fruitGame() {
 		this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
 		this.start_time = millis()/1000;
 		this.game_dimensions = [2000, 1000];
-		textFont(font_set[0]);
+		textFont(font_set[3]);
 		textSize(20);
 		textAlign(CENTER, CENTER);
 		fill(0, 0, 0);
@@ -36,8 +46,8 @@ function fruitGame() {
 			this.fruits[i] = new game_1_fruit(this.fruitSprite, width*Math.random(), height*Math.random(), 3+Math.random()*12);
 		}
 		this.players[0] = new game_1_player(this.main_sprite, 200, 200, "left", 0);
-		this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
-		this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
+		this.endzones[0] = new game_1_endzone(1/15*this.game_dimensions[0], 10.5/20*this.game_dimensions[1], 4*(this.game_dimensions[0]/30), 5*(this.game_dimensions[1]/20));
+		this.endzones[1] = new game_1_endzone(14/15*this.game_dimensions[0], 10.5/20*this.game_dimensions[1], 4*(this.game_dimensions[0]/30), 5*(this.game_dimensions[1]/20));
 		this.main_player_index = 0;
 		this.end_message = "GAME OVER";
 		g_cam.reset();
@@ -112,7 +122,8 @@ function fruitGame() {
 
 	this.draw = function() {
 		push();
-		textFont(font_set[0]);
+		textFont(font_set[3]);
+		
 		this.current_time = this.game_length - ((millis()/1000) - this.start_time);
 		if (this.game_active == 0) { this.draw_game_load(); }
 		else if (this.game_active == 1) { this.draw_game_active();}
@@ -121,14 +132,17 @@ function fruitGame() {
 	}
 
 	this.draw_game_load = function() {
-		background(200, 200, 200);
-		fill(0, 0, 0);
+		background(this.cyan);
+		stroke(5);
+		fill(this.purple);
 		text_make(0, 50, 0, 0);
 		for (let i in this.players) {
 			this.players[i].draw();
 		}
+		
 		textAlign(CENTER, CENTER);
-		g_cam.text("Game starts in "+str(int(this.current_time)), width/2, height/2);
+		textFont(font_set[3]);
+		g_cam.text("game starts in "+str(int(this.current_time)), width/2, height/2);
 		if (this.current_time < 0) {
 			this.game_active = 1;
 		}
@@ -138,7 +152,7 @@ function fruitGame() {
 		g_cam.x = this.players[this.main_player_index].x;
 		g_cam.y = this.players[this.main_player_index].y;
 		g_cam.scale = 0.8;
-		background(200, 200, 200);
+		g_cam.image(this.background1, this.game_dimensions[0]/2, this.game_dimensions[1]/2, this.game_dimensions[0], this.game_dimensions[1]);
 		fill(0, 0, 0);
 		text_make(0, 50, 0, 0);
 		textSize(50);
@@ -200,7 +214,7 @@ function fruitGame() {
 		if (time < breakpoint) {
 			stroke(0, 0, 0);
 			strokeWeight(4);
-			fill(255, 78, 0);
+			fill(this.red);
 			rect(box_position_x-250, height/2 - 100, 500, 200);
 			fill(r, g, b);
 			text("GAME OVER", text_position_x, height/2);

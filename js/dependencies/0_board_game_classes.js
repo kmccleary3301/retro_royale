@@ -1,19 +1,19 @@
 class board_game_player { 
 	constructor(spriteSheet, x, y, face) {
 		this.temp_sprite_sheet = spriteSheet;
-		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 80, 80,
+		this.sprite_anim = new sprite_animation_object(spriteSheet, 100, 64, 64,
 			{
 				"left_right": {
-					"row": 0,
-					"row_length": 6
+					"row": 1,
+					"row_length": 4
 				},
 				"down": {
-					"row": 1,
-					"row_length": 6
+					"row": 0,
+					"row_length": 4
 				},
 				"up": {
 					"row": 2,
-					"row_length": 6
+					"row_length": 4
 				}
 			});
 		this.coins = 0;

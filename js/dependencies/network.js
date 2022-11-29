@@ -1,9 +1,10 @@
 var host_address = "127.0.0.1", global_port = 3128;
 var connected_to_server;
 var session_id = undefined;
+var randoN = Math.floor(1000*Math.random());
 
 var user_info = {
-  "name": "Guest "+Math.floor(1000*Math.random())
+  "name": "Player "+ randoN
 };
 
 function make_socket() {

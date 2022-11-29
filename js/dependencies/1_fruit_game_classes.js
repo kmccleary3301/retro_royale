@@ -155,6 +155,7 @@ class game_1_fruit {
 		this.scored = 0;
 		this.player_holding_id = 0;
 		this.sprite_select = 0;
+		this.record = loadImage(repo_address+"media/misc/record.png");
 		if ((size < 5) || (size > 15)) {
 			size = Math.min(15, Math.max(0, 5));
 		}
@@ -174,7 +175,9 @@ class game_1_fruit {
 		}
 		push();
 		g_cam.translate(this.x, this.y);
-		g_cam.image(this.spriteSheet, null, null, 20, 20, 20*(this.sprite_select), 0, 20, 20);
+		//g_cam.image(this.spriteSheet, null, null, 20, 20, 20*(this.sprite_select), 0, 20, 20);
+		g_cam.image(this.record, null, null, 20, 20);
+
 		pop();
 	}
 
@@ -231,10 +234,11 @@ class game_1_endzone {
 	draw(){
 		push();
 		text_make(0, 30, 0, 1);
-		fill(255, 204, 0);
+		//fill(255, 204, 0);
 		rectMode
+		stroke(0, 0, 0);
 		g_cam.rect(this.x, this.y, this.width, this.height);
-		fill(0, 0, 0);
+		fill(243, 199, 82);
 		g_cam.text(str(this.score), this.x, this.y);
 		pop();
 	}
