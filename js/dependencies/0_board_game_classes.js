@@ -140,6 +140,7 @@ class board_game_tile {
 					"row_length": 1
 				}
 			});
+		this.sprite_anim.global_frames_per_anim_frame = 12;
 		this.tile_x = tile_x;
 		this.tile_y = tile_y;
 		this.x = 80 + 160*this.tile_x;
