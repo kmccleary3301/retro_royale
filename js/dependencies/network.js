@@ -4,7 +4,7 @@ var session_id = undefined;
 var randoN = Math.floor(1000*Math.random());
 
 var user_info = {
-  "name": "PLayer "+ randoN
+  "name": "Player "+ randoN
 };
 
 function make_socket() {

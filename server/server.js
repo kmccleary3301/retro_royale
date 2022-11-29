@@ -823,7 +823,7 @@ function game_end_screen() {
   }
 
   this.tick_function = function() {
-    console.log("tick function, current_time -> "+this.current_time);
+    //console.log("tick function, current_time -> "+this.current_time);
     this.current_time = Date.now()/1000 - this.start_time;
     if (this.current_time >= this.timer_length) { 
       sessions[this.session_id].swap_current_state("board_game");

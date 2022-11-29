@@ -19,41 +19,63 @@ class laser {
   draw() {
     //ctx.fillStyle = this.color;
     //ctx.fillRect(this.x, this.y, this.width, this.height);
-    image(this.laser_beam, this.x, this.y, this.width, this.height);
+    image(this.laser_beam, this.x, this.y, 40, 80);
+    //ellipse(this.x, this.y, 20, 20);
+    
+    
   }
   update() {
     this.draw();
     this.y += 10;
   }
+
 }
 
 class spaceship {
   constructor(x, y, color, speed) {
     this.x = x;
     this.y = y;
+    this.facing = 0;
     
     this.color = color;
     this.speed = speed;
-    
+    this.laser_beam_1 = [];
     this.video_game_font = loadFont('media/fonts/videogame.ttf');
+    this.j = 0;
     
   }
 
   draw() {
 
-    translate(this.x, this.y);
+    //translate(this.x, this.y);
+    push();
     fill(this.color);
-    textFont(this.video_game_font, 30);
-    text("A")
+    textFont(this.video_game_font, 60);
+    text("A", this.x, this.y);
+    //rect(this.x, this.y, 50, 50);
+    pop();
     if (frameCount % 60 == 0) {
       //this.move();
-      laser_beam_1 = new laser(this.x, this.y, this.color);
+      this.laser_beam_1[this.j] = new laser(this.x, this.y, this.color);
+      this.j++;
     }
+    if(this.j > 0){
+    for (var i = 0; i < this.laser_beam_1.length; i++) {
+      this.laser_beam_1[i].update();
+    }
+  }
     this.move();
+    if (this.x >= 1440-60) {
+      this.facing = 1;
+    }
+    if (this.x <= 0+60) {
+      this.facing = 0;
+    }
   }
 
   move() {
-    this.x += this.speed;
+    this.x += this.speed-(2*this.facing);
+    this.y += random(-1, 1);
   }
 
   hit() {
@@ -164,6 +186,8 @@ class fighting_game_player  {
     this.y = Math.min(this.y, 0);
 
     this.x = Math.max(bounds[0], Math.min(this.x, bounds[1]));
+
+    
     
     this.sprite_anim.draw(this.x, this.y+fgs_floor, true);
     if (this.isDead == 1) {
@@ -217,7 +241,7 @@ class fighting_game_player  {
     } else if (this.isAttacking == 1) { //if attacking, then update animation to attacking
       this.update_facing(this.facing);
       this.update_anim("attacking");
-    } else if (this.dy < 200) { //if jumping, then update animation to jumping
+    } else if (this.dy < 0) { //if jumping, then update animation to jumping
       this.update_anim("jumping");
     } else if (this.dx != 0) { //if moving, then update animation to left_right_walking
       this.update_facing(this.facing);
@@ -259,6 +283,10 @@ class fighting_game_player  {
     }
     if(this.y < -1 )  {     
       this.dy += gravity; 
+    }
+    if (this.is_hit){
+      fill(this.red);
+      this.is_hit = 0;
     }
     
 		pop();
@@ -384,6 +412,11 @@ function fighting_game() {
   
     this.players[0] = new fighting_game_player(this.Sprite, 400, 0, 0, 0); //starting location, direction facing, color
     this.main_player_index = 0;
+
+    
+    this.spaceshippy[0] = new spaceship(100, 100, this.blue, 1);
+    
+
     //send_data("load_game");
     stopAllSounds();
 		playSound("beat_angry", true);
@@ -493,7 +526,7 @@ function fighting_game() {
   this.mouse_released = function() { return; }
 
   this.draw = function() {
-    this.current_time = Date.now()/1000 - this.start_time;
+    //this.current_time = Date.now()/1000 - this.start_time;
     if(this.gameOver == 0) {
 
       boundary_offset = this.round_bound[this.game_round-1];
@@ -517,11 +550,23 @@ function fighting_game() {
       }
       
       textFont(this.video_game_font, 40);
+      fill(this.yellow);
       text("round "+this.game_round, width/2, height-120);
 
+      
+        this.spaceshippy[0].draw();
+      
 
       for (let i in this.players) {
-        this.spaceshippy[i] = new spaceship(this.players[i].x, this.players[i].y-300, this.blue, 1);
+        for (let j in this.laser_beam_1){
+          if (this.laser_beam_1[j].y < 600){
+            if (collisionDetection(this.players[i], this.laser_beam_1[j])) {
+              send_data("hit:"+i);
+              this.laser_beam_1[j].y = 6000;
+            }
+          
+          }
+        }
       }
       /*
       //DISCO DISCO HEAVEN
@@ -561,9 +606,9 @@ function fighting_game() {
 
 
 
-      if (this.countdown_time > 0) {
+      if (this.countdown_time >= 0) {
 
-        this.countdown_time = this.round_length - this.current_time;
+        //this.countdown_time = this.round_length - this.current_time;
         //this.countdown_time -= 1/60;
         //fill(colors[4]);
         // // text_make(0, 200, 0, 2);
