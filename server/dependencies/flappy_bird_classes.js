@@ -34,27 +34,30 @@ class flappy_bird_player {
     this.y_on_last_jump = this.y;
     this.acceleration = -100;
     this.is_dead = 0;
+    this.current_animation="flap";
   }
 
   make_data_raw() {
-    return this.x+","+this.y+","+this.last_jump+","+this.y_on_last_jump+","+this.acceleration+","+this.is_dead;
-  }
-
-  make_data(){
-    if (arguments[0] === undefined) {
-      return "pos_player:"+this.make_data_raw();
-    } else {
-      return "pos_player:"+arguments[0]+","+this.make_data_raw();
-    }
-  }
-
-  update_data(x, y, last_jump, y_on_last_jump, acceleration){
-    if (x != null) { this.x = x; }
-    if (y != null) { this.y = y; }
-    if (last_jump != null) { this.last_jump = last_jump; }
-    if (y_on_last_jump != null) { this.y_on_last_jump = y_on_last_jump; }
-    if (acceleration != null) { this.acceleration = acceleration; }
-  }
+	  return this.x+","+this.y+","+this.last_jump+","+this.y_on_last_jump+","+this.acceleration+","+this.is_dead+","+this.current_animation;
+	}
+  
+	make_data(){
+	  if (arguments[0] === undefined) {
+		return "pos_player:"+this.make_data_raw();
+	  } else {
+		return "pos_player:"+arguments[0]+","+this.make_data_raw();
+	  }
+	}
+  
+	update_data(x, y, last_jump, y_on_last_jump, acceleration, is_dead, animation){
+	  if (x != null) { this.x = x; }
+	  if (y != null) { this.y = y; }
+	  if (last_jump != null) { this.last_jump = last_jump; }
+	  if (y_on_last_jump != null) { this.y_on_last_jump = y_on_last_jump; }
+	  if (acceleration != null) { this.acceleration = acceleration; }
+	  if (is_dead != null) { this.is_dead = is_dead; }
+	  if (animation != null) { this.current_animation = animation; }
+	}
 }
 
 

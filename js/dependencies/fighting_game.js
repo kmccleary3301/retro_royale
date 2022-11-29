@@ -323,6 +323,7 @@ function fighting_game() {
   
     this.players[0] = new fighting_game_player(this.Sprite, 400, 0, 0, 0); //starting location, direction facing, color
     this.main_player_index = 0;
+    this.user_last_attacked_time = Date.now()/1000 - 20;
     //send_data("load_game");
     stopAllSounds();
 		playSound("beat_angry", true);
@@ -377,10 +378,14 @@ function fighting_game() {
       }
       else if (code == this.space_key)
       {
-        //this.players[this.main_player_index].update_anim("attacking");
-        this.player_attack(this.main_player_index);
-        send_data("attack");
-        //return;
+        if (Date.now()/1000 - this.user_last_attacked_time > 1) {
+
+          //this.players[this.main_player_index].update_anim("attacking");
+          this.player_attack(this.main_player_index);
+          send_data("attack");
+          this.user_last_attacked_time = Date.now()/1000;
+          //return;
+        }
       }
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
     }

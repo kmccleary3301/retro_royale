@@ -395,15 +395,15 @@ class sprite_animation_object {
 
   change_animation(animation) {
     if (typeof animation === "string") {
-      this.current_animation_row = this.row_dictionary[animation]["row"];
-      this.current_row_length = this.row_dictionary[animation]["row_length"];
-      this.current_first_tile = this.row_dictionary[animation]["first_tile"];
+      animation = animation;
     } else if (typeof animation === "number") {
       var key = Object.keys(this.row_dictionary)[animation];
-      this.current_animation_row = this.row_dictionary[key]["row"];
-      this.current_row_length = this.row_dictionary[key]["row_length"];
-      this.current_first_tile = this.row_dictionary[key]["first_tile"];
+      animation = key;
     }
+    if (this.row_dictionary[animation] === undefined) { return; }
+    this.current_animation_row = this.row_dictionary[animation]["row"];
+    this.current_row_length = this.row_dictionary[animation]["row_length"];
+    this.current_first_tile = this.row_dictionary[animation]["first_tile"];
     this.sx = 0;
   }
 

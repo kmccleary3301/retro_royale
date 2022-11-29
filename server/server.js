@@ -76,6 +76,17 @@ function seed_random(seed) {
   return x - Math.floor(x);
 }
 
+function end_session(session_id) {
+  if (sessions[session_id] === undefined) { return; }
+  setTimeout(function(){ 
+    for (let i in sessions[session_id].clients) {
+      sessions[session_id].remove_client(sessions[session_id].clients[i]);
+    }
+    sessions[session_id].clear_all_intervals();
+    delete sessions[session_id]; 
+  }, 10000);
+}
+
 function game_start() {
   console.log("Game Reset");
   current_state = new dev_room();
@@ -132,7 +143,7 @@ server.on('connection', function connection(thisClient) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
-      if (session_id === undefined) {
+      if (session_id === undefined || session_id == null) {
         if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
         //else if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
         else if (flag == 'user_info') { clients_info[index].name = message; thisClient.send("request_session"); continue; }
@@ -162,7 +173,7 @@ server.on('connection', function connection(thisClient) {
       } else if (sessions[session_id] !== undefined) {
         if (flag == 'leave_session') {
           sessions[session_id].remove_client(thisClient);
-          clients_info[index].session_id = undefined;
+          clients_info[index].session_id = null;
         } else {
           sessions[session_id].read_network_data(flag, message, thisClient);
         }
@@ -351,6 +362,9 @@ class game_session {
     this.clients.splice(index, 1);
     this.clients_info.splice(index, 1);
     this.current_state.user_disconnected(index);
+    if (this.clients.length == 0) {
+      end_session(this.session_id);
+    }
   }
 
   append_interval_id(set_int_returned) {
@@ -1517,6 +1531,40 @@ function fighting_game() {
       }
   }}
 
+  this.player_finished = function(player_id) {
+    var place = 1 + Object.keys(this.game_result_json).length;
+    this.game_result_json[sessions[this.session_id].clients_info[player_id].name] = {
+      "player_id": player_id,
+      "coins_added": 65 - 15*place
+    }
+    var sum_players_alive = 0;
+    for (let i in this.players) {
+      if (this.players[i].health > 0) { sum_players_alive += 1; }
+    }
+    if (sum_players_alive <= 1) {
+      var self = this;
+      setTimeout(function(){self.end_game(); }, 15000);
+    }
+    else if (Object.keys(this.game_result_json).length == this.players.length) {
+      this.end_game();
+    }
+  }
+
+  this.end_game = function() {
+    if (this.game_over) { return; }
+    var place = 1 + Object.keys(this.game_result_json).length;
+    for (let i in this.players) {
+      if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+        this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+          "player_id": i,
+          "coins_added": 65 - 15*place
+        }
+      }
+    }
+    var self = this;
+    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+    this.game_over = 1;
+  }
 
   //make a function to declare a winner
   this.check_winner = function(){
@@ -1534,25 +1582,6 @@ function fighting_game() {
           //this.leaderboard();        //this is where the leaderboard function would be called to determine placement
         }
       }
-    }
-  }
-
-  this.end_game = function(winner_id) {
-    if (this.game_over == 0) {
-      for (let i in this.players) {
-        if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
-          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
-            "player_id": i,
-            "coins_added": 30
-          }
-        }
-      }
-      if (winner_id !== undefined) {
-        this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 15;
-      }
-      var self = this;
-      setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
-      this.game_over = 1;
     }
   }
 
@@ -1574,8 +1603,7 @@ function fighting_game() {
     var players_alive = this.players.length;
     var winner_id = 0;
     for (let i in this.players) { 
-      if(this.players[i].health <= 0) { players_alive--; }
-      else {winner_id = i; }
+      if(this.players[i].health <= 0) { this.player_finished(i); }
     }
     if (players_alive <= 1) { this.end_game(winner_id); }
     sessions[this.session_id].broadcast("game_timer_info:"+this.current_time+","+this.countdown_time+","+this.game_round);
@@ -1675,7 +1703,7 @@ function flappy_bird() {
     }
     this.set_player_y_positions;
     var self = this;
-    var int_id = setInterval(function(){ self.tick_function(); }, 35);
+    var int_id = setInterval(function(){ self.tick_function(); }, 500);
     sessions[this.session_id].append_interval_id(int_id);
     this.game_over = 0;
   }
@@ -1746,7 +1774,7 @@ function flappy_bird() {
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
     if (this.players[usr_id] === undefined) {
-      this.players[usr_id] = new flappy_bird_player(500, 250, 1);
+      this.players[usr_id] = new flappy_bird_player(500, 250);
       this.players_alive++;
     }
     this.set_player_y_positions();
@@ -1769,11 +1797,12 @@ function flappy_bird() {
   }
 
   this.read_in_player_position = function(data) {
-		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
+		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5, 6], [7]);
 		if (this.players[p_vals[0]] === undefined) {
-			this.players[p_vals[0]] = new flappy_bird_player(500, 250, 1);
+			this.players[p_vals[0]] = new flappy_bird_player(500, 250);
+      this.set_player_y_positions();
 		}
-		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
+		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
 	}
 
 	this.read_in_pipe_position = function(data) { //format packet as pipe:x,y,pipeWidth
