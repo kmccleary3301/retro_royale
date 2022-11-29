@@ -1,7 +1,5 @@
 function board_game() {
 	this.setup = function() {
-		pop();
-		test_reset_draw_settings();
 		send_data("loading_board_game");
 		//reset();
 		this.vid_font = loadFont('media/fonts/videogame.ttf');
@@ -74,6 +72,8 @@ function board_game() {
 
 		var self = this;
 		setTimeout(function(){self.set_board_dims(); }, 2000);
+		stopAllSounds(true);
+		playSound("soothing_1", true);
 	}
 
 	this.make_board_layout_preset_1 = function() {
@@ -189,7 +189,10 @@ function board_game() {
 				var walkable_directions = this.check_walkable_directions(this.user_player_index);
 				console.log("Checking walkable directions: "+walkable_directions);
 				if (walkable_directions.length == 1) {
-					send_data("move_tile_direction:"+walkable_directions[0]);
+					var tile_target_id = 
+						this.tiles[this.players[this.user_player_index].current_tile_index].connected_tiles[walkable_directions[0]]["tile_id"];
+					
+					send_data("move_tile_direction:"+walkable_directions[0]+","+tile_target_id);
 					this.pause_check = true;
 				}
 			}
@@ -321,7 +324,9 @@ function board_game() {
 				var walkable_directions = this.check_walkable_directions(this.user_player_index);
 				console.log("Checking walkable directions: "+walkable_directions);
 				if (walkable_directions.length == 1) {
-					send_data("move_tile_direction:"+walkable_directions[0]);
+					var tile_target_id = 
+						this.tiles[this.players[this.user_player_index].current_tile_index].connected_tiles[walkable_directions[0]]["tile_id"];
+					send_data("move_tile_direction:"+walkable_directions[0]+","+tile_target_id);
 				}
 			}
 			
@@ -343,7 +348,7 @@ function board_game() {
 				this.animation_queue.splice(0, 0, new message_display_element("+3 coins", 5));
 				break;
 			case 'versus':
-				this.animation_queue.splice(0, 0, new message_display_element("Versus", 5));
+				//this.animation_queue.splice(0, 0, new message_display_element("Versus", 5));
 				break;
 			case 'star':
 				this.animation_queue.splice(0, 0, new message_display_element("Star", 5));
@@ -385,7 +390,12 @@ function board_game() {
 		if (this.current_turn_moves <= 0) { return; }
 		for (let i in this.arrow_keys){
 			if (keycode == this.arrow_keys[i]){
-				send_data("move_tile_direction:"+i);
+				var tile_target_id = 
+						this.tiles[this.players[this.user_player_index].current_tile_index].connected_tiles[i]["tile_id"];
+				var valid = this.tiles[this.players[this.user_player_index].current_tile_index].connected_tiles[i]["connected"];
+				if (!valid) { return; }
+				
+				send_data("move_tile_direction:"+i+","+tile_target_id);
 			}
 		}
 	}

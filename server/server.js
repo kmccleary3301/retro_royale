@@ -1158,7 +1158,8 @@ function board_game() {
     /*if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else */if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
-      this.move_player_to_tile(usr_id, message);
+      p_vals = convert_data_string(message, [1], [], [0]);
+      this.move_player_to_tile(usr_id, p_vals[0], p_vals[1]);
     } else if (flag == "begin_dice" && usr_id == this.turning_player_index) {
       var dice_make = new dice_element([1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]);
       sessions[this.session_id].broadcast("dice_roll_turn:ints,"+dice_make.make_data());
@@ -1182,12 +1183,20 @@ function board_game() {
         sessions[this.session_id].broadcast("GAME_OVER");
       }
     }
+    if (this.tiles[this.players[this.turning_player_index].current_tile_index].type == 'star') {
+      this.players[this.turning_player_index].current_tile_index = 0;
+      this.players[this.turning_player_index].previous_tile_index = 0;
+      this.players[this.turning_player_index].x = this.tiles[this.players[this.turning_player_index].current_tile_index].x;
+      this.players[this.turning_player_index].y = this.tiles[this.players[this.turning_player_index].current_tile_index].y;
+      sessions[this.session_id].broadcast(this.players[this.turning_player_index].make_data(this.turning_player_index));
+    }
     sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
     console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
   }
 
-  this.move_player_to_tile = function(usr_id, direction) {
+  this.move_player_to_tile = function(usr_id, direction, tile_target_id) {
+    if (this.current_turn_moves <= 0) { return; }
     if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
 		{ console.log("child failed"); return; }
     if (this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"] == this.players[usr_id].previous_tile_index) {
@@ -1195,7 +1204,9 @@ function board_game() {
     }
     sessions[this.session_id].broadcast(this.players[usr_id].make_data(usr_id));
     this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
-    this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    //this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    this.players[usr_id].current_tile_index = tile_target_id;
+    console.log("ttid:"+tile_target_id);
     this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
     sessions[this.session_id].broadcast("player_move_tile:"+usr_id+","+direction);

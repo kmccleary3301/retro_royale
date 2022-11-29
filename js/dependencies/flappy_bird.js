@@ -77,6 +77,8 @@ class flappy_bird_player {
 		this.sprite_anim.change_animation("flap");
 		this.sprite_anim.start();
 		this.current_animation = "flap";
+		stopAllSounds(true);
+		playSound("soothing_2", true);
 	}
 	
 	draw() {
@@ -195,12 +197,13 @@ function flappy_bird() {
   
     this.key_pressed = function(keycode) {
 		//if (this.players[this.main_player_index].is_dead) { return; }
-		if(keycode == this.space_bar) {
-			if (this.players[this.main_player_index].isDead) { return; }
-			send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-			this.players[this.main_player_index].jump();
-			send_data("jump_notice");
-		}
+			if(keycode == this.space_bar) {
+				if (this.players[this.main_player_index].isDead) { return; }
+				send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+				this.players[this.main_player_index].jump();
+				send_data("jump_notice");
+				playSound("snare_1");
+			}
     }
   
     this.mouse_pressed = function() { return; }
@@ -332,5 +335,6 @@ function flappy_bird() {
 		this.players[player_id].is_dead = 1;
 		this.players[player_id].sprite_anim.change_animation("die");
 		this.players[player_id].jump();
+		playSound("snare_reverb");
 	}
 }
