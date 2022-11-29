@@ -46,8 +46,8 @@ function fruitGame() {
 			this.fruits[i] = new game_1_fruit(this.fruitSprite, width*Math.random(), height*Math.random(), 3+Math.random()*12);
 		}
 		this.players[0] = new game_1_player(this.main_sprite, 200, 200, "left", 0);
-		this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
-		this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
+		this.endzones[0] = new game_1_endzone(1/15*this.game_dimensions[0], 10.5/20*this.game_dimensions[1], 4*(this.game_dimensions[0]/30), 5*(this.game_dimensions[1]/20));
+		this.endzones[1] = new game_1_endzone(14/15*this.game_dimensions[0], 10.5/20*this.game_dimensions[1], 4*(this.game_dimensions[0]/30), 5*(this.game_dimensions[1]/20));
 		this.main_player_index = 0;
 		this.end_message = "GAME OVER";
 		g_cam.reset();
@@ -132,15 +132,17 @@ function fruitGame() {
 	}
 
 	this.draw_game_load = function() {
-		background(200, 200, 200);
-		fill(0, 0, 0);
+		background(this.cyan);
+		stroke(5);
+		fill(this.purple);
 		text_make(0, 50, 0, 0);
 		for (let i in this.players) {
 			this.players[i].draw();
 		}
 		
 		textAlign(CENTER, CENTER);
-		g_cam.text("Game starts in "+str(int(this.current_time)), width/2, height/2);
+		textFont(font_set[3]);
+		g_cam.text("game starts in "+str(int(this.current_time)), width/2, height/2);
 		if (this.current_time < 0) {
 			this.game_active = 1;
 		}
@@ -150,7 +152,7 @@ function fruitGame() {
 		g_cam.x = this.players[this.main_player_index].x;
 		g_cam.y = this.players[this.main_player_index].y;
 		g_cam.scale = 0.8;
-		image(this.background1, 1440/2, 1080/2, 1440, 1080);
+		g_cam.image(this.background1, this.game_dimensions[0]/2, this.game_dimensions[1]/2, this.game_dimensions[0], this.game_dimensions[1]);
 		fill(0, 0, 0);
 		text_make(0, 50, 0, 0);
 		textSize(50);

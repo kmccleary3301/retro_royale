@@ -234,10 +234,11 @@ class game_1_endzone {
 	draw(){
 		push();
 		text_make(0, 30, 0, 1);
-		fill(255, 204, 0);
+		//fill(255, 204, 0);
 		rectMode
+		stroke(0, 0, 0);
 		g_cam.rect(this.x, this.y, this.width, this.height);
-		fill(0, 0, 0);
+		fill(243, 199, 82);
 		g_cam.text(str(this.score), this.x, this.y);
 		pop();
 	}
