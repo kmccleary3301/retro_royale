@@ -22,6 +22,8 @@ function game_end_screen() {
 		this.loser_names = [];
 		this.game_message = "";
     	this.game_results_json = {};
+		stopAllSounds(true);
+		playSound("menacing_synth", true);
 	}
 
 	this.window_resize = function() {

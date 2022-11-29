@@ -384,6 +384,7 @@ function fighting_game() {
           this.player_attack(this.main_player_index);
           send_data("attack");
           this.user_last_attacked_time = Date.now()/1000;
+          playSound("snare");
           //return;
         }
       }
@@ -572,6 +573,7 @@ function fighting_game() {
       }
     } else if (flag == "hit") {
       this.hit_parse(message);
+      playSound("perc_reverb");
     } else if (flag == "attack") {
       this.read_attack(message);
     } else if (flag == "death") {

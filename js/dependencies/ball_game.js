@@ -247,6 +247,8 @@ function ball_game() {
 		this.s5x = 0;
 		this.s7x = 0;
 		this.rando = [-20, 25, 6];
+    stopAllSounds(true);
+		playSound("soothing_1", true);
   }
 
   this.key_pressed = function(keycode) {

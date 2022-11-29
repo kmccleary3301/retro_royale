@@ -406,7 +406,7 @@ class client_info {
 function fruitGame() {
   this.setup = function(session_id) {
     this.session_id = session_id;
-    this.fruits_count = 800;
+    this.fruits_count = 250;
     this.remove_percentage_of_fruits = 0.2;
     this.players = [];
     this.fruits = [];
@@ -459,6 +459,7 @@ function fruitGame() {
     }
 
     this.game_result_json = {};
+    
   }
   
   this.tick_function = function() { this.game_update(); }
@@ -468,7 +469,7 @@ function fruitGame() {
     if (this.current_time < 0 && this.game_active != 2) {
       if (this.game_active == 0) {
         this.game_active = 1;
-        this.game_length = 15;
+        this.game_length = 60;
         this.start_time = Date.now()/1000;
         this.current_time = this.game_length;
       } else if (this.game_active == 1) {
@@ -1226,7 +1227,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 50, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 1, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':

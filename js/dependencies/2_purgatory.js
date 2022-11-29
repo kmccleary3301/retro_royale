@@ -154,6 +154,8 @@ function purgatory() {
 		//
     send_data("get_index");
     send_data("get_names");
+    stopAllSounds(true);
+		playSound("soothing_2", true);
   }
 
   this.key_pressed = function(keycode) {
