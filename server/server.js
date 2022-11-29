@@ -1210,7 +1210,10 @@ function board_game() {
     this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
     sessions[this.session_id].broadcast("player_move_tile:"+usr_id+","+direction);
-    if (this.tiles[this.players[usr_id].current_tile_index].type == 'star') { this.current_turn_moves = 0; }
+    if (this.tiles[this.players[usr_id].current_tile_index].type == 'star') { 
+      this.current_turn_moves = 0;
+      broadcast("current_turn_moves:"+this.current_turn_moves);
+    }
     else { this.current_turn_moves--; }
   }
 
@@ -1228,7 +1231,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 50, 1, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 50, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':

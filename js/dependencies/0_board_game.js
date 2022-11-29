@@ -384,6 +384,7 @@ function board_game() {
 	}
 
 	this.key_pressed = function(keycode) {
+		if (this.animation_info[0] == 1) { return; }
 		console.log("KEY PRESSED: "+keycode);
 		console.log("User_player_index: "+this.user_player_index);
 		if (this.user_player_index != this.turning_player_index || this.animation_queue.length > 0) { return; }

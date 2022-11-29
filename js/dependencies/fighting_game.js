@@ -113,7 +113,7 @@ class fighting_game_player  {
 
     this.x = Math.max(bounds[0], Math.min(this.x, bounds[1]));
     
-    this.sprite_anim.draw(this.x, this.y+fgs_floor, true);
+    this.sprite_anim.draw(this.x, this.y+fgs_floor, false);
     if (this.isDead == 1) {
       this.y += this.dy; //add gravity to y position
       this.y = Math.min(this.y, 0); //if y position is greater than floor, then set y position to floor
