@@ -1032,7 +1032,7 @@ function board_game() {
 	this.setup = function(session_id) {
     this.session_id = session_id;
     console.log("board game session_id -> "+this.session_id);
-    Jimp.read("./media/board_layouts/test_template_1.png", (err, img) => {
+    Jimp.read("./media/board_layouts/final_template.png", (err, img) => {
       if (err) throw err;
       /*
       console.log("pixel -> "+Jimp.intToRGBA(img.getPixelColor(0, 0)));
