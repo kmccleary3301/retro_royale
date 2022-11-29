@@ -102,7 +102,7 @@ class game_1_player {
 	grab_fruit(fruit_id, size){
 		this.fruit_holding = 1;
 		this.fruit_held_id = fruit_id;
-		this.speed = 400/size;
+		//this.speed = 400/size;
 	}
 
 	drop_fruit(){
