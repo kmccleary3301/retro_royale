@@ -223,21 +223,29 @@ class game_1_fruit {
 }
 
 class game_1_endzone {
-	constructor(x1, y1, width, height) {
+	constructor(x1, y1, width, height, facing) {
 		this.x = x1;
 		this.y = y1;
 		this.width = width;
 		this.height = height;  
 		this.score = 0;
+		this.jukebox = loadImage(repo_address+"media/misc/jukebox.png");
+		this.jukebox2 = loadImage(repo_address+"media/misc/jukebox2.png");
+		this.facing = facing;
+
 	}
 
 	draw(){
 		push();
 		text_make(0, 30, 0, 1);
 		//fill(255, 204, 0);
-		rectMode
+		if(this.facing == 0){
+		g_cam.image(this.jukebox, this.x, this.y, this.width, this.height);
+		}
+		if (this.facing == 1) {
+			g_cam.image(this.jukebox2, this.x, this.y, this.width, this.height);}
 		stroke(0, 0, 0);
-		g_cam.rect(this.x, this.y, this.width, this.height);
+		//g_cam.rect(this.x, this.y, this.width, this.height);
 		fill(243, 199, 82);
 		g_cam.text(str(this.score), this.x, this.y);
 		pop();

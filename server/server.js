@@ -416,8 +416,8 @@ function fruitGame() {
     this.start_time = Date.now()/1000;
     this.current_time = this.game_length;
     this.game_dimensions = [2000, 1000];
-    this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400);
-    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400);
+    this.endzones[0] = new game_1_endzone(100, this.game_dimensions[1]/2, 200, 400, 0);
+    this.endzones[1] = new game_1_endzone(this.game_dimensions[0]-100, this.game_dimensions[1]/2, 200, 400, 1);
     if (sessions[this.session_id] !== undefined) {
       for (let i in sessions[this.session_id].clients) {
         this.players[i] = new game_1_player(this.endzones[i%2].x, this.endzones[i%2].y, "down", i%4);
