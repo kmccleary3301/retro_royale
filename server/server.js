@@ -1030,6 +1030,7 @@ function swap_new_direction(dir) {
 
 function board_game() {
 	this.setup = function(session_id) {
+    this.last_end_turn = Date.now()/1000;
     this.session_id = session_id;
     console.log("board game session_id -> "+this.session_id);
     Jimp.read("./media/board_layouts/final_template.png", (err, img) => {
@@ -1170,12 +1171,16 @@ function board_game() {
     } else if (flag == "begin_tile_event" && usr_id == this.turning_player_index) {
       this.tile_event_action(this.tiles[this.players[this.turning_player_index].current_tile_index].type);
     } else if (flag == "end_turn" && usr_id == this.turning_player_index) {
-      console.log("end_turn:"+usr_id);
-      this.end_turn(message);
+      if (Date.now()/1000 - this.last_end_turn > 2) {
+        console.log("end_turn:"+usr_id);
+        this.end_turn(message);
+        this.last_end_turn = Date.now()/1000;
+      }
     }
   }
 
   this.end_turn = function(message) {
+    if (this.current_turn_moves > 0 ) { return; }
     this.read_game_action();
     this.turning_player_index = (this.turning_player_index + 1) % this.players.length;
     if (this.turning_player_index == 0) {

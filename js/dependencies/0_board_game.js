@@ -365,11 +365,13 @@ function board_game() {
 				this.reset_player_to_beginning_flag = 1;
 				break;
 		}
-		var self = this;
-		setTimeout(function(){
-			if (self.animation_queue == [] && self.turn_done) { send_data("end_turn"); }
-		}, 2000);
-		setTimeout(function(){ self.turn_done = true;}, 1200);
+		if (this.turning_player_index == this.user_player_index) {
+			var self = this;
+			setTimeout(function(){
+				if (self.animation_queue == [] && self.turn_done) { send_data("end_turn"); }
+			}, 2000);
+			setTimeout(function(){ self.turn_done = true;}, 1200);
+		}
 		/*
 		if (timeout_flag) {
 			setTimeout(function(){ send_data("end_turn"); }, 500);
