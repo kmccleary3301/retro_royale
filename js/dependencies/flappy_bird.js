@@ -54,7 +54,7 @@ class flappy_bird_pipe {
 
 class flappy_bird_player {
 	constructor(sprite_sheet, x, y, sprite_color) {
-		this.sprite_color = sprite_color;
+		this.sprite_color = sprite_color % 4;
 		this.sprite_anim = new sprite_animation_object(sprite_sheet, 70, 64, 64,
 			{
 				"flap": {
@@ -75,7 +75,10 @@ class flappy_bird_player {
 		//this.acceleration = 0;
 		this.has_jumped = false;
 		this.sprite_anim.change_animation("flap");
-		this.sprite_anim.stop();
+		this.sprite_anim.start();
+		this.current_animation = "flap";
+		stopAllSounds(true);
+		playSound("soothing_2", true);
 	}
 	
 	draw() {
@@ -86,16 +89,13 @@ class flappy_bird_player {
 		} else {
 			this.sprite_anim.rotation_angle = 0;
 		}
-		fill(255, 0, 0);
-		ellipse(this.x, this.y, 10);
-		this.sprite_anim.draw(this.x, this.y, true);
-		console.log("sprite_anim ->"+this.sprite_anim.current_animation_row+", "+this.sprite_anim.sx);
-		console.log("this.sprite color ->"+this.sprite_color);
+		this.sprite_anim.draw(this.x, this.y, false);
 		this.update();
+		/*
 		if (this.sprite_anim.sx%6 == 5) {
 			this.sprite_anim.stop();
 		}
-		
+		*/
 		pop();
 	}
 
@@ -106,30 +106,57 @@ class flappy_bird_player {
 		this.y_on_last_jump = int(this.y);
 		this.last_jump = Date.now()/1000;
 	}
-  
+	
+	update_anim(animation) {
+		if (this.current_animation == animation) {return;}
+		this.current_animation = animation;
+		this.sprite_anim.change_animation(animation)
+		if (animation == "flap") { this.sprite_anim.start(); }
+		else { this.sprite_anim.stop(); }
+	}
+
 	update() {
 		if (!this.has_jumped) { return; }
 	  	this.y = float(this.y_on_last_jump) + (this.acceleration - this.acceleration*Math.pow((Date.now()/1000 - this.last_jump)*5-1, 2));
 	}
+
+	calc_time(y, y_on_last_jump) {
+		var v1 = y - y_on_last_jump - this.acceleration;
+		v1 /= this.acceleration;
+		var v2 = Math.sqrt(v1);
+		var v3 = (v2+1)/5;
+		var time_calc = Date.now()/1000 - v3;
+		return time_calc;
+	}
   
 	make_data_raw() {
-	  return this.x+","+this.y+","+this.last_jump+","+this.y_on_last_jump+","+this.acceleration+","+this.is_dead;
+	  return this.x+","+this.y+","+this.last_jump+","+this.y_on_last_jump+","+this.acceleration+","+this.is_dead+","+this.current_animation;
 	}
   
 	make_data(){
 	  if (arguments[0] === undefined) {
 		return "pos_player:"+this.make_data_raw();
 	  } else {
-		return "pos_player:"+player_index+","+this.make_data_raw();
+		return "pos_player:"+arguments[0]+","+this.make_data_raw();
 	  }
 	}
   
-	update_data(x, y, last_jump, y_on_last_jump, acceleration){
+	update_data(x, y, last_jump, y_on_last_jump, acceleration, is_dead, animation){
 	  if (x != null) { this.x = x; }
-	  if (y != null) { this.y = y; }
+	  if (y != null) {
+			this.y = y; 
+		}
 	  if (last_jump != null) { this.last_jump = last_jump; }
 	  if (y_on_last_jump != null) { this.y_on_last_jump = y_on_last_jump; }
 	  if (acceleration != null) { this.acceleration = acceleration; }
+	  if (is_dead != null) { 
+			if (is_dead != this.is_dead) {
+				if (is_dead) { this.update_anim("dead"); }
+				else { this.update_anim("flap"); }
+			}
+			this.is_dead = is_dead; 
+		}
+	  if (animation != null) { this.update_anim(animation); }
 	}
 }
 
@@ -170,46 +197,49 @@ function flappy_bird() {
   
     this.key_pressed = function(keycode) {
 		//if (this.players[this.main_player_index].is_dead) { return; }
-		if(keycode == this.space_bar) {
-			if (this.players[this.main_player_index].isDead) { return; }
-			this.players[this.main_player_index].jump();
-			send_data("jump_notice");
-			send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
-		}
+			if(keycode == this.space_bar) {
+				if (this.players[this.main_player_index].isDead) { return; }
+				send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
+				this.players[this.main_player_index].jump();
+				send_data("jump_notice");
+				playSound("snare_1");
+			}
     }
   
     this.mouse_pressed = function() { return; }
     this.mouse_released = function() { return; }
   
     this.draw = function() {
-		push();
-		background(200, 200, 200);
-		// image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
-		// 		this.backGroundWidth,this.backGroundHeight);
-		// image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
-		// 		this.backGroundWidth, this.backGroundHeight);
-		this.scroll_background_1.draw();
-		this.scroll_background_2.draw();
-		this.scroll_background_3.draw();
+			push();
+			background(200, 200, 200);
+			// image(this.backGround,this.backGround1XPosition,this.backGround1YPosition,
+			// 		this.backGroundWidth,this.backGroundHeight);
+			// image(this.backGround,this.backGround2XPosition,this.backGround2YPosition,
+			// 		this.backGroundWidth, this.backGroundHeight);
+			this.scroll_background_1.draw();
+			this.scroll_background_2.draw();
+			this.scroll_background_3.draw();
 
-		fill(0, 0, 0);
-		text_make(4, 200, 0, 2);
-		textAlign(CENTER, CENTER);
-		//text("FLAP!", width/2, height/2);
-		
-		if (this.game_is_over) {
-			var message_position = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 1.5], this.current_time-this.game_over_time);
-			text("game over", message_position, height/2);
-		}
+			fill(0, 0, 0);
+			text_make(4, 200, 0, 2);
+			textAlign(CENTER, CENTER);
+			//text("FLAP!", width/2, height/2);
+			
+			if (this.game_is_over) {
+				var message_position = sigmoid_array([width*2, width/2, -width], [0, 1.5, 3], [1.5, 1.5], this.current_time-this.game_over_time);
+				text("game over", message_position, height/2);
+			}
 
-		for (let i in this.pipes) {
-			this.pipes[i].draw();
-		}
-		for (let i in this.players) {
-			this.players[i].draw();
-		}
-		this.check_collision();
-		pop();
+			for (let i in this.pipes) {
+				this.pipes[i].draw();
+			}
+			for (let i in this.players) {
+				this.players[i].draw();
+			}
+			if (this.players[this.main_player_index].is_dead == 0) {
+				this.check_collision();
+			}
+			pop();
     }
   
     this.read_network_data = function(flag, message) {
@@ -222,8 +252,8 @@ function flappy_bird() {
       } else if (flag == "pos_player") {
         this.read_in_player_position(message);
       } else if (flag == "new_player") {
-        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, j%4);
-		console.log("New player connected");
+        this.players[parseInt(message)] = new flappy_bird_player(this.Sprite, 200, 200, parseInt(message)%4);
+				console.log("New player connected");
       } else if (flag == "rmv_player") {
         var player_index = parseInt(message);
         this.players.splice(player_index, 1);
@@ -232,20 +262,22 @@ function flappy_bird() {
         }
       } else if (flag == "pipe_pos") {
         this.read_in_pipe_position(message);
-	  } else if (flag == "death") {
-		this.kill(parseInt(message));
-	  } else if (flag == "end_game") {
-		this.game_is_over = 1;
-		this.game_over_time = Date.now()/1000;
-	  }
+			} else if (flag == "death") {
+				this.kill(parseInt(message));
+			} else if (flag == "end_game") {
+				this.game_is_over = 1;
+				this.game_over_time = Date.now()/1000;
+			} else if (flag == "player_jump") {
+				this.players[parseInt(message)].jump();
+			}
     }
 
 	this.read_in_player_position = function(data) {
-		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5, 6]);
+		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5, 6], [7]);
 		if (this.players[p_vals[0]] === undefined) {
 			this.players[p_vals[0]] = new flappy_bird_player_2(this.Sprite, 10, 10);
 		}
-		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6]);
+		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
 	}
 
 	this.read_in_pipe_position = function(data) { //format packet as pipe:x,y,pipeWidth
@@ -295,12 +327,14 @@ function flappy_bird() {
 		
 		if (kill_player) {
 			this.kill(this.main_player_index);
+			send_data("dead_notice");
 		}
 	}
 
 	this.kill = function(player_id) {
 		this.players[player_id].is_dead = 1;
 		this.players[player_id].sprite_anim.change_animation("die");
-		send_data("dead_notice");
+		this.players[player_id].jump();
+		playSound("snare_reverb");
 	}
-  }
+}

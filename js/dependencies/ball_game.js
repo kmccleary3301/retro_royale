@@ -20,9 +20,10 @@ class game_2_ball {
 
     draw() {
       //console.log("drawing ball");
-      fill(colors[4]);
+      push();
+      fill(color(255, 0, 0));
       stroke(255);
-      ellipse(this.x, this.y, this.radius);
+      g_cam.ellipse(this.x, this.y, this.radius, this.radius);
       //console.log("drawing - "+str(this.x)+","+str(this.y));
       var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
@@ -57,6 +58,7 @@ class game_2_ball {
         this.y += this.dy*this.speed*mid_time;
       }
       this.last_update = Date.now()/1000;
+      pop();
     }
 
     update_data(x, y, dx, dy, speed) {
@@ -130,10 +132,10 @@ class ball_game_player {
 		}
 		text_make(0, 20, 0, 1);
 		fill(0, 0, 255);
-		text(this.name, this.x, this.y+60);
-		this.sprite_anim.draw(this.x, this.y, false);
+		g_cam.text(this.name, this.x, this.y+60);
+		this.sprite_anim.draw(this.x, this.y, true);
     fill(255, 0, 0);
-    ellipse(this.x, this.y, 10);
+    g_cam.ellipse(this.x, this.y, 10, 10);
 		pop();
 	}
 
@@ -220,6 +222,9 @@ function ball_game() {
 			"down" : 40
 		};
     this.bounds = {"x":[0, 1536], "y":[0, 731]};
+    this.bounds["center"] = [(this.bounds["x"][0]+this.bounds["x"][1])/2, (this.bounds["y"][0]+this.bounds["y"][1])/2];
+    
+    g_cam.update(this.bounds["center"][0], this.bounds["center"][1], 1);
     this.greenSprite = loadImage(repo_address+"media/sprites/Spritesheet_64.png");
     this.font = loadFont('media/fonts/Alpharush.ttf');
     imageMode(CENTER);
@@ -290,12 +295,12 @@ function ball_game() {
 		stroke(this.blue);
 		strokeWeight(5);
 		line(width/2, 0, width/2, 300);
-		image(this.disco_sprites, width/2, 300, 96, 96, 128*this.sx, 0, 128, 128);
+		g_cam.image(this.disco_sprites, this.bounds["center"][0], 300, 96, 96, 128*this.sx, 0, 128, 128);
 		//image(this.blue_line1, width/2, 175, 1, 175, this.blue_line1.width, this.blue_line1.length);
-		imageMode(CENTER);
-		image(this.sparkle, width/2+this.rando[2], 300+this.rando[0], abs(sin(frameCount/30))*30, abs(sin(frameCount/30))*30, 0, 0, this.sparkle.width, this.sparkle.height, CONTAIN, LEFT, CENTER);
-   		image(this.sparkle, width/2+this.rando[0], 300+this.rando[1], abs(sin(frameCount/25))*40, abs(sin(frameCount/25))*40, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
-   		image(this.sparkle, width/2+this.rando[1], 300+this.rando[2], abs(sin(frameCount/20))*50, abs(sin(frameCount/20))*50, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
+		  imageMode(CENTER);
+		  g_cam.image(this.sparkle, this.bounds["center"][0]+this.rando[2], 300+this.rando[0], abs(sin(frameCount/30))*30, abs(sin(frameCount/30))*30, 0, 0, this.sparkle.width, this.sparkle.height, CONTAIN, LEFT, CENTER);
+   		g_cam.image(this.sparkle, this.bounds["center"][0]+this.rando[0], 300+this.rando[1], abs(sin(frameCount/25))*40, abs(sin(frameCount/25))*40, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
+   		g_cam.image(this.sparkle, this.bounds["center"][0]+this.rando[1], 300+this.rando[2], abs(sin(frameCount/20))*50, abs(sin(frameCount/20))*50, 0, 0, this.sparkle.width, this.sparkle.height, COVER, CENTER, CENTER);
     
     if(countdown > 0){
       fill(colors[4]);

@@ -76,6 +76,17 @@ function seed_random(seed) {
   return x - Math.floor(x);
 }
 
+function end_session(session_id) {
+  if (sessions[session_id] === undefined) { return; }
+  setTimeout(function(){ 
+    for (let i in sessions[session_id].clients) {
+      sessions[session_id].remove_client(sessions[session_id].clients[i]);
+    }
+    sessions[session_id].clear_all_intervals();
+    delete sessions[session_id]; 
+  }, 10000);
+}
+
 function game_start() {
   console.log("Game Reset");
   current_state = new dev_room();
@@ -132,7 +143,7 @@ server.on('connection', function connection(thisClient) {
       if (line_pieces.length > 1) {           //Some commands are just a flag, this accounts for that.
         message = line_pieces[1];             
       }
-      if (session_id === undefined) {
+      if (session_id === undefined || session_id == null) {
         if (flag == 'connected') { thisClient.send("connected"); } //This only constitutes a hello, establishes that the connection was made
         //else if (flag == 'load_game') { thisClient.send("current_game:"+current_state_flag); }
         else if (flag == 'user_info') { clients_info[index].name = message; thisClient.send("request_session"); continue; }
@@ -162,7 +173,7 @@ server.on('connection', function connection(thisClient) {
       } else if (sessions[session_id] !== undefined) {
         if (flag == 'leave_session') {
           sessions[session_id].remove_client(thisClient);
-          clients_info[index].session_id = undefined;
+          clients_info[index].session_id = null;
         } else {
           sessions[session_id].read_network_data(flag, message, thisClient);
         }
@@ -351,6 +362,9 @@ class game_session {
     this.clients.splice(index, 1);
     this.clients_info.splice(index, 1);
     this.current_state.user_disconnected(index);
+    if (this.clients.length == 0) {
+      end_session(this.session_id);
+    }
   }
 
   append_interval_id(set_int_returned) {
@@ -585,7 +599,8 @@ class game_2_player {
 }
 
 function purgatory() {
-  this.setup = function() {
+  this.setup = function(session_id) {
+    this.session_id = session_id;
     this.whoWon; //holds the index of the player that won the game
 
     this.game_length = 30.000;
@@ -594,6 +609,14 @@ function purgatory() {
 
     this.current_time = 0;
     this.players = [];
+    this.game_result_json = {};
+    this.game_over = 0;
+
+    var sentence_data = fs.readFileSync('./data/sentence_data.txt', 'utf8');
+    sentence_data = sentence_data.split("\n");
+    this.chosen_sentence = sentence_data[Math.round(Math.random()*(sentence_data.length-1))];
+    console.log("chosen sentence:"+this.chosen_sentence);
+
     //for (i=0; i < clients.length; i++) {
     //  console.log("client #"+i);
     //  this.players[i] = new game_1_player(600*Math.random(), 600*Math.random(), 1);
@@ -603,6 +626,15 @@ function purgatory() {
 		//
 		//
 		//
+    if (sessions[this.session_id] !== undefined) {
+      console.log("session found, making players");
+      for (let i in sessions[this.session_id].clients) {
+        this.players[i] = new game_2_player(null, this.numberOfPlayers, 3);
+      }
+      for (let i in sessions[this.session_id].clients) {
+        this.user_loaded(i);
+      }
+    }
     this.numberOfPlayers = 0;
 
     // var int_id = setInterval(function(){ self.tick_function(); }, 100);
@@ -613,10 +645,10 @@ function purgatory() {
     //this.current_time = Date.now()/1000 - this.start_time;
     //if (this.current_time >= 5) { swap_current_state("fruit_game"); }
     if(this.whoWon != null) {
-      broadcast("Won:"+whoWon);
+      sessions[this.session_id].broadcast("Won:"+whoWon);
     }
     this.current_time = this.game_length - (Date.now()/1000 - this.start_time);
-    broadcast("game_state:"+this.current_time+","+this.game_length);
+    sessions[this.session_id].broadcast("game_state:"+this.current_time+","+this.game_length);
   }
 
   this.read_network_data = function(flag, message, usr_id) {
@@ -625,33 +657,67 @@ function purgatory() {
       this.user_loaded(usr_id);
     } else if (flag == "my_pos") {
       this.read_in_player_position(usr_id+","+message);
-      broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
+      sessions[this.session_id].broadcast_exclusive(this.players[usr_id].make_data(usr_id), [usr_id]);
     } else if (flag == "debug") {
       console.log("Client sent: "+message);
     } else if (flag == "get_index") {
-      clients[usr_id].send("index:"+usr_id);
-      clients[usr_id].send("player_count:" + clients.length);
+      sessions[this.session_id].clients[usr_id].send("index:"+usr_id);
+      sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length);
     } else if (flag == "get_names") {
-      broadcast("Name of:"+usr_id+","+clients_info[usr_id].name);
+      sessions[this.session_id].broadcast("Name of:"+usr_id+","+clients_info[usr_id].name);
+    } else if (flag == "finished_sentence") {
+      this.player_finished(usr_id);
+    }
+  }
+
+  this.player_finished = function(player_id) {
+    var place = 1 + Object.keys(this.game_result_json).length;
+    this.game_result_json[sessions[this.session_id].clients_info[player_id].name] = {
+      "player_id": player_id,
+      "coins_added": 65 - 15*place
+    }
+    if (place == 1) {
+      var self = this;
+      setTimeout(function(){self.end_game(); }, 15000);
+    }
+    else if (Object.keys(this.game_result_json).length == this.players.length) {
+      var self = this;
+      setTimeout(function(){self.end_game(); }, 2000);
     }
   }
 
   this.user_loaded = function(usr_id) {
-    clients[usr_id].send("load_recieved");
+    sessions[this.session_id].clients[usr_id].send("load_recieved");
     //upon construction, every player in my game is given the same x
     //value. so i pass it as null to make things simpler.
     //constructor for MY game players
-    this.players[usr_id] = new game_2_player(null, this.numberOfPlayers, 3);
+    this.players[usr_id] = new game_2_player(null, this.players.length, 3);
     this.numberOfPlayers++;
-    console.log("Client "+this.numberOfPlayers+" loaded:"+this.players[usr_id].make_data());
+    console.log("Client "+usr_id+" loaded:"+this.players[usr_id].make_data());
     //
-    broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
-    clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
-    clients[usr_id].send(this.make_everything());
+    sessions[this.session_id].broadcast_exclusive("new_player:"+usr_id+"\n"+this.players[usr_id].make_data(usr_id), [usr_id]);
+    sessions[this.session_id].clients[usr_id].send("player_count:" + clients.length + "\n" + "assigned_id:" + usr_id + "\n");
+    sessions[this.session_id].clients[usr_id].send(this.make_everything());
+  }
+
+  this.end_game = function() {
+    if (this.game_over) { return; }
+    for (let i in this.players) {
+      if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+        var place = 1 + Object.keys(this.game_result_json).length;
+        this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+          "player_id": i,
+          "coins_added": 65 - 15*place
+        }
+      }
+    }
+    var self = this;
+    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+    this.game_over = 1;
   }
 
   this.user_disconnected = function(usr_id) {
-    broadcast("rmv_player:"+usr_id);
+    sessions[this.session_id].broadcast("rmv_player:"+usr_id);
     this.players.splice(usr_id, 1);
     this.numberOfPlayers--;
   }
@@ -659,6 +725,7 @@ function purgatory() {
   this.make_everything = function() {
     str_make = "";
     for (let i in this.players) { str_make += this.players[i].make_data(i) + "\n"; }
+    str_make += "keyboard_sentence:"+this.chosen_sentence+"\n";
     return str_make;
   }
 
@@ -666,8 +733,9 @@ function purgatory() {
     p_vals = convert_data_string(data_string, [0, 3, 5, 6, 7], [1, 2, 4]);
     if(this.players[p_vals[0]] === undefined) {this.players[p_vals[0]] = new game_2_player(null, this.numberOfPlayers, 3);}
     this.players[p_vals[0]].update_data(null, p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
-    if(p_vals[1] > 1700)
+    if(p_vals[1] > 1700) {
       whoWon = p_vals[0];
+    }
     return p_vals[0];
   }
 }
@@ -1090,7 +1158,8 @@ function board_game() {
     /*if (flag == "load_game") {
       this.user_loaded(usr_id);
     } else */if (flag == "move_tile_direction" && usr_id == this.turning_player_index) {
-      this.move_player_to_tile(usr_id, message);
+      p_vals = convert_data_string(message, [1], [], [0]);
+      this.move_player_to_tile(usr_id, p_vals[0], p_vals[1]);
     } else if (flag == "begin_dice" && usr_id == this.turning_player_index) {
       var dice_make = new dice_element([1, 2, 3, 4, 5, 6], [1, 1, 1, 1, 1, 1]);
       sessions[this.session_id].broadcast("dice_roll_turn:ints,"+dice_make.make_data());
@@ -1114,12 +1183,20 @@ function board_game() {
         sessions[this.session_id].broadcast("GAME_OVER");
       }
     }
+    if (this.tiles[this.players[this.turning_player_index].current_tile_index].type == 'star') {
+      this.players[this.turning_player_index].current_tile_index = 0;
+      this.players[this.turning_player_index].previous_tile_index = 0;
+      this.players[this.turning_player_index].x = this.tiles[this.players[this.turning_player_index].current_tile_index].x;
+      this.players[this.turning_player_index].y = this.tiles[this.players[this.turning_player_index].current_tile_index].y;
+      sessions[this.session_id].broadcast(this.players[this.turning_player_index].make_data(this.turning_player_index));
+    }
     sessions[this.session_id].broadcast("turning_player:"+this.turning_player_index);
     console.log("Player: "+this.turning_player_index+", turn: "+this.current_turn);
     sessions[this.session_id].clients[this.turning_player_index].send("your_roll");
   }
 
-  this.move_player_to_tile = function(usr_id, direction) {
+  this.move_player_to_tile = function(usr_id, direction, tile_target_id) {
+    if (this.current_turn_moves <= 0) { return; }
     if (!this.tiles[this.players[usr_id].current_tile_index].check_child(direction)) 
 		{ console.log("child failed"); return; }
     if (this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"] == this.players[usr_id].previous_tile_index) {
@@ -1127,11 +1204,16 @@ function board_game() {
     }
     sessions[this.session_id].broadcast(this.players[usr_id].make_data(usr_id));
     this.players[usr_id].previous_tile_index = this.players[usr_id].current_tile_index;
-    this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    //this.players[usr_id].current_tile_index = this.tiles[this.players[usr_id].current_tile_index].connected_tiles[direction]["tile_id"];
+    this.players[usr_id].current_tile_index = tile_target_id;
+    console.log("ttid:"+tile_target_id);
     this.players[usr_id].x = this.tiles[this.players[usr_id].current_tile_index].x;
     this.players[usr_id].y = this.tiles[this.players[usr_id].current_tile_index].y;
     sessions[this.session_id].broadcast("player_move_tile:"+usr_id+","+direction);
-    if (this.tiles[this.players[usr_id].current_tile_index].type == 'star') { this.current_turn_moves = 0; }
+    if (this.tiles[this.players[usr_id].current_tile_index].type == 'star') { 
+      this.current_turn_moves = 0;
+      broadcast("current_turn_moves:"+this.current_turn_moves);
+    }
     else { this.current_turn_moves--; }
   }
 
@@ -1149,7 +1231,7 @@ function board_game() {
 				this.game_action_store = "change_coins:"+this.turning_player_index+","+3;
 				break;
 			case 'versus':
-				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 1, 1]);
+				var dice_make = new dice_element(["Fruit Frenzy", "Disco Dodgeball", "Sky Surprise", "Backroom Brawl", "Keyboard Krawler"], [1, 1, 1, 50, 1]);
         sessions[this.session_id].broadcast("dice_roll_turn:strings,"+dice_make.make_data());
         switch(dice_make.chosen_value) {
           case 'Fruit Frenzy':
@@ -1253,11 +1335,12 @@ function ball_game() {
     console.log("this.session_id -> "+this.session_id);
     this.start_time = Date.now()/1000;
     this.current_time = 0;
-    this.add_last_time = Date.now()/1000;
+    this.add_last_time = Date.now()/1000-5;
     this.players = [];
     this.balls = [];
     this.game_over = 0;
     this.bounds = {"x":[0, 1536], "y":[0, 731]};
+    this.bounds["center"] = [(this.bounds["x"][0]+this.bounds["x"][1])/2, (this.bounds["y"][0]+this.bounds["y"][1])/2];
     // this.condition;
     this.game_over = false;
     if (sessions[this.session_id] !== undefined) {
@@ -1462,6 +1545,40 @@ function fighting_game() {
       }
   }}
 
+  this.player_finished = function(player_id) {
+    var place = 1 + Object.keys(this.game_result_json).length;
+    this.game_result_json[sessions[this.session_id].clients_info[player_id].name] = {
+      "player_id": player_id,
+      "coins_added": 65 - 15*place
+    }
+    var sum_players_alive = 0;
+    for (let i in this.players) {
+      if (this.players[i].health > 0) { sum_players_alive += 1; }
+    }
+    if (sum_players_alive <= 1) {
+      var self = this;
+      setTimeout(function(){self.end_game(); }, 15000);
+    }
+    else if (Object.keys(this.game_result_json).length == this.players.length) {
+      this.end_game();
+    }
+  }
+
+  this.end_game = function() {
+    if (this.game_over) { return; }
+    var place = 1 + Object.keys(this.game_result_json).length;
+    for (let i in this.players) {
+      if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
+        this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
+          "player_id": i,
+          "coins_added": 65 - 15*place
+        }
+      }
+    }
+    var self = this;
+    setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
+    this.game_over = 1;
+  }
 
   //make a function to declare a winner
   this.check_winner = function(){
@@ -1479,25 +1596,6 @@ function fighting_game() {
           //this.leaderboard();        //this is where the leaderboard function would be called to determine placement
         }
       }
-    }
-  }
-
-  this.end_game = function(winner_id) {
-    if (this.game_over == 0) {
-      for (let i in this.players) {
-        if (this.game_result_json[sessions[this.session_id].clients_info[i].name] === undefined) {
-          this.game_result_json[sessions[this.session_id].clients_info[i].name] = {
-            "player_id": i,
-            "coins_added": 30
-          }
-        }
-      }
-      if (winner_id !== undefined) {
-        this.game_result_json[sessions[this.session_id].clients_info[winner_id].name]["coins_added"] += 15;
-      }
-      var self = this;
-      setTimeout(function(){sessions[self.session_id].swap_current_state("game_end_screen"); }, 2000);
-      this.game_over = 1;
     }
   }
 
@@ -1519,8 +1617,7 @@ function fighting_game() {
     var players_alive = this.players.length;
     var winner_id = 0;
     for (let i in this.players) { 
-      if(this.players[i].health <= 0) { players_alive--; }
-      else {winner_id = i; }
+      if(this.players[i].health <= 0) { this.player_finished(i); }
     }
     if (players_alive <= 1) { this.end_game(winner_id); }
     sessions[this.session_id].broadcast("game_timer_info:"+this.current_time+","+this.countdown_time+","+this.game_round);
@@ -1620,7 +1717,7 @@ function flappy_bird() {
     }
     this.set_player_y_positions;
     var self = this;
-    var int_id = setInterval(function(){ self.tick_function(); }, 35);
+    var int_id = setInterval(function(){ self.tick_function(); }, 500);
     sessions[this.session_id].append_interval_id(int_id);
     this.game_over = 0;
   }
@@ -1691,7 +1788,7 @@ function flappy_bird() {
   this.user_loaded = function(usr_id) {
     sessions[this.session_id].clients[usr_id].send("load_recieved");
     if (this.players[usr_id] === undefined) {
-      this.players[usr_id] = new flappy_bird_player(500, 250, 1);
+      this.players[usr_id] = new flappy_bird_player(500, 250);
       this.players_alive++;
     }
     this.set_player_y_positions();
@@ -1714,11 +1811,12 @@ function flappy_bird() {
   }
 
   this.read_in_player_position = function(data) {
-		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5]);
+		p_vals = convert_data_string(data, [0], [1, 2, 3, 4, 5, 6], [7]);
 		if (this.players[p_vals[0]] === undefined) {
-			this.players[p_vals[0]] = new flappy_bird_player(500, 250, 1);
+			this.players[p_vals[0]] = new flappy_bird_player(500, 250);
+      this.set_player_y_positions();
 		}
-		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5]);
+		this.players[p_vals[0]].update_data(p_vals[1], p_vals[2], p_vals[3], p_vals[4], p_vals[5], p_vals[6], p_vals[7]);
 	}
 
 	this.read_in_pipe_position = function(data) { //format packet as pipe:x,y,pipeWidth

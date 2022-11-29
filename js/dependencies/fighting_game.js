@@ -189,7 +189,7 @@ class fighting_game_player  {
 
     
     
-    this.sprite_anim.draw(this.x, this.y+fgs_floor, true);
+    this.sprite_anim.draw(this.x, this.y+fgs_floor, false);
     if (this.isDead == 1) {
       this.y += this.dy; //add gravity to y position
       this.y = Math.min(this.y, 0); //if y position is greater than floor, then set y position to floor
@@ -417,6 +417,7 @@ function fighting_game() {
     this.spaceshippy[0] = new spaceship(100, 100, this.blue, 1);
     
 
+    this.user_last_attacked_time = Date.now()/1000 - 20;
     //send_data("load_game");
     stopAllSounds();
 		playSound("beat_angry", true);
@@ -471,10 +472,14 @@ function fighting_game() {
       }
       else if (code == this.space_key)
       {
-        //this.players[this.main_player_index].update_anim("attacking");
-        this.player_attack(this.main_player_index);
-        send_data("attack");
-        //return;
+        if (Date.now()/1000 - this.user_last_attacked_time > 1) {
+
+          //this.players[this.main_player_index].update_anim("attacking");
+          this.player_attack(this.main_player_index);
+          send_data("attack");
+          this.user_last_attacked_time = Date.now()/1000;
+          //return;
+        }
       }
       send_data("my_pos:"+this.players[this.main_player_index].make_data_raw());
     }

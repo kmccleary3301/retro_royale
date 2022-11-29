@@ -5,10 +5,13 @@ function seed_random(seed) {
 class game_2_ball {
 	constructor(bounds) {
 		this.radius = 50;
-		this.x = 0;
-		this.y = 0;
-		this.dx = 1;
-		this.dy = 1;
+		this.x = bounds["center"][0];
+		this.y = bounds["center"][1];
+		this.dx = Math.random()-0.5;
+		this.dy = Math.random()-0.5;
+    var mag = Math.sqrt(this.dx*this.dx+this.dy*this.dy);
+    this.dx /= mag;
+    this.dy /= mag;
 		this.speed = 300;
     this.bounds = bounds;
 		this.last_update = Date.now()/1000;

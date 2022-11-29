@@ -14,7 +14,7 @@ class fighting_game_player {
 	}
 
 	make_data_raw() {
-		return this.x+","+this.y+","+this.dx+","+this.dy+","+this.facing+","+this.health+","+this.isAttacking+","+this.isDucking;
+		return this.x+","+this.y+","+this.dx+","+this.dy+","+this.facing+","+this.health+","+this.isAttacking+","+this.isDucking+","+this.current_animation;
 	}
 
 	make_data(player_index){

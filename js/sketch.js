@@ -8,10 +8,17 @@ var game_bounds, g_cam;
 var tone_started = 0;
 
 var sound_ids = {
-  "press" : 'media/sounds/button_press.wav',
-  "arp" : 'media/sounds/arp_2.wav',
-  "beat_angry" : 'media/sounds/beat_angry.wav',
-  "beat_groovy" : 'media/sounds/beat_groovy.wav'
+  "press" : 'media/sounds/button_press.mp3',
+  "arp" : 'media/sounds/arp_2.mp3',
+  "beat_angry" : 'media/sounds/beat_angry.mp3',
+  "beat_groovy" : 'media/sounds/beat_groovy.mp3',
+  "soothing_1" : "media/sounds/soothing_loop_1.mp3",
+  "soothing_2" : "media/sounds/soothing_loop_2.mp3",
+  "snare_reverb" : "media/sounds/snare_reverb.mp3",
+  "perc_reverb" : "media/sounds/perc_reverb.mp3",
+  "button_press" : "media/sounds/button_press.mp3",
+  "menacing_synth" : "media/sounds/synth_2.mp3",
+  "snare_1" : "media/sounds/snare_1.mp3"
 };
 
 var sound_id_flags = {};
@@ -140,8 +147,19 @@ function stopSound(sound_name) {
 }
 
 function stopAllSounds() {
-  for (let key in sound_id_flags) {
-    if (sound_id_flags[key]) { console.log("stopping sound ->"+key); stopSound(key); }
+  var brute_force = false;
+  if (arguments[0] !== undefined) {
+    brute_force = arguments[0];
+  }
+  if (brute_force) {
+    for (let key in sound_id_flags) {
+      console.log("stopping sound ->"+key); 
+      stopSound(key);
+    }
+  } else {
+    for (let key in sound_id_flags) {
+      if (sound_id_flags[key]) { console.log("stopping sound ->"+key); stopSound(key); }
+    }
   }
 }
 
