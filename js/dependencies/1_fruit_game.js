@@ -1,5 +1,14 @@
 function fruitGame() {
 	this.setup = function() {
+
+		//colors
+		this.blue = [3, 94, 232];
+		this.red = [229, 53, 100];
+		this.yellow = [243, 199, 82];
+		this.pink = [246, 1, 157];
+		this.cyan = [45, 226, 230];
+		this.purple = [151, 0, 204];
+
 		this.fruits_count = 15;
 		this.players = [];
 		this.fruits = [];
@@ -9,6 +18,7 @@ function fruitGame() {
 		this.start_time;
 		this.current_time = this.game_length;
 		this.main_player_index;
+		this.background1 = loadImage(repo_address+"media/backgrounds/diner_background.png");
 		this.arrow_keys = {
 			"left" : 37,
 			"right" : 39,
@@ -27,7 +37,7 @@ function fruitGame() {
 		this.fruitSprite = loadImage(repo_address+"media/sprites/fruit_sprites.png");
 		this.start_time = millis()/1000;
 		this.game_dimensions = [2000, 1000];
-		textFont(font_set[0]);
+		textFont(font_set[3]);
 		textSize(20);
 		textAlign(CENTER, CENTER);
 		fill(0, 0, 0);
@@ -112,7 +122,8 @@ function fruitGame() {
 
 	this.draw = function() {
 		push();
-		textFont(font_set[0]);
+		textFont(font_set[3]);
+		
 		this.current_time = this.game_length - ((millis()/1000) - this.start_time);
 		if (this.game_active == 0) { this.draw_game_load(); }
 		else if (this.game_active == 1) { this.draw_game_active();}
@@ -127,6 +138,7 @@ function fruitGame() {
 		for (let i in this.players) {
 			this.players[i].draw();
 		}
+		
 		textAlign(CENTER, CENTER);
 		g_cam.text("Game starts in "+str(int(this.current_time)), width/2, height/2);
 		if (this.current_time < 0) {
@@ -138,7 +150,7 @@ function fruitGame() {
 		g_cam.x = this.players[this.main_player_index].x;
 		g_cam.y = this.players[this.main_player_index].y;
 		g_cam.scale = 0.8;
-		background(200, 200, 200);
+		image(this.background1, 1440/2, 1080/2, 1440, 1080);
 		fill(0, 0, 0);
 		text_make(0, 50, 0, 0);
 		textSize(50);
@@ -200,7 +212,7 @@ function fruitGame() {
 		if (time < breakpoint) {
 			stroke(0, 0, 0);
 			strokeWeight(4);
-			fill(255, 78, 0);
+			fill(this.red);
 			rect(box_position_x-250, height/2 - 100, 500, 200);
 			fill(r, g, b);
 			text("GAME OVER", text_position_x, height/2);
