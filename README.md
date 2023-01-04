@@ -6,17 +6,17 @@ Multiplayer P5.js board game
 This is a browser-based multiplayer board game written with [P5.js](https://p5js.org/), [Tone.js](https://tonejs.github.io/), and [Node.js.](https://nodejs.org/en/)
 
 Authors:
-*   Kyle McCleary      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Developer)     kmccl24@lsu.edu
+*   Kyle McCleary&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Developer)     kmccl24@lsu.edu
 
-*   Jake Kinchen       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Artist, Minigame Developer)
+*   Jake Kinchen&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Artist, Minigame Developer)
 
-*   James Power        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
+*   James Power&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
-*   Lydia Parsa        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
+*   Lydia Parsa&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
-*   Enjolie Watson     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
+*   Enjolie Watson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
-*   Brandon Braswell   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
+*   Brandon Braswell&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
 Server hosts can be selected from the main menu.
 Note that only the frontend is hosted here.
