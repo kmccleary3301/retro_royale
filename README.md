@@ -1,31 +1,37 @@
-# retro_royale
+##  Retro Royale
 Multiplayer P5 project
+[Play it Here](https://kmccleary3301.github.io/retro_royale/)
 
+This is a browser-based multiplayer board game written with [P5.js](https://p5js.org/), [Tone.js](https://tonejs.github.io/), and [Node.js.](https://nodejs.org/en/)
 
-This is a P5.js game styled after mario party.
+Authors:
+Kyle McCleary       (Lead Developer)
+*kmccl24@lsu.edu
+Jake Kinchen        (Lead Artist, Minigame Developer)
+James Power         (Minigame Developer)
+Lydia Parsa         (Minigame Developer)
+Enjolie Watson      (Minigame Developer)
+Brandon Braswell    (Minigame Developer)
 
-Game is multiplayer with internet connectivity, and a server-side component.
+Server hosts can be selected from the main menu.
+Note that only the frontend is hosted here.
+While we have hosted servers elsewhere, there is not
+currently an official server running the backend.
 
-# Setup
+#   Backend Setup
+To run the backend, simply install Node.js [here](https://nodejs.org/en/).
+Next, clone this repository to a folder of your choosing.
+Finally, run the following commands:
 
-Install Node.js from https://nodejs.org/en/
+>   cd *path-to-repo*
+>   cd server
+>   node server.js
 
-In vscode, make a new folder for the project, and pull from this repository.
+To connect, simply enter the address listed in the terminal into the server select from the main menu.
 
-Open a terminal and run the following command:
->  npm install -g browser-sync
-
-In order to start the server, run the following commands in a terminal:
->  cd server
->  
->  npm install   #only do this the first time, it will install dependencies for server.js
->  
->  node server.js
-
-To run the client, make a new terminal and run this command:
->  browser-sync start --server -f -w
-
-This will open a live session in a browser at localhost:3000
-
-This session will auto refresh every time you save a file in vscode
-
+#   Playing
+Once the backend is running and selected on the client, connect from the main menu.
+Once in the session menu, you can either enter the ID of an existing session or create a new one.
+Upon doing the latter, this will spawn you in a dev room. If you are the host, you will have a menu of games
+to spawn into. Other players can connect to the session at any point, and the host is able to start
+the game at any time.
