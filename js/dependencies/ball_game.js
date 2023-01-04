@@ -16,14 +16,16 @@ class game_2_ball {
       this.speed = 300;
       this.last_update = Date.now()/1000;
       this.bounds = bounds;
+      this.ball_image = loadImage("media/misc/disco_bullet.png");
     }
 
     draw() {
       //console.log("drawing ball");
       push();
-      fill(color(255, 0, 0));
-      stroke(255);
-      g_cam.ellipse(this.x, this.y, this.radius, this.radius);
+      //fill(color(255, 0, 0));
+      //stroke(255);
+      //g_cam.ellipse(this.x, this.y, this.radius, this.radius);
+      g_cam.image(this.ball_image, this.x, this.y, this.radius, this.radius);
       //console.log("drawing - "+str(this.x)+","+str(this.y));
       var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
@@ -134,8 +136,8 @@ class ball_game_player {
 		fill(0, 0, 255);
 		g_cam.text(this.name, this.x, this.y+60);
 		this.sprite_anim.draw(this.x, this.y, true);
-    fill(255, 0, 0);
-    g_cam.ellipse(this.x, this.y, 10, 10);
+    //fill(255, 0, 0);
+    //g_cam.ellipse(this.x, this.y, 10, 10);
 		pop();
 	}
 
