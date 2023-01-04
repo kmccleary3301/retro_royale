@@ -1,4 +1,4 @@
-##  Retro Royale
+#   Retro Royale
 Multiplayer P5 project
 
 [Play it Here](https://kmccleary3301.github.io/retro_royale/)
