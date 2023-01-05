@@ -42,23 +42,23 @@ to spawn into. Other players can connect to the session at any point, and the ho
 the game at any time.
 
 #   Minigames
-*Main Menu*
+##  *Main Menu*
 ![main_menu.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/main_menu.png)   
 
-*Game Select Room*
+##  *Game Select Room*
 ![dev_room.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/dev_room.png)   
 
-*Game Board*
+##  *Game Board*
 ![board_game.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/board_game.png)   
 
-*Disco Blitz*
+##  *Disco Blitz*
 ![disco_blitz.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/disco_blitz.png)   
 
-*Backroom Brawl*
+##  *Backroom Brawl*
 ![fighting_game.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/fighting_game.png)   
 
-*Fruit Frenzy*
+##  *Fruit Frenzy*
 ![fruit_game.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/fruit_game.png)   
 
-*Keyboard Krawlers*
+##  *Keyboard Krawlers*
 ![type_racer.png](https://raw.githubusercontent.com/kmccleary3301/retro_royale/master/media/readme/type_racer.png)   
