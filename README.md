@@ -12,11 +12,11 @@ Authors:
 
 *   James Power&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
-*   Lydia Parsa&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
+*   Lydia Parsa&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
 *   Enjolie Watson&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
-*   Brandon Braswell&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
+*   Brandon Braswell&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Minigame Developer)
 
 Server hosts can be selected from the main menu.
 Note that only the frontend is hosted here.
