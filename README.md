@@ -6,7 +6,7 @@ Multiplayer P5.js board game
 This is a browser-based multiplayer board game written with [P5.js](https://p5js.org/), [Tone.js](https://tonejs.github.io/), and [Node.js.](https://nodejs.org/en/)
 
 Authors:
-*   Kyle McCleary&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Developer)     kmccl24@lsu.edu
+*   Kyle McCleary&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Developer)
 
 *   Jake Kinchen&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Lead Artist, Minigame Developer)
 
