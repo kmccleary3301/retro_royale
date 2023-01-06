@@ -16,14 +16,16 @@ class game_2_ball {
       this.speed = 300;
       this.last_update = Date.now()/1000;
       this.bounds = bounds;
+      this.disco_ball = loadImage(repo_address+'media/misc/disco_ball_string.png');
     }
 
     draw() {
       //console.log("drawing ball");
       push();
-      fill(color(255, 0, 0));
+      //fill(color(255, 0, 0));
       stroke(255);
-      g_cam.ellipse(this.x, this.y, this.radius, this.radius);
+      //g_cam.ellipse(this.x, this.y, this.radius, this.radius);
+      g_cam.image(this.disco_ball, this.x, this.y, this.radius, this.radius);
       //console.log("drawing - "+str(this.x)+","+str(this.y));
       var bounce_flag = false;
       this.x += this.dx*this.speed*(Date.now()/1000 - this.last_update);
@@ -238,7 +240,7 @@ function ball_game() {
 		this.cyan = [45, 226, 230];
 		this.purple = [151, 0, 204];
 		//this.color_array = [this.red, this.cyan, this.purple, this.blue, this.yellow, this.pink];
-		this.disco_ball = loadImage('media/misc/disco_ball_string.png');
+		this.disco_ball = loadImage(repo_address+'media/misc/disco_ball_string.png');
 		this.sparkle = loadImage(repo_address+"media/misc/sparkle.png");
 		this.disco_sprites = loadImage(repo_address+"media/misc/disco_sprite.png");
 		this.disco_sprites_2 = loadImage(repo_address+"media/misc/disco_sprite_7i.png");
