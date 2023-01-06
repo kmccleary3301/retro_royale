@@ -29,7 +29,9 @@ Next, clone this repository to a folder of your choosing.
 Finally, run the following commands:
 
 >   cd *path-to-repo*
+>
 >   cd server
+>
 >   node server.js
 
 To connect, simply enter the address listed in the terminal into the server select from the main menu.
